@@ -174,7 +174,11 @@ class StatusOut(BaseModel):
     politicians_total: int
     latest_disclosure_date: date | None
     latest_transaction_date: date | None
-    last_ingested_at: datetime | None
+    last_ingested_at: datetime | None  # when the newest trade row was inserted
+    last_successful_ingest_at: datetime | None  # when the last ingest run finished without error
+    ingest_age_hours: float | None
+    ingest_stale_after_hours: float
+    ingest_stale: bool
     invalid_date_trades: int
     securities_total: int
     securities_priced: int
