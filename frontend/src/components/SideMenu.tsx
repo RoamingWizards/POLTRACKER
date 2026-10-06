@@ -26,8 +26,9 @@ export function DataFreshness() {
   const { data } = useStatus();
   return (
     <Stack sx={{ p: 2, gap: 0.25, borderTop: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-        Last ingest: {timeAgo(data?.last_ingested_at)}
+      <Typography variant="caption" sx={{ color: data?.ingest_stale ? 'warning.main' : 'text.secondary' }}>
+        Last ingest: {data ? (data.last_successful_ingest_at ? timeAgo(data.last_successful_ingest_at) : 'none yet') : '…'}
+        {data?.ingest_stale ? ' (stale)' : ''}
       </Typography>
       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         Latest disclosure: {data?.latest_disclosure_date ?? '—'}

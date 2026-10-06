@@ -1,6 +1,12 @@
 // The browser only ever talks to the POLTRACKER FastAPI backend (never to
-// CongressInvests or yfinance). In dev, Vite proxies /api to the backend.
-const BASE = import.meta.env.VITE_API_BASE ?? '/api';
+// CongressInvests or yfinance).
+//
+// - Local development: leave VITE_API_BASE_URL unset. Requests go to /api, which the Vite dev
+//   server proxies to the backend (see vite.config.ts), so no CORS is involved.
+// - Production build: set VITE_API_BASE_URL to the API's public URL at build time, for example
+//   https://your-api.example.com (the backend must allow this site's origin via CORS_ORIGINS).
+//   The value is baked into the bundle, so it must never contain a secret.
+const BASE = (import.meta.env.VITE_API_BASE_URL?.trim() || '/api').replace(/\/+$/, '');
 
 export class ApiError extends Error {
   status: number;

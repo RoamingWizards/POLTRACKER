@@ -146,7 +146,11 @@ export interface Status {
   politicians_total: number;
   latest_disclosure_date: string | null;
   latest_transaction_date: string | null;
-  last_ingested_at: string | null;
+  last_ingested_at: string | null; // when the newest trade row was inserted
+  last_successful_ingest_at: string | null; // when the last ingest run finished without error
+  ingest_age_hours: number | null;
+  ingest_stale_after_hours: number;
+  ingest_stale: boolean;
   invalid_date_trades: number;
   securities_total: number;
   securities_priced: number;

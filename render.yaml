@@ -1,0 +1,22 @@
+# Render Blueprint for the POLTRACKER API (FastAPI, read-only).
+#
+# NOT APPLIED: nothing is deployed and no Render account or service exists yet. This file only records the
+# settings needed so the service can be created later. See docs/PRODUCTION_READINESS.md.
+#
+# Free web services sleep after 15 minutes idle (the first request then takes about a minute) and have no
+# persistent disk, so the production database must be PostgreSQL (Neon), never a file on this service.
+services:
+  - type: web
+    name: poltracker-api
+    runtime: python
+    plan: free
+    # Python is pinned by .python-version (3.13). Render's default for new services is newer and untested here.
+    buildCommand: pip install .
+    startCommand: uvicorn poltracker.api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Values are entered in the Render dashboard when the Blueprint is created. They are not stored here.
+      - key: DATABASE_URL # the Neon PostgreSQL connection string (a secret)
+        sync: false
+      - key: CORS_ORIGINS # the frontend's origin, e.g. https://<project>.pages.dev (no trailing slash)
+        sync: false
