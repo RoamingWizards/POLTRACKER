@@ -385,7 +385,7 @@ Render, free-tier terms that can change, and an auto-disable rule on the schedul
 
 **Step 2: database**
 9. Create the Neon project (free). Record the direct and pooled connection strings. Choose a region close to Render's.
-10. Run `alembic upgrade head` against Neon. Confirm version `0004`.
+10. Run `alembic upgrade head` against Neon. Confirm version `0005`.
 11. Run the copy script from your machine with the backed-up `poltracker.db`. Verify row counts match
     (105 politicians, 1,062 securities, 5,381 trades, 272,477 price bars, plus the single `ingest_state` row).
 12. Point a local API at Neon and compare a few responses with SQLite. Check SSL, latency and the pooled versus

@@ -9,3 +9,7 @@ node_modules/
 *.egg-info/
 dist/
 *.tsbuildinfo
+
+.claude/skills/
+skills-lock.json
+.neon
