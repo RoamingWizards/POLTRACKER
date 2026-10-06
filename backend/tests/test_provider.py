@@ -1,0 +1,98 @@
+"""CongressInvestsProvider over a mocked HTTP transport (no network, no daily-quota spend)."""
+
+import httpx
+import pytest
+from sqlalchemy import func, select
+
+from poltracker.ingest import ingest_recent
+from poltracker.models import Trade
+from poltracker.providers import CongressInvestsProvider, ProviderError, ProviderRateLimited
+
+
+def provider_for(handler) -> CongressInvestsProvider:
+    client = httpx.Client(base_url="https://example.test", transport=httpx.MockTransport(handler))
+    return CongressInvestsProvider("https://example.test", client=client)
+
+
+def record(i: int, **kw) -> dict:
+    base = {
+        "member": f"Member {i}", "chamber": "House", "trade_type": "buy", "amount": "$1,001 - $15,000",
+        "tx_date": "2026-09-01", "disclosed": "2026-09-20", "asset": f"Company {i}", "ticker": f"T{i}", "link": "https://x/1.pdf",
+    }
+    base.update(kw)
+    return base
+
+
+def test_fetches_and_normalizes_a_page(recent_body):
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["path"], seen["params"] = request.url.path, dict(request.url.params)
+        return httpx.Response(200, json=recent_body)
+
+    page = provider_for(handler).fetch_recent_page(limit=25, offset=0)
+    assert seen["path"] == "/trades/recent" and seen["params"] == {"limit": "25", "offset": "0"}
+    assert len(page.trades) == 25 and page.has_more is True and page.total == 5381
+    assert page.skipped == 0
+
+
+def test_unusable_records_are_counted_not_fatal():
+    body = {"trades": [record(1), record(2, tx_date="garbage"), record(3, chamber="Mars")], "has_more": False, "total": 3}
+    page = provider_for(lambda r: httpx.Response(200, json=body)).fetch_recent_page(limit=10)
+    assert len(page.trades) == 1 and page.skipped == 2
+
+
+def test_api_key_is_sent_as_header_when_configured():
+    seen = {}
+    client = httpx.Client(
+        base_url="https://example.test",
+        headers={"X-Api-Key": "k"},
+        transport=httpx.MockTransport(lambda r: (seen.update(key=r.headers.get("x-api-key")), httpx.Response(200, json={"trades": []}))[1]),
+    )
+    CongressInvestsProvider("https://example.test", "k", client=client).fetch_recent_page(limit=1)
+    assert seen["key"] == "k"
+
+
+def test_429_is_a_rate_limit_error():
+    with pytest.raises(ProviderRateLimited):
+        provider_for(lambda r: httpx.Response(429)).fetch_recent_page(limit=10)
+
+
+def test_server_error_and_bad_json_are_provider_errors():
+    with pytest.raises(ProviderError):
+        provider_for(lambda r: httpx.Response(503)).fetch_recent_page(limit=10)
+    with pytest.raises(ProviderError):
+        provider_for(lambda r: httpx.Response(200, text="<html>not json</html>")).fetch_recent_page(limit=10)
+
+
+def test_network_failure_is_a_provider_error():
+    def boom(request):
+        raise httpx.ConnectError("down")
+
+    with pytest.raises(ProviderError):
+        provider_for(boom).fetch_recent_page(limit=10)
+
+
+def test_rate_limit_mid_run_keeps_progress_and_the_next_run_resumes(session_factory):
+    """Page 1 succeeds, page 2 hits the daily limit: page 1 stays committed, the run reports why it stopped."""
+    state = {"limited": True}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        offset = int(request.url.params["offset"])
+        if offset == 0:
+            return httpx.Response(200, json={"trades": [record(1), record(2)], "has_more": True, "total": 4})
+        if state["limited"]:
+            return httpx.Response(429)
+        return httpx.Response(200, json={"trades": [record(3), record(4)], "has_more": False, "total": 4})
+
+    prov = provider_for(handler)
+    first = ingest_recent(prov, session_factory, page_size=2, max_pages=5)
+    assert first.inserted == 2 and "provider error" in first.stopped and "limit" in first.stopped
+    with session_factory() as s:
+        assert s.scalar(select(func.count()).select_from(Trade)) == 2  # not rolled back
+
+    state["limited"] = False
+    second = ingest_recent(prov, session_factory, page_size=2, max_pages=5)
+    assert second.inserted == 2  # picks up the remainder; the first two are recognised, not duplicated
+    with session_factory() as s:
+        assert s.scalar(select(func.count()).select_from(Trade)) == 4
