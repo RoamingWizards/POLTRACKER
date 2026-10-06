@@ -130,79 +130,86 @@ Current validation baseline:
 
 ---
 
-# Current task
-
-## [ ] Phase 5 — Merge PR #1 into main
+## [x] Phase 5 — Merge PR #1 into main
 
 PR:
 `rebuild-dashboard` → `main`
 
-Preferred merge method:
-- merge commit
-- do not squash
-- do not rebase
+Completed:
+- PR #1 merged using a merge commit (`960abfc`), not squashed or rebased
+- the six rebuild commits are now on `origin/main`:
+  - `624ff48`
+  - `960f521`
+  - `17a961d`
+  - `9c89bdc`
+  - `9efbfdd`
+  - `d925bbd`
+- local `main` switched and pulled
+- `rebuild-dashboard` intentionally kept (not deleted)
+- history not rewritten
 
-Acceptance criteria:
+Subsequently, `CLAUDE.md` and `TASKS.md` were added to `main` in commit
+`14cbb71` ("Add files via upload").
 
-1. Confirm current branch and working tree are clean.
-2. Confirm PR #1 targets `main`.
-3. Confirm all intended rebuild commits are present:
-   - `624ff48`
-   - `960f521`
-   - `17a961d`
-   - `9c89bdc`
-   - `9efbfdd`
-   - `d925bbd`
-4. Merge PR #1 using a merge commit.
-5. Confirm the merge succeeds.
-6. Confirm `origin/main` contains the six rebuild commits.
-7. Switch the local repository to `main`.
-8. Pull the latest `origin/main`.
-9. Show:
-   - `git log --oneline --decorate -10`
-   - `git status`
-10. Confirm the working tree is clean.
-11. Do not delete `rebuild-dashboard` yet.
-
-Important:
-- Do not rewrite history.
-- Do not delete branches.
-- Do not modify unrelated files.
+Reminder:
 - The old Telegram and Finnhub keys remain in public Git history and must be revoked separately.
+
+---
+
+# Current task
+
+## [ ] Phase 6 — Deployment planning (planning and research only)
+
+Status:
+Approved. This phase produces a recommendation document. It does not deploy anything.
+
+Deliverable:
+A deployment recommendation, saved as `docs/DEPLOYMENT_PLAN.md`, covering:
+
+1. frontend hosting options
+2. backend hosting options
+3. persistent database options
+4. scheduled ingestion options
+5. environment and secrets handling
+6. expected free-tier and low-cost limits
+7. estimated monthly cost
+8. recommended architecture for POLTRACKER
+9. migration path from local SQLite
+10. deployment steps
+11. risks and limitations
+
+Guidance:
+- Prefer low-cost or free-tier options appropriate for a public portfolio project.
+- Base claims about pricing and limits on current provider documentation, and state when
+  figures could not be verified.
+- Keep the recommendation consistent with the constraints in `CLAUDE.md`
+  (cost-conscious, provider-neutral, SQLite today with a PostgreSQL path later).
+
+Phase 6 must NOT:
+- deploy anything
+- create paid resources
+- modify DNS
+- create cloud databases
+- add production secrets
+- change GitHub repository settings
+- add billing
+- migrate SQLite to PostgreSQL
+- change production branches
+
+Documentation changes only. Any hosting accounts, deployments or spending decisions
+require a separate, explicit approval in this file.
 
 ### STOP FOR REVIEW
 
-Stop after Phase 5 and summarize the result.
+Stop after the recommendation is written and summarize it.
 
-Do not continue into deployment or new feature work until this file is updated.
+Do not begin deployment.
 
 ---
 
 # Planned future work
 
 These tasks are intentionally not authorized yet.
-
-## [ ] Phase 6 — Deployment planning
-
-Status:
-Not yet approved.
-
-Possible future scope:
-- choose hosting architecture
-- backend hosting
-- frontend hosting
-- persistent production database
-- scheduled ingestion
-- environment configuration
-- production CORS
-- logs/monitoring
-- cost estimate
-
-Do not deploy anything yet.
-
-### STOP FOR REVIEW
-
----
 
 ## [ ] Phase 7 — SEC EDGAR enrichment
 
