@@ -1,4 +1,9 @@
 """
+DEPRECATED: superseded by the POLTRACKER backend and dashboard (see ../README.md).
+Kept for reference only and not maintained. Its trade source URL now answers with an
+HTTP 301 redirect (checked 2026-10-06) and the script has not been re-verified since.
+Credentials are read from the environment; none are stored in this repository.
+
 US Politician Stock Trade Tracker
 ----------------------------------
 Pulls House representative trades from House Stock Watcher (free, no key needed)
@@ -7,11 +12,11 @@ Sends a daily Telegram digest of notable trades
 
 Setup:
 1. pip3 install requests schedule
-2. Get a free Finnhub key at finnhub.io (takes 2 minutes)
-3. Fill in your keys below
-4. Run: python3 politician_tracker.py
+2. export FINNHUB_API_KEY=... TELEGRAM_TOKEN=... TELEGRAM_CHAT_ID=...
+3. Run: python3 politician_tracker.py
 """
 
+import os
 import requests
 import schedule
 import time
@@ -21,9 +26,9 @@ from datetime import datetime, timedelta
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 
-FINNHUB_API_KEY  = "d78il0pr01qp0fl5c6jgd78il0pr01qp0fl5c6k0"    # finnhub.io — free tier
-TELEGRAM_TOKEN   = "8630626977:AAGE1U2SithGfQqRQxJdx_w9IjOMbZ-O_nw"
-TELEGRAM_CHAT_ID = "845938381"
+FINNHUB_API_KEY  = os.environ.get("FINNHUB_API_KEY", "")
+TELEGRAM_TOKEN   = os.environ.get("TELEGRAM_TOKEN", "")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 # Filtering
 MIN_TRADE_VALUE      = 15000    # ignore trades below this ($ estimated value)
