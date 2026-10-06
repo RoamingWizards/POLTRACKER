@@ -60,8 +60,24 @@ variable they are skipped. The test refuses to run against a database whose name
 
 **Collation caveat.** Text ordering follows the database collation, which differs by platform. The PostgreSQL used
 during development (macOS, no ICU) sorts like SQLite, so it cannot show locale differences. The parity dataset
-contains names that would expose them (accents, mixed case, punctuation), so run these tests once on Linux
-PostgreSQL (for example a CI service container, or Neon itself) before relying on identical ordering.
+contains names that would expose them (accents, mixed case, punctuation), so the Linux CI job below runs them on a
+Linux PostgreSQL and prints its collation. Neon itself is still unchecked.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and every push to `main`. It deploys nothing and needs no
+secrets.
+
+| Job | What it does |
+|---|---|
+| Backend | Python 3.13 on Linux with an official `postgres:18` service container and a throwaway database named `poltracker_test`. It prints the server version and collation, applies migrations 0001 to 0005 to the clean database (and checks the result is `0005 (head)`), then runs the **whole suite on PostgreSQL**, then again on SQLite |
+| Frontend | Node 22: `npm ci`, `npx tsc -b`, `npm run build` |
+
+Safeguards: the PostgreSQL step **fails if any test was skipped**, so a misconfigured URL cannot turn the
+PostgreSQL-only tests into a silent pass. Test runs use `pytest-socket` to refuse every connection except localhost, so
+a test that tried to reach CongressInvests, Yahoo, Neon or Render would fail instead of passing quietly. The service
+container uses trust authentication and is reachable only from the runner, so no password or secret exists. Only the
+package registries and the container registry are contacted, to install dependencies and pull the image.
 
 ## Render (API): settings to use later
 
@@ -120,5 +136,4 @@ recorded. When data is fresh nothing is shown but a normal "on schedule" chip.
 
 See the deployment sequence in [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md). Not done in this phase: creating the Render,
 Neon and Cloudflare projects, adding secrets, applying migrations to a production database, copying the real data,
-setting `INGEST_ENABLED`, the Render cold-start experience in the frontend (retry and "waking up" message), and a CI
-workflow that runs the tests on Linux PostgreSQL.
+setting `INGEST_ENABLED`, and the Render cold-start experience in the frontend (retry and "waking up" message).
