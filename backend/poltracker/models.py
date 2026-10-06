@@ -113,3 +113,14 @@ class PriceBar(Base):
     adj_close: Mapped[float | None] = mapped_column(Float)
     volume: Mapped[int | None] = mapped_column(BigInteger)
     provider: Mapped[str] = mapped_column(String(40))
+
+
+class IngestState(Base):
+    """Per-provider ingestion progress. `backfill_complete` flips once a run reaches the end of the
+    provider's data; until then "this page is all known" must not be read as "caught up"."""
+
+    __tablename__ = "ingest_state"
+
+    source: Mapped[str] = mapped_column(String(40), primary_key=True)
+    backfill_complete: Mapped[bool] = mapped_column(default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)

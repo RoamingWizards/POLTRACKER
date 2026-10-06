@@ -34,9 +34,9 @@ class CongressProvider(ABC):
     def fetch_ticker_page(self, ticker: str, *, limit: int, offset: int = 0) -> TradePage:
         ...
 
-    def iter_recent_pages(self, *, page_size: int, max_pages: int) -> Iterator[TradePage]:
+    def iter_recent_pages(self, *, page_size: int, max_pages: int, start_page: int = 0) -> Iterator[TradePage]:
         """Lazily page through recent trades; the caller stops iterating when caught up."""
-        for page_no in range(max_pages):
+        for page_no in range(start_page, start_page + max_pages):
             page = self.fetch_recent_page(limit=page_size, offset=page_no * page_size)
             yield page
             if not page.has_more:

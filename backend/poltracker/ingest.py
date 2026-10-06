@@ -11,13 +11,13 @@ import time
 from collections import Counter
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from .config import get_settings
 from .db import make_session_factory
 from .domain import TradeIn
-from .models import Politician, Security, Trade
+from .models import IngestState, Politician, Security, Trade
 from .normalize import fingerprint, politician_key
 from .providers import CongressInvestsProvider, CongressProvider, ProviderError
 
@@ -107,6 +107,28 @@ def store_trades(session: Session, trades: list[TradeIn], seen: Counter) -> int:
     return inserted
 
 
+def _backfill_state(session: Session, source: str, page_size: int) -> tuple[bool, int]:
+    """(backfill_complete, page to start from).
+
+    Once complete, runs start at the newest page. Before that, a run resumes near where the
+    stored data ends, one page back for overlap because upstream order within tied filing
+    dates is not guaranteed to be stable between requests.
+    """
+    state = session.get(IngestState, source)
+    if state and state.backfill_complete:
+        return True, 0
+    stored = session.scalar(select(func.count(Trade.id)).where(Trade.source == source)) or 0
+    return False, max(0, stored // page_size - 1)
+
+
+def _mark_complete(session: Session, source: str) -> None:
+    state = session.get(IngestState, source)
+    if state is None:
+        session.add(IngestState(source=source, backfill_complete=True))
+    else:
+        state.backfill_complete = True
+
+
 def ingest_recent(
     provider: CongressProvider,
     session_factory: sessionmaker[Session],
@@ -116,20 +138,27 @@ def ingest_recent(
 ) -> IngestResult:
     result = IngestResult()
     seen: Counter = Counter()
+    with session_factory() as session:
+        complete, start_page = _backfill_state(session, provider.name, page_size)
     try:
-        for page in provider.iter_recent_pages(page_size=page_size, max_pages=max_pages):
+        for page in provider.iter_recent_pages(page_size=page_size, max_pages=max_pages, start_page=start_page):
             with session_factory() as session:
                 inserted = store_trades(session, page.trades, seen)
+                if not page.has_more:
+                    _mark_complete(session, provider.name)  # reached the end of the provider's data
                 session.commit()  # commit per page so partial progress survives a failure
             result.pages += 1
             result.fetched += len(page.trades)
             result.skipped += page.skipped
             result.inserted += inserted
-            if inserted == 0:
+            if not page.has_more:
+                result.stopped = "reached the end of the provider's data"
+                break
+            if inserted == 0 and complete:
                 result.stopped = "caught up (page had nothing new)"
                 break
         else:
-            result.stopped = "reached max_pages or end of data"
+            result.stopped = "reached max_pages; backfill will resume next run" if not complete else "reached max_pages"
     except ProviderError as exc:
         result.stopped = f"provider error: {exc}"
         log.error("Ingestion stopped early: %s", exc)
