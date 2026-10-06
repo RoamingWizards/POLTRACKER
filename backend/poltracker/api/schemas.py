@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -120,3 +120,69 @@ class SecurityPerformanceOut(BaseModel):
     status_counts: dict[str, int]
     total: int
     items: list[TradePerformanceOut]
+
+
+class DailyCount(BaseModel):
+    date: date
+    count: int
+
+
+class MonthlyCount(BaseModel):
+    month: str  # YYYY-MM, by disclosure date
+    buys: int
+    sells: int
+    other: int
+
+
+class TopTicker(BaseModel):
+    ticker: str
+    name: str | None
+    trades: int
+    buys: int
+    sells: int
+
+
+class TopPolitician(BaseModel):
+    id: int
+    name: str
+    chamber: str
+    trades: int
+
+
+class OverviewTotals(BaseModel):
+    trades: int
+    politicians: int
+    securities: int
+    trades_in_window: int
+    buys_in_window: int
+    sells_in_window: int
+
+
+class OverviewOut(BaseModel):
+    window_days: int
+    totals: OverviewTotals
+    latest_disclosure_date: date | None
+    daily: list[DailyCount]
+    monthly: list[MonthlyCount]
+    top_tickers: list[TopTicker]
+    top_politicians: list[TopPolitician]
+
+
+class StatusOut(BaseModel):
+    trades_total: int
+    trades_by_source: dict[str, int]
+    politicians_total: int
+    latest_disclosure_date: date | None
+    latest_transaction_date: date | None
+    last_ingested_at: datetime | None
+    invalid_date_trades: int
+    securities_total: int
+    securities_priced: int
+    securities_unavailable: int
+    securities_pending: int
+    price_bars: int
+    latest_bar_date: date | None
+    benchmark_ticker: str
+    benchmark_from: date | None
+    benchmark_to: date | None
+    benchmark_status: str | None

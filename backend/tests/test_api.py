@@ -87,3 +87,29 @@ def test_prices_and_performance_endpoints(client, session_factory):
 
     assert client.get("/securities/NOPE/prices").status_code == 404
     assert client.get("/securities/NOPE/performance").status_code == 404
+
+
+def test_trade_sorting(client):
+    asc = client.get("/trades", params={"sort_by": "transaction_date", "order": "asc", "limit": 500}).json()["items"]
+    dates = [t["transaction_date"] for t in asc]
+    assert dates == sorted(dates)
+    desc = client.get("/trades", params={"sort_by": "ticker", "order": "desc", "limit": 500}).json()["items"]
+    tickers = [t["ticker"] or "" for t in desc]
+    assert tickers == sorted(tickers, reverse=True)
+    assert client.get("/trades", params={"sort_by": "password"}).status_code == 422
+
+
+def test_overview_endpoint(client):
+    body = client.get("/stats/overview", params={"days": 365}).json()
+    assert body["totals"]["trades"] == 25
+    assert body["totals"]["trades_in_window"] + 0 <= 25
+    assert len(body["daily"]) == 366 and sum(d["count"] for d in body["daily"]) == body["totals"]["trades_in_window"]
+    assert body["top_tickers"] and body["top_politicians"]
+    assert sum(m["buys"] + m["sells"] + m["other"] for m in body["monthly"]) == 25
+
+
+def test_status_endpoint(client):
+    body = client.get("/status").json()
+    assert body["trades_total"] == 25 and body["trades_by_source"] == {"congressinvests": 25}
+    assert body["securities_pending"] == body["securities_total"] > 0
+    assert body["invalid_date_trades"] == 0 and body["benchmark_ticker"] == "SPY"
