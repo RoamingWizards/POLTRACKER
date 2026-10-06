@@ -7,6 +7,7 @@ delete + insert, which keeps this portable beyond SQLite.
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 
@@ -135,7 +136,10 @@ def refresh_prices(
     retry_days: int = 7,
     overlap_days: int = 7,
     today: date | None = None,
+    on_progress: Callable[[int, int], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> RefreshResult:
+    """`on_progress(batches_done, batches_total)` after each provider batch; `should_stop()` is polled between batches."""
     today = today or date.today()
     result = RefreshResult()
 
@@ -169,9 +173,14 @@ def refresh_prices(
     plans.sort()  # similar start dates batch together, so a chunk wastes little overlap
     full_refetch: list[tuple[date, int]] = []
 
-    for i in range(0, len(plans), batch_size):
+    total_batches = -(-len(plans) // batch_size)
+    for n, i in enumerate(range(0, len(plans), batch_size), start=1):
+        if should_stop and should_stop():
+            return result
         chunk = plans[i : i + batch_size]
         _fetch_chunk(provider, session_factory, chunk, starts, today, result, full_refetch)
+        if on_progress:
+            on_progress(n, total_batches)
 
     # Adjusted closes were restated for these (dividend/split): rebuild their whole history.
     for i in range(0, len(full_refetch), batch_size):

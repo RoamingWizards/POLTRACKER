@@ -9,6 +9,7 @@ import argparse
 import logging
 import time
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -147,7 +148,11 @@ def ingest_recent(
     *,
     page_size: int,
     max_pages: int,
+    on_progress: Callable[[int, int | None], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> IngestResult:
+    """`on_progress(pages_done, pages_total_estimate)` is called after each stored page; `should_stop()` is polled
+    between pages so a desktop app can quit promptly. A stopped run is neither a success nor an error."""
     result = IngestResult()
     seen: Counter = Counter()
     with session_factory() as session:
@@ -163,6 +168,12 @@ def ingest_recent(
             result.fetched += len(page.trades)
             result.skipped += page.skipped
             result.inserted += inserted
+            if on_progress:
+                total_pages = -(-page.total // page_size) if page.total else None
+                on_progress(start_page + result.pages, total_pages)
+            if should_stop and should_stop():
+                result.stopped = "stopped before finishing (the app is closing)"
+                return result  # not recorded as a success; the next run resumes
             if not page.has_more:
                 result.stopped = "reached the end of the provider's data"
                 break

@@ -21,6 +21,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-socket"]  # pytest-socket lets CI block every non-local network connection
+# Native macOS app: the window (pywebview) and the packager (PyInstaller). Not needed for web or CLI use.
+desktop = ["pywebview>=6", "pyinstaller>=6"]
 
 [tool.setuptools.packages.find]
 where = ["backend"]
