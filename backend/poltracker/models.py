@@ -123,4 +123,7 @@ class IngestState(Base):
 
     source: Mapped[str] = mapped_column(String(40), primary_key=True)
     backfill_complete: Mapped[bool] = mapped_column(default=False)
+    # When a run last finished without a provider error (even if it found nothing new).
+    # Drives the stale-ingestion warning; max(trades.created_at) cannot, because quiet days add no trades.
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)

@@ -1,17 +1,18 @@
+from collections import Counter
 from collections.abc import Iterator
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import case, extract, func, or_, select
 from sqlalchemy.orm import Session
 
-from collections import Counter
-
-from ..config import get_settings
+from ..config import Settings, get_settings
 from ..db import make_session_factory
-from ..models import PriceBar, Politician, Security, Trade
+from ..models import IngestState, PriceBar, Politician, Security, Trade
 from ..performance import load_benchmark, load_series, trade_performance
+from .ordering import nulls_last, text_order
 from .schemas import (
     DailyCount,
     MonthlyCount,
@@ -30,7 +31,7 @@ from .schemas import (
     TradePerformanceOut,
 )
 
-app = FastAPI(title="POLTRACKER", version="0.1.0")
+router = APIRouter()
 
 _session_factory = None
 
@@ -43,12 +44,12 @@ def get_session() -> Iterator[Session]:
         yield session
 
 
-@app.get("/health")
+@router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/trades", response_model=TradePageOut)
+@router.get("/trades", response_model=TradePageOut)
 def list_trades(
     ticker: str | None = None,
     politician_id: int | None = None,
@@ -78,12 +79,14 @@ def list_trades(
 
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     column = getattr(Trade, sort_by)
-    direction = column.asc() if order == "asc" else column.desc()
+    if sort_by in ("ticker", "politician_name"):
+        column = text_order(session, column)
+    direction = nulls_last(column.asc() if order == "asc" else column.desc())
     rows = session.scalars(stmt.order_by(direction, Trade.id.desc()).limit(limit).offset(offset)).all()
     return TradePageOut(items=rows, total=total, limit=limit, offset=offset)
 
 
-@app.get("/trades/{trade_id}", response_model=TradeOut)
+@router.get("/trades/{trade_id}", response_model=TradeOut)
 def get_trade(trade_id: int, session: Session = Depends(get_session)) -> Trade:
     trade = session.get(Trade, trade_id)
     if trade is None:
@@ -101,7 +104,7 @@ def _politician_out(session: Session, pol: Politician) -> PoliticianOut:
     )
 
 
-@app.get("/politicians", response_model=PoliticianPageOut)
+@router.get("/politicians", response_model=PoliticianPageOut)
 def list_politicians(
     chamber: str | None = Query(None, pattern="^(house|senate)$"),
     q: str | None = Query(None, description="name contains"),
@@ -115,11 +118,11 @@ def list_politicians(
     if q:
         stmt = stmt.where(Politician.name.ilike(f"%{q}%"))
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-    pols = session.scalars(stmt.order_by(Politician.name).limit(limit).offset(offset)).all()
+    pols = session.scalars(stmt.order_by(text_order(session, Politician.name), Politician.id).limit(limit).offset(offset)).all()
     return PoliticianPageOut(items=[_politician_out(session, p) for p in pols], total=total, limit=limit, offset=offset)
 
 
-@app.get("/politicians/{politician_id}", response_model=PoliticianOut)
+@router.get("/politicians/{politician_id}", response_model=PoliticianOut)
 def get_politician(politician_id: int, session: Session = Depends(get_session)) -> PoliticianOut:
     pol = session.get(Politician, politician_id)
     if pol is None:
@@ -127,7 +130,7 @@ def get_politician(politician_id: int, session: Session = Depends(get_session)) 
     return _politician_out(session, pol)
 
 
-@app.get("/securities/{ticker}", response_model=SecurityOut)
+@router.get("/securities/{ticker}", response_model=SecurityOut)
 def get_security(ticker: str, session: Session = Depends(get_session)) -> SecurityOut:
     sec = session.scalar(select(Security).where(Security.ticker == ticker.upper()))
     if sec is None:
@@ -136,7 +139,7 @@ def get_security(ticker: str, session: Session = Depends(get_session)) -> Securi
         select(func.count(Trade.id), func.max(Trade.transaction_date)).where(Trade.security_id == sec.id)
     ).one()
     recent = session.scalars(
-        select(Trade).where(Trade.security_id == sec.id).order_by(Trade.disclosure_date.desc(), Trade.id.desc()).limit(10)
+        select(Trade).where(Trade.security_id == sec.id).order_by(nulls_last(Trade.disclosure_date.desc()), Trade.id.desc()).limit(10)
     ).all()
     return SecurityOut(
         id=sec.id, ticker=sec.ticker, name=sec.name, price_status=sec.price_status,
@@ -152,7 +155,7 @@ def _security_or_404(session: Session, ticker: str) -> Security:
     return sec
 
 
-@app.get("/securities/{ticker}/prices", response_model=PriceSeriesOut)
+@router.get("/securities/{ticker}/prices", response_model=PriceSeriesOut)
 def get_prices(
     ticker: str,
     start: date | None = None,
@@ -171,7 +174,7 @@ def get_prices(
     )
 
 
-@app.get("/securities/{ticker}/performance", response_model=SecurityPerformanceOut)
+@router.get("/securities/{ticker}/performance", response_model=SecurityPerformanceOut)
 def get_performance(
     ticker: str,
     limit: int = Query(200, ge=1, le=1000),
@@ -193,7 +196,7 @@ def get_performance(
 
 
 
-@app.get("/stats/overview", response_model=OverviewOut)
+@router.get("/stats/overview", response_model=OverviewOut)
 def overview(days: int = Query(30, ge=1, le=365), session: Session = Depends(get_session)) -> OverviewOut:
     today = date.today()
     cutoff = today - timedelta(days=days)
@@ -227,13 +230,17 @@ def overview(days: int = Query(30, ge=1, le=365), session: Session = Depends(get
         for y, m, b, s_, o in monthly_rows
     ]
 
+    # The display name comes from the securities table. `max(trades.asset_name)` depended on the
+    # database collation, so SQLite and PostgreSQL picked different names. Ties break on id, not on
+    # text, for the same reason.
     top_tickers = [
         TopTicker(ticker=t, name=n, trades=c, buys=b or 0, sells=s_ or 0)
         for t, n, c, b, s_ in session.execute(
-            select(Trade.ticker, func.max(Trade.asset_name), func.count(Trade.id), buys, sells)
-            .where(in_window, Trade.ticker.is_not(None))
-            .group_by(Trade.ticker)
-            .order_by(func.count(Trade.id).desc(), Trade.ticker)
+            select(Security.ticker, Security.name, func.count(Trade.id), buys, sells)
+            .join(Trade, Trade.security_id == Security.id)
+            .where(in_window)
+            .group_by(Security.id)
+            .order_by(func.count(Trade.id).desc(), Security.id)
             .limit(10)
         ).all()
     ]
@@ -244,7 +251,7 @@ def overview(days: int = Query(30, ge=1, le=365), session: Session = Depends(get
             .join(Trade, Trade.politician_id == Politician.id)
             .where(in_window)
             .group_by(Politician.id)
-            .order_by(func.count(Trade.id).desc(), Politician.name)
+            .order_by(func.count(Trade.id).desc(), Politician.id)
             .limit(10)
         ).all()
     ]
@@ -266,12 +273,17 @@ def overview(days: int = Query(30, ge=1, le=365), session: Session = Depends(get
     )
 
 
-@app.get("/status", response_model=StatusOut)
+@router.get("/status", response_model=StatusOut)
 def data_status(session: Session = Depends(get_session)) -> StatusOut:
     today = date.today()
     bench = get_settings().benchmark_ticker
     bench_sec = session.scalar(select(Security).where(Security.ticker == bench))
     traded = Security.id.in_(select(Trade.security_id).where(Trade.security_id.is_not(None)))
+    settings = get_settings()
+    last_success = session.scalar(select(func.max(IngestState.last_success_at)))
+    age_hours = (
+        (datetime.now(UTC).replace(tzinfo=None) - last_success).total_seconds() / 3600 if last_success else None
+    )
     by_source = dict(session.execute(select(Trade.source, func.count(Trade.id)).group_by(Trade.source)).all())
     return StatusOut(
         trades_total=sum(by_source.values()),
@@ -280,6 +292,11 @@ def data_status(session: Session = Depends(get_session)) -> StatusOut:
         latest_disclosure_date=session.scalar(select(func.max(Trade.disclosure_date))),
         latest_transaction_date=session.scalar(select(func.max(Trade.transaction_date)).where(Trade.transaction_date <= today)),
         last_ingested_at=session.scalar(select(func.max(Trade.created_at))),
+        last_successful_ingest_at=last_success,
+        ingest_age_hours=round(age_hours, 2) if age_hours is not None else None,
+        ingest_stale_after_hours=settings.ingest_stale_after_hours,
+        # Fresh data is not an error. Stale means "older than the threshold" or "never recorded".
+        ingest_stale=age_hours is None or age_hours > settings.ingest_stale_after_hours,
         invalid_date_trades=session.scalar(
             select(func.count(Trade.id)).where(
                 or_(Trade.transaction_date > today, Trade.transaction_date > Trade.disclosure_date)
@@ -298,3 +315,23 @@ def data_status(session: Session = Depends(get_session)) -> StatusOut:
         benchmark_to=bench_sec.price_to if bench_sec else None,
         benchmark_status=bench_sec.price_status if bench_sec else None,
     )
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or get_settings()
+    app = FastAPI(title="POLTRACKER", version="0.1.0")
+    origins = settings.cors_origin_list
+    if origins:  # an empty CORS_ORIGINS disables cross-origin access entirely
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET"],  # the API is read-only
+            allow_headers=["Accept", "Content-Type"],
+            allow_credentials=False,
+            max_age=600,
+        )
+    app.include_router(router)
+    return app
+
+
+app = create_app()

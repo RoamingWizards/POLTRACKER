@@ -16,6 +16,7 @@ dependencies = [
     "pydantic-settings",
     "httpx",
     "yfinance",
+    "psycopg[binary]>=3.2",  # PostgreSQL driver for production (Neon); SQLite needs nothing extra
 ]
 
 [project.optional-dependencies]
