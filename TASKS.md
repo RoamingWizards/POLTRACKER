@@ -156,54 +156,68 @@ Reminder:
 
 ---
 
-# Current task
-
-## [ ] Phase 6 — Deployment planning (planning and research only)
-
-Status:
-Approved. This phase produces a recommendation document. It does not deploy anything.
+## [x] Phase 6 — Deployment planning
 
 Deliverable:
-A deployment recommendation, saved as `docs/DEPLOYMENT_PLAN.md`, covering:
+`docs/DEPLOYMENT_PLAN.md` — approved and merged.
 
-1. frontend hosting options
-2. backend hosting options
-3. persistent database options
-4. scheduled ingestion options
-5. environment and secrets handling
-6. expected free-tier and low-cost limits
-7. estimated monthly cost
-8. recommended architecture for POLTRACKER
-9. migration path from local SQLite
-10. deployment steps
-11. risks and limitations
+Completed:
+- deployment plan written under a hard constraint of $0 recurring infrastructure cost
+- plan approved by the project owner on 2026-10-06
+- merged to `main` via PR #3 using a merge commit (`82c7aa7`); content commit `5b6772f`
+  ("Document zero-cost deployment architecture")
+- `docs/deployment-plan` branch intentionally kept (not deleted)
+- no application code changed, nothing deployed, no accounts or secrets created
 
-Guidance:
-- Prefer low-cost or free-tier options appropriate for a public portfolio project.
-- Base claims about pricing and limits on current provider documentation, and state when
-  figures could not be verified.
-- Keep the recommendation consistent with the constraints in `CLAUDE.md`
-  (cost-conscious, provider-neutral, SQLite today with a PostgreSQL path later).
+Approved $0 architecture:
+- Cloudflare Pages — React frontend
+- Render Free web service — FastAPI backend (read-only API)
+- Neon Free PostgreSQL — persistent storage
+- GitHub Actions every 6 hours — ingestion and price enrichment, writing directly to Neon
 
-Phase 6 must NOT:
-- deploy anything
-- create paid resources
-- modify DNS
-- create cloud databases
-- add production secrets
-- change GitHub repository settings
-- add billing
-- migrate SQLite to PostgreSQL
-- change production branches
+Approved decisions recorded in the plan:
+- target recurring infrastructure cost is $0
+- Render Free sleeps after 15 minutes of inactivity; the first request after sleep can take roughly
+  one minute. This is accepted and is not a reason to switch to Vercel
+- Render local storage is ephemeral and must not hold the production database, so PostgreSQL on
+  Neon is required
+- GitHub Actions writes directly to Neon and does not depend on the Render API being awake
+- scheduled workflows in public GitHub repositories can be disabled after 60 days without
+  repository activity
+- the Data Status page should make stale ingestion visible
+- free-tier terms can change and must be re-checked before deployment
 
-Documentation changes only. Any hosting accounts, deployments or spending decisions
-require a separate, explicit approval in this file.
+Evidence behind the plan:
+- PostgreSQL compatibility was measured locally in a scratch copy: migrations 0001–0004 ran
+  unmodified, 98 of 98 database tests passed, and the real data copied in 3.5 s
+- two small code fixes were identified (NULL sort ordering; a collation-dependent `max()` query)
+
+**Deployment itself is NOT approved.** Nothing in `docs/DEPLOYMENT_PLAN.md` may be executed yet.
+This includes creating Render, Neon or Cloudflare accounts or projects, adding repository or
+production secrets, changing GitHub repository settings, and making the PostgreSQL code changes
+listed in section 7 of the plan. Each requires separate, explicit approval in this file.
+
+Reminders before any deployment is approved:
+- Revoke the old Telegram and Finnhub keys (still in public Git history).
+- Back up the local `poltracker.db`. CongressInvests only serves the last 365 days, so older
+  trades cannot be re-fetched.
+- Re-check every free-tier limit and term against the providers' current pages.
+
+---
+
+# Current task
+
+None approved.
+
+Phase 6 is complete. Deployment implementation, SEC EDGAR enrichment, provider resilience and
+data-quality work are all unapproved until this file says otherwise.
 
 ### STOP FOR REVIEW
 
-Stop after the recommendation is written and summarize it.
+Stop here and summarize.
 
-Do not begin deployment.
+Do not begin deployment or any new feature work until this file is updated with an explicit
+approval.
 
 ---
 
