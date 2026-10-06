@@ -16,10 +16,11 @@ dependencies = [
     "pydantic-settings",
     "httpx",
     "yfinance",
+    "psycopg[binary]>=3.2",  # PostgreSQL driver for production (Neon); SQLite needs nothing extra
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pytest-socket"]  # pytest-socket lets CI block every non-local network connection
 
 [tool.setuptools.packages.find]
 where = ["backend"]

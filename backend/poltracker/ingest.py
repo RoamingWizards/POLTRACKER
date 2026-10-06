@@ -10,6 +10,7 @@ import logging
 import time
 from collections import Counter
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -129,6 +130,17 @@ def _mark_complete(session: Session, source: str) -> None:
         state.backfill_complete = True
 
 
+def _record_success(session_factory: sessionmaker[Session], source: str) -> None:
+    """Stamp the moment a run finished without a provider error, even if it found nothing new."""
+    with session_factory() as session:
+        state = session.get(IngestState, source)
+        if state is None:
+            state = IngestState(source=source, backfill_complete=False)
+            session.add(state)
+        state.last_success_at = datetime.now(UTC).replace(tzinfo=None)
+        session.commit()
+
+
 def ingest_recent(
     provider: CongressProvider,
     session_factory: sessionmaker[Session],
@@ -162,7 +174,14 @@ def ingest_recent(
     except ProviderError as exc:
         result.stopped = f"provider error: {exc}"
         log.error("Ingestion stopped early: %s", exc)
+        return result  # not a success: leave last_success_at alone so the stale warning can fire
+    _record_success(session_factory, provider.name)
     return result
+
+
+def exit_code(result: IngestResult) -> int:
+    """Non-zero when the provider failed, so a scheduled workflow run shows as failed (and gets noticed)."""
+    return 1 if result.stopped.startswith("provider error") else 0
 
 
 def main() -> None:
@@ -190,7 +209,7 @@ def main() -> None:
             log.info("prices: enriched=%d cached=%d unavailable=%d failed=%d",
                      refresh.enriched, refresh.cached, len(refresh.unavailable), len(refresh.failed))
         if not args.loop:
-            return
+            raise SystemExit(exit_code(result))
         time.sleep(settings.ingest_interval_hours * 3600)
 
 

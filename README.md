@@ -64,7 +64,7 @@ backend/poltracker/
   enrich.py         fetch prices + report coverage CLI
   api/              FastAPI app and schemas
   models.py         SQLAlchemy models
-migrations/         Alembic migrations (0001 schema, 0002 price coverage, 0003 name merge, 0004 ingest state)
+migrations/         Alembic migrations (0001 schema, 0002 price coverage, 0003 name merge, 0004 ingest state, 0005 last ingest success)
 frontend/src/       Vite + React + TypeScript (pages/, components/, api/, shared-theme/)
 legacy/             the original Telegram script, deprecated, kept for reference
 ```
@@ -119,9 +119,12 @@ cd frontend && npm run dev
 | Frontend type check | `cd frontend && npx tsc -b` |
 | Frontend production build | `cd frontend && npm run build` (output in `frontend/dist`) |
 
+Production configuration (PostgreSQL, CORS, the frontend API URL, Render, Cloudflare Pages and the scheduled workflow) is
+described in [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md). Nothing is deployed yet.
+
 Configuration lives in `.env` (see `.env.example`): database URL, CongressInvests base URL and optional API key,
 page size, price batch size, and benchmark ticker. For a production build, serve `frontend/dist` behind a reverse
-proxy that forwards `/api` to the backend, or set `VITE_API_BASE` at build time. Deployment itself is not included.
+proxy that forwards `/api` to the backend, or set `VITE_API_BASE_URL` at build time. Deployment itself is not included.
 
 ## API
 

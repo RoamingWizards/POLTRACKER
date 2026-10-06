@@ -1,4 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -52,10 +54,26 @@ export default function DataStatus() {
         </Button>
       </Stack>
       {error && <QueryError error={error} what="status" />}
+      {s?.ingest_stale && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <AlertTitle>Ingestion looks stale</AlertTitle>
+          {s.last_successful_ingest_at
+            ? `The last successful ingest was ${timeAgo(s.last_successful_ingest_at)} (${formatDateTime(s.last_successful_ingest_at)}), older than the ${s.ingest_stale_after_hours}-hour threshold.`
+            : 'No successful ingest has been recorded yet.'}{' '}
+          If the scheduled workflow is not running, check that it has not been disabled: GitHub disables scheduled
+          workflows in public repositories after 60 days without repository activity.
+        </Alert>
+      )}
 
       <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <StatCard title="Last ingest" loading={isLoading} value={timeAgo(s?.last_ingested_at)} interval={formatDateTime(s?.last_ingested_at)} />
+          <StatCard
+            title="Last successful ingest"
+            loading={isLoading}
+            value={s?.last_successful_ingest_at ? timeAgo(s.last_successful_ingest_at) : 'none yet'}
+            interval={s ? (s.last_successful_ingest_at ? formatDateTime(s.last_successful_ingest_at) : 'No run recorded') : undefined}
+            chip={s ? (s.ingest_stale ? { label: 'stale', tone: 'warning' } : { label: 'on schedule', tone: 'up' }) : undefined}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard title="Trades stored" loading={isLoading} value={formatInt(s?.trades_total)} interval={`${formatInt(s?.politicians_total)} politicians`} />

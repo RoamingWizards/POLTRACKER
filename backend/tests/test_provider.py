@@ -96,3 +96,55 @@ def test_rate_limit_mid_run_keeps_progress_and_the_next_run_resumes(session_fact
     assert second.inserted == 2  # picks up the remainder; the first two are recognised, not duplicated
     with session_factory() as s:
         assert s.scalar(select(func.count()).select_from(Trade)) == 4
+
+
+# ── last successful ingest (drives the stale warning) ────────────────────────
+
+
+def last_success(session_factory):
+    from poltracker.models import IngestState
+
+    with session_factory() as s:
+        state = s.get(IngestState, "congressinvests")
+        return state.last_success_at if state else None
+
+
+def test_a_successful_run_records_when_it_finished(session_factory):
+    body = {"trades": [record(1)], "has_more": False, "total": 1}
+    ingest_recent(provider_for(lambda r: httpx.Response(200, json=body)), session_factory, page_size=5, max_pages=3)
+    assert last_success(session_factory) is not None
+
+
+def test_a_run_that_finds_nothing_new_still_counts_as_successful(session_factory):
+    """Quiet days (no new disclosures) are healthy; only errors should leave the timestamp alone."""
+    import time
+
+    body = {"trades": [record(1)], "has_more": False, "total": 1}
+    prov = provider_for(lambda r: httpx.Response(200, json=body))
+    ingest_recent(prov, session_factory, page_size=5, max_pages=3)
+    first = last_success(session_factory)
+    time.sleep(0.01)
+    result = ingest_recent(prov, session_factory, page_size=5, max_pages=3)
+    assert result.inserted == 0 and last_success(session_factory) > first
+
+
+def test_a_failed_run_does_not_update_the_timestamp(session_factory):
+    ok = {"trades": [record(1)], "has_more": False, "total": 1}
+    ingest_recent(provider_for(lambda r: httpx.Response(200, json=ok)), session_factory, page_size=5, max_pages=3)
+    before = last_success(session_factory)
+    result = ingest_recent(provider_for(lambda r: httpx.Response(429)), session_factory, page_size=5, max_pages=3)
+    assert "provider error" in result.stopped
+    assert last_success(session_factory) == before
+
+
+def test_a_failed_first_run_records_nothing(session_factory):
+    ingest_recent(provider_for(lambda r: httpx.Response(503)), session_factory, page_size=5, max_pages=3)
+    assert last_success(session_factory) is None
+
+
+def test_single_run_exit_code_reflects_provider_failure():
+    from poltracker.ingest import IngestResult, exit_code
+
+    assert exit_code(IngestResult(stopped="caught up (page had nothing new)")) == 0
+    assert exit_code(IngestResult(stopped="reached max_pages; backfill will resume next run")) == 0
+    assert exit_code(IngestResult(stopped="provider error: /trades/recent: daily request limit reached")) == 1
