@@ -28,13 +28,33 @@ def parse_amount(text: str | None) -> tuple[int | None, int | None]:
 
 
 def normalize_name(raw: str) -> str:
-    """Drop honorific tokens ('John J Mr McGuire' -> 'John J McGuire') and tidy spacing."""
+    """Tidy a member name without guessing.
+
+    - drops honorific tokens ('John J Mr McGuire' -> 'John J McGuire')
+    - collapses a repeated first name ('Scott Scott Franklin' -> 'Scott Franklin');
+      only when a surname still follows, so a genuine two-word name is untouched
+    """
     tokens = [t for t in raw.replace(",", " ").split() if t.lower().rstrip(".") not in _HONORIFICS]
+    if len(tokens) >= 3 and tokens[0].lower().rstrip(".") == tokens[1].lower().rstrip("."):
+        tokens = tokens[1:]
     return " ".join(tokens)
 
 
+def _is_initial(token: str) -> bool:
+    bare = token.rstrip(".")
+    return len(bare) == 1 and bare.isalpha()
+
+
 def politician_key(name: str, chamber: str) -> str:
-    return f"{chamber}:{re.sub(r'[^a-z0-9]+', '', name.lower())}"
+    """Identity key for a politician within a chamber.
+
+    A single-letter middle initial is ignored, so 'John J McGuire' and 'John McGuire'
+    are one person. Nothing broader is merged: full middle names, nicknames ('Dan' vs
+    'Daniel') and suffixes ('Jr.') all stay significant.
+    """
+    tokens = name.split()
+    kept = [t for i, t in enumerate(tokens) if not (0 < i < len(tokens) - 1 and _is_initial(t))]
+    return f"{chamber}:{re.sub(r'[^a-z0-9]+', '', ' '.join(kept).lower())}"
 
 
 def normalize_chamber(raw: str | None) -> str | None:
