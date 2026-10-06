@@ -1,0 +1,62 @@
+name: Ingest and enrich
+
+# Pulls new congressional trades and refreshes market prices, writing straight to PostgreSQL.
+# It does not depend on the API being awake. See docs/PRODUCTION_READINESS.md.
+
+on:
+  schedule:
+    # Every 6 hours, at an odd minute: runs scheduled for the top of the hour are the ones GitHub delays under load.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: poltracker-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    # Safe by default: scheduled runs do nothing until the repository VARIABLE INGEST_ENABLED is set to "true".
+    # Manual runs are always allowed (and still need the DATABASE_URL secret).
+    if: github.event_name == 'workflow_dispatch' || vars.INGEST_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # A repository SECRET holding the PostgreSQL connection string (use the direct, non-pooled one).
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Check configuration
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::The DATABASE_URL repository secret is not set."
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            postgres://*|postgresql://*|postgresql+psycopg://*) ;;
+            *) echo "::error::DATABASE_URL must be a PostgreSQL URL."; exit 1 ;;
+          esac
+
+      - name: Install
+        run: pip install .
+
+      - name: Check the database schema is up to date
+        # Migrations are applied by hand, never by this job (one of them is irreversible).
+        run: |
+          pip install alembic
+          if ! alembic current | grep -q "(head)"; then
+            echo "::error::The database is not at the latest migration. Run 'alembic upgrade head' against it first."
+            exit 1
+          fi
+
+      - name: Ingest new trades and refresh prices
+        run: python -m poltracker.ingest --enrich
