@@ -7,3 +7,5 @@ __pycache__/
 *.db-journal
 node_modules/
 *.egg-info/
+dist/
+*.tsbuildinfo
