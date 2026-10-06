@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TradeOut(BaseModel):
@@ -54,6 +54,69 @@ class SecurityOut(BaseModel):
     id: int
     ticker: str
     name: str | None
+    price_status: str | None = None
+    price_from: date | None = None
+    price_to: date | None = None
     trade_count: int
     latest_trade_date: date | None
     recent_trades: list[TradeOut]
+
+
+class PriceBarOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    date: date
+    open: float | None
+    high: float | None
+    low: float | None
+    close: float | None
+    adj_close: float | None
+    volume: int | None
+
+
+class PriceSeriesOut(BaseModel):
+    ticker: str
+    price_status: str | None
+    price_from: date | None
+    price_to: date | None
+    bars: list[PriceBarOut]
+
+
+class LegOut(BaseModel):
+    status: str
+    anchor_date: date | None = None
+    price: float | None = None
+    return_: float | None = Field(None, serialization_alias="return", validation_alias="return_")
+    benchmark_return: float | None = None
+    excess_return: float | None = None
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class PerformanceOut(BaseModel):
+    """Returns are fractions of adjusted close (0.10 = +10%). `direction_adjusted` flips sign for sells."""
+
+    status: str
+    detail: str | None = None
+    benchmark: str | None = None
+    latest_date: date | None = None
+    latest_price: float | None = None
+    direction: int | None = None
+    transaction: LegOut | None = None
+    disclosure: LegOut | None = None
+    direction_adjusted: dict[str, float | None] = {}
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TradePerformanceOut(BaseModel):
+    trade: TradeOut
+    performance: PerformanceOut
+
+
+class SecurityPerformanceOut(BaseModel):
+    ticker: str
+    benchmark: str
+    status_counts: dict[str, int]
+    total: int
+    items: list[TradePerformanceOut]

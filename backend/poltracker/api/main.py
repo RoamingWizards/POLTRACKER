@@ -5,9 +5,22 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from collections import Counter
+
+from ..config import get_settings
 from ..db import make_session_factory
-from ..models import Politician, Security, Trade
-from .schemas import PoliticianOut, PoliticianPageOut, SecurityOut, TradeOut, TradePageOut
+from ..models import PriceBar, Politician, Security, Trade
+from ..performance import load_benchmark, load_series, trade_performance
+from .schemas import (
+    PoliticianOut,
+    PoliticianPageOut,
+    PriceSeriesOut,
+    SecurityOut,
+    SecurityPerformanceOut,
+    TradeOut,
+    TradePageOut,
+    TradePerformanceOut,
+)
 
 app = FastAPI(title="POLTRACKER", version="0.1.0")
 
@@ -115,4 +128,55 @@ def get_security(ticker: str, session: Session = Depends(get_session)) -> Securi
     recent = session.scalars(
         select(Trade).where(Trade.security_id == sec.id).order_by(Trade.disclosure_date.desc(), Trade.id.desc()).limit(10)
     ).all()
-    return SecurityOut(id=sec.id, ticker=sec.ticker, name=sec.name, trade_count=count, latest_trade_date=latest, recent_trades=recent)
+    return SecurityOut(
+        id=sec.id, ticker=sec.ticker, name=sec.name, price_status=sec.price_status,
+        price_from=sec.price_from, price_to=sec.price_to,
+        trade_count=count, latest_trade_date=latest, recent_trades=recent,
+    )
+
+
+def _security_or_404(session: Session, ticker: str) -> Security:
+    sec = session.scalar(select(Security).where(Security.ticker == ticker.upper()))
+    if sec is None:
+        raise HTTPException(404, "Security not found")
+    return sec
+
+
+@app.get("/securities/{ticker}/prices", response_model=PriceSeriesOut)
+def get_prices(
+    ticker: str,
+    start: date | None = None,
+    end: date | None = None,
+    session: Session = Depends(get_session),
+) -> PriceSeriesOut:
+    sec = _security_or_404(session, ticker)
+    stmt = select(PriceBar).where(PriceBar.security_id == sec.id)
+    if start:
+        stmt = stmt.where(PriceBar.date >= start)
+    if end:
+        stmt = stmt.where(PriceBar.date <= end)
+    bars = session.scalars(stmt.order_by(PriceBar.date)).all()
+    return PriceSeriesOut(
+        ticker=sec.ticker, price_status=sec.price_status, price_from=sec.price_from, price_to=sec.price_to, bars=bars
+    )
+
+
+@app.get("/securities/{ticker}/performance", response_model=SecurityPerformanceOut)
+def get_performance(
+    ticker: str,
+    limit: int = Query(200, ge=1, le=1000),
+    session: Session = Depends(get_session),
+) -> SecurityPerformanceOut:
+    sec = _security_or_404(session, ticker)
+    bench_ticker = get_settings().benchmark_ticker
+    series, bench = load_series(session, sec.id), load_benchmark(session, bench_ticker)
+    trades = session.scalars(
+        select(Trade).where(Trade.security_id == sec.id).order_by(Trade.transaction_date.desc(), Trade.id.desc()).limit(limit)
+    ).all()
+    today = date.today()
+    items = [
+        TradePerformanceOut(trade=t, performance=trade_performance(t, series, bench, bench_ticker, today))
+        for t in trades
+    ]
+    counts = Counter(i.performance.status for i in items)
+    return SecurityPerformanceOut(ticker=sec.ticker, benchmark=bench_ticker, status_counts=dict(counts), total=len(items), items=items)

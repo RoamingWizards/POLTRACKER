@@ -47,3 +47,43 @@ def test_politicians_and_security(client):
     sec = client.get("/securities/jnj").json()
     assert sec["ticker"] == "JNJ" and sec["recent_trades"]
     assert client.get("/securities/NOPE").status_code == 404
+
+
+def test_prices_and_performance_endpoints(client, session_factory):
+    from datetime import date, timedelta
+
+    from poltracker.models import PriceBar, Security
+    from sqlalchemy import select
+
+    # Give JNJ and SPY a short price history around the fixture's 2026-09-08 trade.
+    with session_factory() as s:
+        spy = Security(ticker="SPY", name="SPY")
+        s.add(spy)
+        jnj = s.scalar(select(Security).where(Security.ticker == "JNJ"))
+        s.flush()
+        d = date(2026, 9, 7)
+        for i in range(30):
+            day = d + timedelta(days=i)
+            if day.weekday() < 5:
+                for sec, base in ((jnj, 100.0), (spy, 400.0)):
+                    p = base + i
+                    s.add(PriceBar(security_id=sec.id, date=day, open=p, high=p, low=p, close=p, adj_close=p, volume=1, provider="t"))
+        jnj.price_status, jnj.price_from, jnj.price_to = "ok", d, d + timedelta(days=29)
+        s.commit()
+
+    prices = client.get("/securities/jnj/prices", params={"start": "2026-09-08", "end": "2026-09-10"}).json()
+    assert [b["date"] for b in prices["bars"]] == ["2026-09-08", "2026-09-09", "2026-09-10"]
+    assert prices["price_status"] == "ok"
+
+    perf = client.get("/securities/JNJ/performance").json()
+    assert perf["benchmark"] == "SPY" and perf["total"] >= 1
+    item = perf["items"][0]
+    assert item["trade"]["ticker"] == "JNJ"
+    p = item["performance"]
+    assert p["status"] == "ok"
+    assert p["transaction"]["anchor_date"] == "2026-09-08"
+    assert p["transaction"]["return"] is not None and p["transaction"]["excess_return"] is not None
+    assert "transaction_return" in p["direction_adjusted"]
+
+    assert client.get("/securities/NOPE/prices").status_code == 404
+    assert client.get("/securities/NOPE/performance").status_code == 404

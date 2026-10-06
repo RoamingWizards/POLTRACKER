@@ -139,6 +139,7 @@ def ingest_recent(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ingest recent congressional trades")
     parser.add_argument("--loop", action="store_true", help="repeat every INGEST_INTERVAL_HOURS")
+    parser.add_argument("--enrich", action="store_true", help="fetch missing prices after each ingest")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -152,6 +153,13 @@ def main() -> None:
             provider, session_factory, page_size=settings.ingest_page_size, max_pages=settings.ingest_max_pages
         )
         log.info("%s | requests used this run: %d", result, provider.requests_made - before)
+        if args.enrich:
+            from .enrich import enrich
+            from .providers.prices import YFinanceProvider
+
+            refresh, _ = enrich(YFinanceProvider(), session_factory)
+            log.info("prices: enriched=%d cached=%d unavailable=%d failed=%d",
+                     refresh.enriched, refresh.cached, len(refresh.unavailable), len(refresh.failed))
         if not args.loop:
             return
         time.sleep(settings.ingest_interval_hours * 3600)
