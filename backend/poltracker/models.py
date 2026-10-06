@@ -51,6 +51,14 @@ class Security(Base):
     name: Mapped[str | None] = mapped_column(String(300))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
+    # Price-cache coverage: the date range already requested from the price provider
+    # (not just the range that has bars), so holidays, late IPOs and dead tickers
+    # are never re-requested.
+    price_from: Mapped[date | None] = mapped_column(Date)
+    price_to: Mapped[date | None] = mapped_column(Date)
+    price_status: Mapped[str | None] = mapped_column(String(20))  # "ok" | "unavailable"
+    price_checked_at: Mapped[datetime | None] = mapped_column(DateTime)
+
     trades: Mapped[list["Trade"]] = relationship(back_populates="security")
 
 

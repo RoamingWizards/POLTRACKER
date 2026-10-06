@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     ingest_max_pages: int = 15
     ingest_interval_hours: float = 6
 
+    benchmark_ticker: str = "SPY"
+    price_batch_size: int = 40
+    price_retry_days: int = 7  # how long before re-checking a ticker the provider had no data for
+    price_tail_overlap_days: int = 7  # refetch overlap, used to detect adjusted-close drift
+
 
 @lru_cache
 def get_settings() -> Settings:

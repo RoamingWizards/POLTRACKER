@@ -15,6 +15,7 @@ dependencies = [
     "pydantic>=2",
     "pydantic-settings",
     "httpx",
+    "yfinance",
 ]
 
 [project.optional-dependencies]
