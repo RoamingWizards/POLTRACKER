@@ -1,0 +1,124 @@
+name: CI
+
+# Runs the tests on Linux against a real PostgreSQL service container, plus the frontend type check and build.
+# Self-contained: no production secrets and no calls to Neon, Render, CongressInvests, Yahoo or any other service.
+# Package registries (pip, npm) and the container registry are the only network use. It deploys nothing.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Python 3.13, PostgreSQL 18)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        # Official image. The throwaway database exists only for this job and is reachable only from the runner,
+        # so trust auth is fine and no password (or secret) is needed.
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: poltracker_test # the name must contain "test": the suite refuses any other database
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d poltracker_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/poltracker_test
+      POLTRACKER_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/poltracker_test
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Report the PostgreSQL version and collation
+        run: |
+          python - <<'PY'
+          import os
+          import sqlalchemy as sa
+          from poltracker.config import normalize_database_url
+
+          engine = sa.create_engine(normalize_database_url(os.environ["DATABASE_URL"]))
+          with engine.connect() as c:
+              version = c.execute(sa.text("show server_version")).scalar()
+              collation = c.execute(
+                  sa.text("select datcollate from pg_database where datname = current_database()")
+              ).scalar()
+              database = c.execute(sa.text("select current_database()")).scalar()
+          line = f"PostgreSQL {version}; database {database}; collation {collation}"
+          print(line)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write(f"### Backend\n{line}\n")
+          PY
+
+      - name: Apply migrations 0001-0005 to the clean database
+        run: |
+          alembic upgrade head
+          alembic current 2>/dev/null | tee current.txt
+          grep -q "0005 (head)" current.txt
+
+      # Everything below is blocked from reaching anything but localhost, so a test that tried to call a real
+      # service would fail loudly instead of quietly passing.
+      - name: Backend tests on PostgreSQL
+        shell: bash
+        run: |
+          pytest -q -rs --allow-hosts=127.0.0.1,::1 --allow-unix-socket | tee pytest-postgres.log
+          if grep -qiE "[0-9]+ skipped" pytest-postgres.log; then
+            echo "::error::Some tests were skipped, so the PostgreSQL-only tests did not all run."
+            exit 1
+          fi
+
+      - name: Backend tests on SQLite (the local-development default)
+        env:
+          POLTRACKER_TEST_DATABASE_URL: ""
+        run: pytest -q --allow-hosts=127.0.0.1,::1 --allow-unix-socket
+
+  frontend:
+    name: Frontend (type check and build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc -b
+
+      - name: Production build
+        run: npm run build
