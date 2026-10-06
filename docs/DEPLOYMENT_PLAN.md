@@ -254,7 +254,7 @@ Everything below was either **measured** (section 2) or follows directly from a 
 4. **Explicit NULL ordering** (`nulls_last()`) in the trade sorts (difference 1 in section 2.2).
 5. **Deterministic security name** in `/stats/overview` (difference 2). Use `securities.name`, not `max(asset_name)`.
 6. **CORS middleware** driven by a `CORS_ORIGINS` setting, limited to the Pages origin. The API has none today **[M]**.
-7. **Frontend:** `VITE_API_BASE` at build time, the wake-up retry and message, and the warm-up request (section 5),
+7. **Frontend:** `VITE_API_BASE_URL` at build time, the wake-up retry and message, and the warm-up request (section 5),
    plus a **stale-ingestion warning on the Data Status page** (for example when the last ingest is older than about
    24 hours, four missed 6-hour runs) so a disabled schedule becomes visible.
 8. **Data copy script** (SQLite to PostgreSQL). My scratch prototype is about 25 lines of SQLAlchemy, takes 3.5 s
@@ -284,7 +284,7 @@ whichever string you choose before relying on it.
 |---|---|---|
 | `DATABASE_URL` (Neon, with SSL) | Render environment variables, and a GitHub Actions repository secret | **Yes** |
 | `CORS_ORIGINS` | Render | No |
-| `VITE_API_BASE` | Cloudflare Pages build variable | No, it ships in the JS |
+| `VITE_API_BASE_URL` | Cloudflare Pages build variable | No, it ships in the JS |
 | `CONGRESSINVESTS_API_KEY` | not used (free tier) | n/a |
 
 Never commit `.env`. Use each platform's secret store. Nothing from the legacy script is needed.
@@ -378,7 +378,7 @@ Render, free-tier terms that can change, and an auto-disable rule on the schedul
 **Step 1: code preparation (normal PRs, no cloud accounts needed)**
 4. PostgreSQL support: driver, URL normalisation, pool settings, NULL ordering, deterministic security name
    (section 7, items 1 to 5), with the test suite also running on PostgreSQL in CI.
-5. CORS setting; frontend `VITE_API_BASE`, wake-up retry, message and warm-up request (items 6 and 7).
+5. CORS setting; frontend `VITE_API_BASE_URL`, wake-up retry, message and warm-up request (items 6 and 7).
 6. Data copy script and a short runbook (item 8).
 7. `ci.yml` and `ingest.yml` (schedule plus manual dispatch) (item 9). Do not add secrets yet.
 8. Run the whole stack locally against a local PostgreSQL, then run tests, type check and build.
@@ -397,7 +397,7 @@ Render, free-tier terms that can change, and an auto-disable rule on the schedul
 14. Verify `GET /health` and `GET /status`. Measure the real cold-start time and what the browser sees while waking.
 
 **Step 4: frontend**
-15. Connect Cloudflare Pages: root `frontend`, build `npm run build`, output `dist`, `VITE_API_BASE` set to the
+15. Connect Cloudflare Pages: root `frontend`, build `npm run build`, output `dist`, `VITE_API_BASE_URL` set to the
     Render URL. Update `CORS_ORIGINS` and redeploy the API.
 16. Test deep links, light and dark mode, mobile, and the cold-start message on the live site.
 
