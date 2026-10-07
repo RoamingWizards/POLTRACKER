@@ -257,5 +257,13 @@ class CommitteeIndustryMapping(Base):
     source_citation: Mapped[str | None] = mapped_column(String(300))
     source_url: Mapped[str] = mapped_column(String(300))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)  # null until a person has reviewed the mapping
+    # Human review state. `reviewed` requires reviewed_at (and ideally reviewed_by); every row starts as needs_review and stays that way until
+    # a person explicitly approves it.
+    review_status: Mapped[str] = mapped_column(String(15), default="needs_review", server_default="needs_review")  # needs_review | reviewed
+    reviewed_by: Mapped[str | None] = mapped_column(String(100))
+    review_note: Mapped[str | None] = mapped_column(Text)  # reviewer comments, or the history of an earlier correction
+    # How the jurisdiction was established: rule_x_text (the Rule X wording was read), committee_published_text (the committee's own subcommittee
+    # text was read), subcommittee_name (inferred from the subcommittee's official name), committee_name (inferred from the committee's name only).
+    jurisdiction_basis: Mapped[str | None] = mapped_column(String(30))
     mapping_version: Mapped[str] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)

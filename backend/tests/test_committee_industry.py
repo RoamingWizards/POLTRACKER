@@ -164,7 +164,8 @@ def test_evaluation_never_touches_the_network(monkeypatch):
 
 def row(**kw):
     base = dict(chamber="house", committee_code="AS00", subcommittee_code=None, committee_name="Armed Services", subcommittee_name=None, sic_start="3720", sic_end="3729",
-                industry_pattern=None, relevance_level="direct", rationale="r", jurisdiction_text="t", source_citation="c", source_url=SRC, reviewed_at=None, mapping_version="v1")
+                industry_pattern=None, relevance_level="direct", rationale="r", jurisdiction_text="t", source_citation="c", source_url=SRC, reviewed_at=None, mapping_version="v1",
+                review_status="needs_review", reviewed_by=None, review_note=None, jurisdiction_basis="rule_x_text")
     return {**base, **kw}
 
 
@@ -213,11 +214,11 @@ def test_an_unreadable_file_is_a_mapping_error(tmp_path):
 
 
 def test_a_none_row_may_have_no_range_and_reviewed_at_is_preserved(session_factory, tmp_path):
-    rows = [row(committee_code="RU00", relevance_level="none", sic_start=None, sic_end=None, reviewed_at="2026-10-08T00:00:00")]
+    rows = [row(committee_code="RU00", relevance_level="none", sic_start=None, sic_end=None, reviewed_at="2026-10-08T00:00:00", review_status="reviewed", reviewed_by="J. Reviewer")]
     with session_factory() as s:
         sync_mappings(s, write(tmp_path, rows))
         (m,) = load_mappings(s)
-        assert (m.relevance_level, m.sic_start, m.reviewed_at) == ("none", None, __import__("datetime").datetime(2026, 10, 8))
+        assert (m.relevance_level, m.sic_start, m.reviewed_at, m.review_status, m.reviewed_by) == ("none", None, __import__("datetime").datetime(2026, 10, 8), "reviewed", "J. Reviewer")
 
 
 # --- the shipped mapping file ------------------------------------------------------------------------------------
@@ -369,3 +370,9 @@ def test_the_assignment_loader_reads_committee_and_subcommittee_seats(session_fa
         s.commit()
         seats = load_assignments(s, pid)
     assert {(a.committee_code, a.subcommittee_code) for a in seats} == {("AS00", None), ("AS00", "AS28")}
+
+
+def test_a_low_numbered_sic_code_still_matches_after_parsing_once():
+    """Agricultural codes such as 0100 are below 1000; they must survive the internal parse (a regression found during the review pass)."""
+    m = CommitteeIndustryMatcher([M(1, committee="AG00", start=100, end=299)])
+    assert m.evaluate([A("AG00")], "0100").status == "relevant" and [r.id for r in m.applicable_rows([A("AG00")], "0100")] == [1]
