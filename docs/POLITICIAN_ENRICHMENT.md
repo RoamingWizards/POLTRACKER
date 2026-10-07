@@ -64,7 +64,10 @@ New table `committee_assignments` (committee/subcommittee name and code, role, c
 - Senate committee membership is published at senate.gov, which returns HTTP 403 to automated clients, and
   Congress.gov has no member-to-committee endpoint. Senators therefore show "Not available" for committees.
 - The House Clerk gives role only where it names one (Chair, Vice Chair, ...) and gives no start/end dates; none are invented.
+- `term_start_year`/`term_end_year` are Congress.gov's span of continuous service in the member's chamber (for example 2018
+  for a Representative first elected in 2018), not the current term. The House Clerk does not provide this, so it is left empty
+  for Clerk-sourced records.
 - `active` from Congress.gov means the most recent term has no end year; the House Clerk lists sitting members only.
-- The Congress.gov provider is tested against fixtures written from the documented response shape; it has not been run
-  against the live API (no key was available when it was written).
+- The Congress.gov provider was validated live on 2026-10-07 against a scratch copy of the database (see the review notes in
+  the pull request); its unit tests use fixtures written from the documented response shape.
 - The Congress.gov profile URL is built from the Bioguide ID (`/member/<first-last>/<ID>`); the slug is cosmetic.
