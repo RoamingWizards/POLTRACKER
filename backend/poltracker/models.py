@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     MetaData,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -227,3 +228,34 @@ class IngestState(Base):
     # Drives the stale-ingestion warning; max(trades.created_at) cannot, because quiet days add no trades.
     last_success_at: Mapped[datetime | None] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+
+class CommitteeIndustryMapping(Base):
+    """A reviewed, deterministic link from a committee/subcommittee's official jurisdiction to a range of SIC codes.
+
+    Used only to say whether a company's industry is within an area plausibly relevant to a committee's jurisdiction. It is context,
+    not evidence of anything. Rows are authored from the official jurisdiction text and carry their citation and rationale.
+    `relevance_level` is direct, related, or none (the committee was reviewed and has no industry-specific jurisdiction, in which case
+    the SIC range is empty). A subcommittee row (subcommittee_code set) is more specific than its parent committee's rows.
+    """
+
+    __tablename__ = "committee_industry_mappings"
+    __table_args__ = (Index("ix_committee_industry_mappings_version_committee", "mapping_version", "committee_code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chamber: Mapped[str] = mapped_column(String(10))
+    committee_code: Mapped[str] = mapped_column(String(20))  # the House Clerk code used by committee_assignments (e.g. AS00)
+    subcommittee_code: Mapped[str | None] = mapped_column(String(20))
+    committee_name: Mapped[str] = mapped_column(String(300))
+    subcommittee_name: Mapped[str | None] = mapped_column(String(300))
+    sic_start: Mapped[int | None] = mapped_column()  # inclusive; null only for relevance_level 'none'
+    sic_end: Mapped[int | None] = mapped_column()
+    industry_pattern: Mapped[str | None] = mapped_column(String(200))  # optional regex that must also match the SIC description
+    relevance_level: Mapped[str] = mapped_column(String(10))  # direct | related | none
+    rationale: Mapped[str] = mapped_column(Text)
+    jurisdiction_text: Mapped[str | None] = mapped_column(Text)  # the official text relied on
+    source_citation: Mapped[str | None] = mapped_column(String(300))
+    source_url: Mapped[str] = mapped_column(String(300))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)  # null until a person has reviewed the mapping
+    mapping_version: Mapped[str] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
