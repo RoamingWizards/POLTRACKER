@@ -2,7 +2,6 @@
 
 import json
 import os
-import subprocess
 import time
 from pathlib import Path
 
@@ -36,13 +35,10 @@ def _visit(window, base: str, path: str, expect: str, charts: bool = False) -> d
 
 
 def _shot(window, name: str) -> None:
-    """Dev aid: POLTRACKER_SELFTEST_SHOTS=<dir> saves a screenshot of the window for each profile page."""
-    out = os.environ.get("POLTRACKER_SELFTEST_SHOTS")
-    if out:
-        Path(out).mkdir(parents=True, exist_ok=True)
-        time.sleep(1.0)
-        box = f"{int(window.x)},{int(window.y)},{int(window.width)},{int(window.height)}"
-        subprocess.run(["screencapture", "-x", "-R", box, str(Path(out) / f"{name}.png")], check=False)
+    """Dev aid: POLTRACKER_SELFTEST_HOLD=<seconds> keeps each profile page on screen so it can be captured externally."""
+    hold = float(os.environ.get("POLTRACKER_SELFTEST_HOLD") or 0)
+    if hold:
+        time.sleep(hold)
 
 
 PROFILE_JS = """(function(){
