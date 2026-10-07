@@ -206,3 +206,121 @@ def test_the_shipped_mappings_produce_a_complete_packet_on_an_empty_database(ses
     review_ = rv.build_review(session_factory, load_rows(REAL), json.loads((ROOT / "data" / "sic_codes.json").read_text())["codes"])
     md = rv.render_markdown(review_)
     assert md.count("#### `") == 184 and review_.trades_total == 0 and "| Mappings | 184 |" in md
+
+
+# --- the priority-row review table ---------------------------------------------------------------------------------
+
+RECS = {
+    "AS00:3720-3729:direct": ("APPROVE DIRECT", "squarely defense"),
+    "AS00/AS25:3720-3729:direct": ("SPLIT RANGE", "x"),
+    "AS00:3760-3769:related": ("KEEP RELATED", "context only"),
+    "BA00:6000-6099:direct": ("APPROVE DIRECT", "banks"),
+    "BA00:6300-6499:direct": ("SPLIT RANGE", "move health plans"),
+    "PW00:3700-3899:related": ("REMOVE", "too broad"),
+}
+
+
+def recs(**changes):
+    out = {k: {"key": k, "action": a, "reason": why} for k, (a, why) in RECS.items()}
+    out.update(changes)
+    return out
+
+
+@pytest.fixture
+def small_review(universe, monkeypatch):
+    monkeypatch.setattr(rv, "MANY_TRADES", 2)  # make a few rows "many matches" so the priority set is non-trivial
+    return rv.build_review(universe, ROWS, SIC)
+
+
+def test_priority_rows_are_ordered_direct_first_then_trades_then_broad_mixed(small_review):
+    keys = [r.key for r in rv.priority_rows(small_review)]
+    levels = [rep(small_review, k).mapping.relevance_level for k in keys]
+    assert levels == sorted(levels, key=lambda lv: rv.LEVEL_ORDER[lv])  # every direct row precedes every related row
+    direct_trades = [rep(small_review, k).trades_matched for k in keys if rep(small_review, k).mapping.relevance_level == "direct"]
+    assert direct_trades == sorted(direct_trades, reverse=True)
+    assert "RU00:none:none" not in keys and "IF00:9990-9999:direct" not in keys  # no substantive concern
+
+
+def test_the_priority_table_renders_every_required_column_for_every_priority_row(small_review):
+    keys = [r.key for r in rv.priority_rows(small_review)]
+    table = rv.render_priority_table(small_review, {k: v for k, v in recs().items() if k in keys})
+    head = [l for l in table.splitlines() if l.startswith("| #")][0]
+    for col in ["Committee / subcommittee", "SIC range", "SIC titles covered", "Level", "Basis", "Official wording", "Trades", "Example tickers", "Overlaps", "Recommended action"]:
+        assert col in head
+    body = [l for l in table.splitlines() if l.startswith("| ") and l.split("|")[1].strip().isdigit()]
+    assert len(body) == len(keys) and "Nothing here changes a mapping" in table
+    assert "**APPROVE DIRECT**" in table and "needs_review" in table
+
+
+def test_recommendations_must_cover_exactly_the_priority_rows(small_review):
+    keys = [r.key for r in rv.priority_rows(small_review)]
+    ok = {k: v for k, v in recs().items() if k in keys}
+    rv.validate_recommendations(small_review, ok)
+    with pytest.raises(rv.RecommendationError, match="no recommendation for"):
+        rv.validate_recommendations(small_review, {k: v for k, v in ok.items() if k != keys[0]})
+    with pytest.raises(rv.RecommendationError, match="not a priority row"):
+        rv.validate_recommendations(small_review, {**ok, "RU00:none:none": {"key": "RU00:none:none", "action": "REMOVE", "reason": "x"}})
+
+
+def test_an_action_must_fit_the_rows_current_level(small_review):
+    keys = [r.key for r in rv.priority_rows(small_review)]
+    related = next(k for k in keys if rep(small_review, k).mapping.relevance_level == "related")
+    direct = next(k for k in keys if rep(small_review, k).mapping.relevance_level == "direct")
+    base = {k: {"key": k, "action": "NEEDS MORE SOURCE REVIEW", "reason": "x"} for k in keys}
+    for action, bad_key in [("APPROVE DIRECT", related), ("DOWNGRADE TO RELATED", related), ("SPLIT RANGE", related), ("KEEP RELATED", direct)]:
+        with pytest.raises(rv.RecommendationError, match="only applies to"):
+            rv.validate_recommendations(small_review, {**base, bad_key: {"key": bad_key, "action": action, "reason": "x"}})
+
+
+def test_the_recommendation_file_format_is_validated(tmp_path):
+    def write(items):
+        p = tmp_path / "r.json"
+        p.write_text(json.dumps(items))
+        return p
+
+    assert rv.load_recommendations(write([{"key": "a", "action": "REMOVE", "reason": "x"}]))["a"]["action"] == "REMOVE"
+    for bad, why in [("x", "JSON list"), ([{"key": "a", "action": "MAYBE", "reason": "x"}], "action must be"), ([{"key": "a", "action": "REMOVE"}], "key and reason"),
+                     ([{"key": "a", "action": "REMOVE", "reason": "x"}, {"key": "a", "action": "REMOVE", "reason": "y"}], "duplicate")]:
+        with pytest.raises(rv.RecommendationError, match=why):
+            rv.load_recommendations(write(bad))
+    with pytest.raises(rv.RecommendationError, match="cannot read"):
+        rv.load_recommendations(tmp_path / "missing.json")
+
+
+def test_clause_wording_quotes_the_cited_clauses_and_marks_inferred_scope():
+    from poltracker.committee_industry import Mapping
+
+    base = dict(id=1, chamber="house", committee_code="AS00", subcommittee_code=None, committee_name="Armed Services", subcommittee_name=None, sic_start=3720, sic_end=3729,
+                industry_pattern=None, relevance_level="direct", rationale="Aircraft (Rule X 1(c)(4)).", jurisdiction_text="(2) Common defense generally. (4) The Department of Defense generally. (9) Shipbuilding.",
+                source_citation="Rule X, clause 1(c)", source_url="https://x", reviewed_at=None, mapping_version="v", jurisdiction_basis="rule_x_text")
+    assert rv.clause_wording(Mapping(**base)) == "(4) The Department of Defense generally."
+    cited_in_citation = rv.clause_wording(Mapping(**{**base, "rationale": "Seapower.", "source_citation": "Rule X, clause 1(c)(9); subcommittee name", "jurisdiction_basis": "subcommittee_name"}))
+    assert cited_in_citation.startswith("(9) Shipbuilding.") and "inferred from its name" in cited_in_citation
+    assert rv.clause_wording(Mapping(**{**base, "rationale": "x", "source_citation": None, "jurisdiction_basis": "committee_name"})).startswith("(2) Common defense")  # no clause cited: opening excerpt
+
+
+def test_generating_the_table_leaves_every_mapping_unchanged(universe, tmp_path):
+    path = tmp_path / "m.json"
+    path.write_text(json.dumps(ROWS))
+    before = hashlib.sha256(path.read_bytes()).hexdigest()
+    review_ = rv.build_review(universe, load_rows(path), SIC)
+    keys = [r.key for r in rv.priority_rows(review_)]
+    rv.render_priority_table(review_, {k: {"key": k, "action": "NEEDS MORE SOURCE REVIEW", "reason": "x"} for k in keys})
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == before
+
+
+# --- the shipped recommendations ---------------------------------------------------------------------------------
+
+REC_FILE = ROOT / "docs" / "review" / "priority_recommendations_2026.1-draft.json"
+
+
+def test_the_shipped_recommendations_are_complete_valid_and_consistent_with_the_mapping_levels():
+    recs_ = rv.load_recommendations(REC_FILE)
+    rows = load_rows(REAL)
+    keys = {rv.row_key(m): m for m in rv.to_mappings(rows)}
+    assert len(recs_) == 50 and set(recs_) <= set(keys)
+    for key, rec in recs_.items():
+        level = keys[key].relevance_level
+        assert rec["action"] in rv.ACTIONS and rec["reason"].strip()
+        assert not (rec["action"] in rv.DIRECT_ONLY and level != "direct") and not (rec["action"] == "KEEP RELATED" and level != "related")
+    assert {r["review_status"] for r in rows} == {"needs_review"}  # producing recommendations changed no status

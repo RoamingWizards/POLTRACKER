@@ -74,19 +74,28 @@ one SIC industry group among current securities, are inferred from a name, are `
 were adjusted after an earlier false positive. A "priority" tier lists rows with a substantive concern (broad, mixed, many matches, earlier false
 positive). The packet never edits a mapping, never marks anything reviewed, and shows counts and tickers only, no politician names.
 
-## Intended Phase 3 flagging policy (documented only; nothing is implemented)
+## Adopted Phase 3 policy (decided; nothing is implemented yet)
 
-| Result | How Phase 3 is intended to use it |
-|---|---|
-| `direct` mapping match | may contribute to a **contextual-review flag** |
-| `related` mapping match | shown as contextual evidence; **never independently triggers a flag** |
-| `none` | the committee was reviewed as not industry-specific; it adds nothing, and the politician's other committees are still evaluated |
-| `unknown` | insufficient data (no SIC, no committee seats, an unmapped committee); never a flag; presented as "cannot assess" |
+1. Only a mapping that is both `review_status = reviewed` and `relevance_level = direct` may contribute to a contextual-review flag.
+2. A `reviewed` + `related` mapping is displayed as supporting context and never independently triggers a flag.
+3. A `needs_review` mapping may be shown in the review tooling and must never affect a trade flag.
+4. `none` means the committee was reviewed as not industry-specific; it adds nothing, and the politician's other committees are still evaluated.
+5. `unknown` means insufficient data (no SIC, no committee seats, an unmapped committee); it never produces a flag and is shown as "cannot assess".
+6. Overlapping committee and subcommittee mappings are not double-counted. A trade has exactly one committee-relevance signal, with potentially
+   several evidence records (the matched committees and subcommittees, each with its provenance).
 
-A flag means "worth a contextual look", not a finding: it must be worded neutrally, never as insider trading, and never implies non-public
-information. It would combine with other Phase 3 signals (trade-size anomaly, disclosure delay, performance versus SPY), not stand alone. It is
-recommended that only rows with `review_status = reviewed` contribute to a flag; `needs_review` rows would be shown as draft evidence. That gating
-is a proposal for Phase 3, not behavior that exists today.
+The matcher already shapes its output this way: `evaluate` returns one `Relevance` per (politician, security) whose `matches` list is the evidence, and
+each match carries `review_status` and `level`, so Phase 3 can apply the gate in one place. A flag means "worth a contextual look", never a finding:
+it is worded neutrally, never as insider trading, and never implies non-public information. It would combine with other signals (trade size,
+disclosure delay, performance versus SPY), not stand alone.
+
+## Priority-row review
+
+`docs/review/priority_rows_review_2026.1-draft.md` is a compact table of the 50 rows with a substantive concern, each with a proposed action
+(`APPROVE DIRECT`, `DOWNGRADE TO RELATED`, `SPLIT RANGE`, `REMOVE`, `NEEDS MORE SOURCE REVIEW`, and `KEEP RELATED` for related rows). The proposals live in
+`docs/review/priority_recommendations_2026.1-draft.json`, separate from the mappings, and nothing is applied automatically. Regenerate with
+`python -m poltracker.committee_industry_review --priority-table OUT.md --recommendations docs/review/priority_recommendations_2026.1-draft.json`;
+it refuses a recommendations file that does not cover exactly the priority rows or uses an action that does not fit a row's level.
 
 ## Usage
 

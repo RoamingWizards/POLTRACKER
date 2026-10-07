@@ -10,6 +10,7 @@ is computed from the data, so the packet cannot drift from the mappings.
 
 import argparse
 import json
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -238,7 +239,7 @@ def render_markdown(review: Review) -> str:
             w(f"| {label} | {s['committee_level']} / {s['subcommittee_level']} |")
         else:
             w(f"| {label} | {s['needs_review']} / {s['reviewed']} |")
-    w("\n`related` mappings are context only. Only `direct` mappings are intended to contribute to a contextual-review flag in Phase 3 (see the docs).\n")
+    w("\n**Phase 3 policy:** only mappings that are both `reviewed` and `direct` may contribute to a contextual-review flag. `reviewed` + `related` is supporting context only. `needs_review` mappings never affect a flag. A trade has one committee-relevance signal with possibly several evidence records (see the docs).\n")
 
     live = [r for r in review.rows if r.mapping.relevance_level != "none"]
     w("## Top 20 mappings by number of affected trades\n")
@@ -306,16 +307,132 @@ def render_markdown(review: Review) -> str:
     return "\n".join(out) + "\n"
 
 
+# --- the priority-row review table ------------------------------------------------------------------------------
+
+ACTIONS = ("APPROVE DIRECT", "DOWNGRADE TO RELATED", "SPLIT RANGE", "REMOVE", "NEEDS MORE SOURCE REVIEW", "KEEP RELATED")
+DIRECT_ONLY = ("APPROVE DIRECT", "DOWNGRADE TO RELATED", "SPLIT RANGE")  # these only make sense for a row that is currently direct
+LEVEL_ORDER = {"direct": 0, "related": 1, "none": 2}
+
+
+class RecommendationError(ValueError):
+    pass
+
+
+def priority_rows(review: Review) -> list[RowReport]:
+    """The rows with a substantive concern, ordered: direct before related, most trades first, broad/mixed first, then key."""
+    rows = [r for r in review.rows if any(f in SUBSTANTIVE for f in r.flags)]
+    return sorted(rows, key=lambda r: (LEVEL_ORDER[r.mapping.relevance_level], -r.trades_matched, -(("broad_range" in r.flags) + ("mixed_industries" in r.flags)), r.key))
+
+
+def load_recommendations(path: Path) -> dict[str, dict]:
+    try:
+        items = json.loads(Path(path).read_text())
+    except (OSError, ValueError) as exc:
+        raise RecommendationError(f"cannot read {path}: {exc}") from exc
+    if not isinstance(items, list):
+        raise RecommendationError("recommendations must be a JSON list")
+    out: dict[str, dict] = {}
+    for i, it in enumerate(items, start=1):
+        if not isinstance(it, dict) or not it.get("key") or not str(it.get("reason") or "").strip():
+            raise RecommendationError(f"recommendation {i}: needs key and reason")
+        if it.get("action") not in ACTIONS:
+            raise RecommendationError(f"recommendation {i}: action must be one of {ACTIONS}")
+        if it["key"] in out:
+            raise RecommendationError(f"recommendation {i}: duplicate key {it['key']}")
+        out[it["key"]] = it
+    return out
+
+
+def validate_recommendations(review: Review, recs: dict[str, dict]) -> None:
+    """Exactly one recommendation per priority row, and an action that fits the row's current level. Mappings are never touched."""
+    rows = {r.key: r for r in priority_rows(review)}
+    if missing := sorted(set(rows) - set(recs)):
+        raise RecommendationError(f"no recommendation for: {', '.join(missing)}")
+    if extra := sorted(set(recs) - set(rows)):
+        raise RecommendationError(f"recommendation for a row that is not a priority row: {', '.join(extra)}")
+    for key, rec in recs.items():
+        level = rows[key].mapping.relevance_level
+        if rec["action"] in DIRECT_ONLY and level != "direct":
+            raise RecommendationError(f"{key}: {rec['action']} only applies to a direct row")
+        if rec["action"] == "KEEP RELATED" and level != "related":
+            raise RecommendationError(f"{key}: KEEP RELATED only applies to a related row")
+
+
+_CLAUSE = re.compile(r"Rule X,? (?:clause )?1\([a-z]\)((?:\(\d+\)(?:,\s*)?)+)")
+
+
+def clause_wording(m: Mapping, limit: int = 300) -> str:
+    """The specific official clauses the rationale cites, quoted from the recorded jurisdiction text."""
+    text = m.jurisdiction_text or ""
+    items = {n: t.strip() for n, t in re.findall(r"\((\d+)\)\s*(.*?)(?=\s*\(\d+\)\s|$)", text, flags=re.S)}
+    numbers = [n for group in _CLAUSE.findall(f"{m.rationale or ''} {m.source_citation or ''}") for n in re.findall(r"\((\d+)\)", group)]
+    picked = [f"({n}) {items[n]}" for n in dict.fromkeys(numbers) if n in items]
+    wording = " ".join(picked) if picked else (text[:limit] or "none recorded")
+    if m.jurisdiction_basis == "subcommittee_name":
+        wording += " [committee wording; the subcommittee's scope is inferred from its name]"
+    elif m.jurisdiction_basis == "committee_published_text":
+        wording += " [subcommittee text published by the committee]"
+    return wording if len(wording) <= limit + 70 else wording[:limit].rstrip() + "..."
+
+
+def _cell(text: str, limit: int | None = None) -> str:
+    text = " ".join(str(text).split()).replace("|", "/")
+    return text if limit is None or len(text) <= limit else text[: limit - 3].rstrip() + "..."
+
+
+def render_priority_table(review: Review, recs: dict[str, dict]) -> str:
+    validate_recommendations(review, recs)
+    rows = priority_rows(review)
+    counts = {a: sum(1 for r in rows if recs[r.key]["action"] == a) for a in ACTIONS}
+    out = [
+        f"# Priority rows: review table (mapping version {review.version})\n",
+        f"{len(rows)} rows with a substantive concern, ordered direct before related, then most trades matched, then broad/mixed ranges first. "
+        "**Nothing here changes a mapping.** Each recommendation is a proposal for a person to accept or reject; every row stays `needs_review`.\n",
+        "Phase 3 policy these recommendations are written against: only `reviewed` + `direct` mappings may contribute to a contextual-review flag, so a direct "
+        "row must be squarely within the committee's jurisdiction and narrow enough that an industry match means something. `KEEP RELATED` is an addition to the "
+        "requested actions, needed because a related row has nothing to 'approve direct'.\n",
+        "| Action | Rows |",
+        "|---|---|",
+        *[f"| {a} | {n} |" for a, n in counts.items() if n],
+        "",
+        "| # | Committee / subcommittee | SIC range | SIC titles covered (current securities) | Level | Basis | Official wording | Trades | Example tickers | Overlaps | Recommended action | Why |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for i, r in enumerate(rows, start=1):
+        m = r.mapping
+        titles = "; ".join(f"{sic} {d} ({n})" for sic, d, n in r.data_descriptions[:6]) + (f"; +{len(r.data_descriptions) - 6} more" if len(r.data_descriptions) > 6 else "")
+        where = m.committee_name + (f" / {m.subcommittee_name}" if m.subcommittee_name else "")
+        flag = " (broad)" if "broad_range" in r.flags else ""
+        out.append("| " + " | ".join([
+            str(i), _cell(f"{m.committee_code}{'/' + m.subcommittee_code if m.subcommittee_code else ''} {where}", 90), f"{m.sic_range}{flag}", _cell(titles or "none", 200),
+            m.relevance_level, m.jurisdiction_basis or "", _cell(clause_wording(m), 330), f"{r.trades_matched} ({r.politicians_matched} pol.)",
+            ", ".join(r.example_tickers[:6]), _cell("; ".join(r.overlaps) or "none", 160), f"**{recs[r.key]['action']}**", _cell(recs[r.key]["reason"], 420)]) + " |")
+    return "\n".join(out) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build the human-review packet for the committee/industry mappings (read-only)")
     parser.add_argument("--file", type=Path, default=DATA / "committee_industry_mappings.json")
     parser.add_argument("--sic", type=Path, default=DATA / "sic_codes.json")
     parser.add_argument("--out", type=Path, help="write the Markdown packet here (default: stdout)")
     parser.add_argument("--json", type=Path, help="also write the per-row numbers as JSON")
+    parser.add_argument("--priority-table", type=Path, help="write the compact priority-row review table here (needs --recommendations)")
+    parser.add_argument("--recommendations", type=Path, help="JSON list of {key, action, reason} for exactly the priority rows")
     args = parser.parse_args(argv)
     rows = load_rows(args.file)
     sic = json.loads(args.sic.read_text())["codes"]
     review = build_review(make_session_factory(), rows, sic)
+    if args.priority_table:
+        if not args.recommendations:
+            parser.error("--priority-table needs --recommendations")
+        try:
+            table = render_priority_table(review, load_recommendations(args.recommendations))
+        except RecommendationError as exc:
+            print(f"Recommendations rejected: {exc}")
+            return 1
+        args.priority_table.parent.mkdir(parents=True, exist_ok=True)
+        args.priority_table.write_text(table)
+        print(f"Wrote {args.priority_table}")
     text = render_markdown(review)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
