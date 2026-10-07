@@ -270,7 +270,7 @@
   "jurisdiction_basis": "subcommittee_name",
   "review_status": "needs_review",
   "reviewed_by": null,
-  "review_note": null
+  "review_note": "Direct treatment should be reconciled with the more conservative handling of adjacent broad food SIC ranges (the 2000-2079 sibling was downgraded to related). Owner's preliminary preference: related, unless official jurisdiction text clearly supports a direct relationship. Not approved; stays needs_review (owner decision 2026-10-07)."
  },
  {
   "chamber": "house",

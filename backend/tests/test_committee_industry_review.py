@@ -380,3 +380,31 @@ def test_review_category_only_credits_reviewed_direct_matches():
     assert review_category(rel("relevant", ("related", "reviewed"), ("direct", "needs_review"))) == "reviewed_related_only"  # needs_review never lifts it
     assert review_category(rel("relevant", ("direct", "needs_review"))) == "needs_review_only"
     assert review_category(rel("not_relevant")) == "no_relevance" and review_category(rel("unknown")) == "unknown"
+
+
+# --- round 2: reviewing an explicit set of rows --------------------------------------------------------------------
+
+def test_the_round_2_table_covers_exactly_the_chosen_rows_and_changes_no_mapping(session_factory):
+    path = ROOT / "docs" / "review" / "round2" / "priority_recommendations_2026.1-draft.json"
+    recs_ = rv.load_recommendations(path)
+    before = hashlib.sha256(REAL.read_bytes()).hexdigest()
+    review_ = rv.build_review(session_factory, load_rows(REAL), json.loads((ROOT / "data" / "sic_codes.json").read_text())["codes"])
+    selected = rv.select_rows(review_, list(recs_))
+    assert len(selected) == len(recs_) == 37 and all(r.mapping.review_status == "needs_review" for r in selected)  # only unreviewed rows
+    table = rv.render_priority_table(review_, recs_, selected, "Round 2 review table")
+    assert table.startswith("# Round 2 review table") and table.count("\n| ") >= 37
+    assert hashlib.sha256(REAL.read_bytes()).hexdigest() == before
+
+
+def test_select_rows_rejects_an_unknown_key_and_validate_rejects_a_missing_recommendation(session_factory):
+    review_ = rv.build_review(session_factory, load_rows(REAL), json.loads((ROOT / "data" / "sic_codes.json").read_text())["codes"])
+    with pytest.raises(rv.RecommendationError):
+        rv.select_rows(review_, ["XX00:1111-1111:direct"])
+    one = rv.select_rows(review_, ["IF00:1311-1311:direct", "AS00:3812-3812:direct"])
+    with pytest.raises(rv.RecommendationError):
+        rv.validate_recommendations(review_, {"IF00:1311-1311:direct": {"key": "IF00:1311-1311:direct", "action": "APPROVE DIRECT", "reason": "x"}}, one)
+
+
+def test_the_ag03_2090_note_records_the_reconciliation_and_the_row_is_still_needs_review():
+    row = shipped()["AG00/AG03:2090-2099:direct"]
+    assert row["review_status"] == "needs_review" and "reconciled" in row["review_note"] and "related" in row["review_note"]

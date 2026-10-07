@@ -343,9 +343,17 @@ def load_recommendations(path: Path) -> dict[str, dict]:
     return out
 
 
-def validate_recommendations(review: Review, recs: dict[str, dict]) -> None:
-    """Exactly one recommendation per priority row, and an action that fits the row's current level. Mappings are never touched."""
-    rows = {r.key: r for r in priority_rows(review)}
+def select_rows(review: Review, keys: list[str]) -> list[RowReport]:
+    """The rows named in `keys` (a later review round), ordered like priority_rows: direct before related, most trades first, broad/mixed first."""
+    by_key = {r.key: r for r in review.rows}
+    if unknown := [k for k in keys if k not in by_key]:
+        raise RecommendationError(f"unknown row key: {', '.join(unknown)}")
+    return sorted((by_key[k] for k in dict.fromkeys(keys)), key=lambda r: (LEVEL_ORDER[r.mapping.relevance_level], -r.trades_matched, -(("broad_range" in r.flags) + ("mixed_industries" in r.flags)), r.key))
+
+
+def validate_recommendations(review: Review, recs: dict[str, dict], selected: list[RowReport] | None = None) -> None:
+    """Exactly one recommendation per selected (default: priority) row, and an action that fits the row's current level. Mappings are never touched."""
+    rows = {r.key: r for r in (selected if selected is not None else priority_rows(review))}
     if missing := sorted(set(rows) - set(recs)):
         raise RecommendationError(f"no recommendation for: {', '.join(missing)}")
     if extra := sorted(set(recs) - set(rows)):
@@ -380,13 +388,13 @@ def _cell(text: str, limit: int | None = None) -> str:
     return text if limit is None or len(text) <= limit else text[: limit - 3].rstrip() + "..."
 
 
-def render_priority_table(review: Review, recs: dict[str, dict]) -> str:
-    validate_recommendations(review, recs)
-    rows = priority_rows(review)
+def render_priority_table(review: Review, recs: dict[str, dict], selected: list[RowReport] | None = None, title: str | None = None) -> str:
+    validate_recommendations(review, recs, selected)
+    rows = selected if selected is not None else priority_rows(review)
     counts = {a: sum(1 for r in rows if recs[r.key]["action"] == a) for a in ACTIONS}
     out = [
-        f"# Priority rows: review table (mapping version {review.version})\n",
-        f"{len(rows)} rows with a substantive concern, ordered direct before related, then most trades matched, then broad/mixed ranges first. "
+        f"# {title or 'Priority rows: review table'} (mapping version {review.version})\n",
+        f"{len(rows)} rows{'' if selected is not None else ' with a substantive concern'}, ordered direct before related, then most trades matched, then broad/mixed ranges first. "
         "**Nothing here changes a mapping.** Each recommendation is a proposal for a person to accept or reject; every row stays `needs_review`.\n",
         "Phase 3 policy these recommendations are written against: only `reviewed` + `direct` mappings may contribute to a contextual-review flag, so a direct "
         "row must be squarely within the committee's jurisdiction and narrow enough that an industry match means something. `KEEP RELATED` is an addition to the "
@@ -417,6 +425,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, help="write the Markdown packet here (default: stdout)")
     parser.add_argument("--json", type=Path, help="also write the per-row numbers as JSON")
     parser.add_argument("--priority-table", type=Path, help="write the compact priority-row review table here (needs --recommendations)")
+    parser.add_argument("--keys", type=Path, help="text file of row keys (one per line) to review instead of the priority rows (a later review round)")
+    parser.add_argument("--title", help="title of the priority table")
     parser.add_argument("--recommendations", type=Path, help="JSON list of {key, action, reason} for exactly the priority rows")
     args = parser.parse_args(argv)
     rows = load_rows(args.file)
@@ -426,7 +436,8 @@ def main(argv: list[str] | None = None) -> int:
         if not args.recommendations:
             parser.error("--priority-table needs --recommendations")
         try:
-            table = render_priority_table(review, load_recommendations(args.recommendations))
+            selected = select_rows(review, [k.strip() for k in args.keys.read_text().splitlines() if k.strip()]) if args.keys else None
+            table = render_priority_table(review, load_recommendations(args.recommendations), selected, args.title)
         except RecommendationError as exc:
             print(f"Recommendations rejected: {exc}")
             return 1
