@@ -5,6 +5,7 @@ import type {
   Overview,
   Page,
   Politician,
+  PoliticianDetail,
   RefreshStatus,
   PriceSeries,
   Security,
@@ -29,7 +30,7 @@ export const usePoliticians = (params: { q?: string; chamber?: string }) =>
   });
 
 export const usePolitician = (id: number) =>
-  useQuery({ queryKey: ['politician', id], queryFn: () => apiGet<Politician>(`/politicians/${id}`) });
+  useQuery({ queryKey: ['politician', id], queryFn: () => apiGet<PoliticianDetail>(`/politicians/${id}`) });
 
 export const useSecurity = (ticker: string) =>
   useQuery({

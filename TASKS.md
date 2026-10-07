@@ -219,6 +219,11 @@ Built and tested: desktop launcher, local server, SQLite bootstrap/import, backg
 
 Do not push further, merge to main, sign, or notarize until reviewed.
 
+## [~] Phase 9A — Official politician enrichment (`politician-enrichment` branch)
+
+Migration 0006, Congress.gov + House Clerk providers, conservative matcher, `python -m poltracker.enrich_politicians`,
+Politician Detail profile. See `docs/POLITICIAN_ENRICHMENT.md`. No LLM, scoring or allegations. Awaiting review.
+
 ---
 
 # Planned future work

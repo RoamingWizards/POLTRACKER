@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     # The Data Status page warns when the last successful ingest is older than this.
     ingest_stale_after_hours: float = Field(24, gt=0)
 
+    # Official politician metadata. The key is optional: without it, enrichment reports "not configured" and the
+    # rest of the app is unaffected. Get a free key at https://api.congress.gov/sign-up/ and keep it out of git.
+    congress_api_key: str | None = None
+    congress_api_base_url: str = "https://api.congress.gov/v3"
+    congress_number: int = 119  # roster to match against; the current Congress covers trades from the last year
+    politician_enrich_stale_days: int = Field(30, ge=1)  # re-enrich matched politicians after this long
+    politician_retry_days: int = Field(7, ge=1)  # re-try unmatched/ambiguous politicians after this long
+    politician_request_interval: float = Field(0.5, ge=0)  # seconds between official-API requests
+
     benchmark_ticker: str = "SPY"
     price_batch_size: int = 40
     price_retry_days: int = 7  # how long before re-checking a ticker the provider had no data for
