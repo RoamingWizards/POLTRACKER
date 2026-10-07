@@ -13,6 +13,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import AppNavbar from './components/AppNavbar';
 import Header from './components/Header';
+import RefreshBanner from './components/RefreshBanner';
 import SideMenu from './components/SideMenu';
 import AppTheme from './shared-theme/AppTheme';
 import { chartsCustomizations, dataGridCustomizations, datePickersCustomizations } from './theme/customizations';
@@ -50,6 +51,9 @@ function Layout() {
       >
         <Stack spacing={2} sx={{ alignItems: 'center', mx: 3, pb: 5, mt: { xs: 8, md: 0 } }}>
           <Header />
+          <Box sx={{ width: '100%', maxWidth: { md: '1700px' } }}>
+            <RefreshBanner />
+          </Box>
           <Suspense fallback={<LinearProgress sx={{ width: '100%', maxWidth: { md: '1700px' } }} aria-label="Loading page" />}>
             <Outlet />
           </Suspense>

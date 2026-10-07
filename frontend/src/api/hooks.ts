@@ -1,15 +1,18 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { apiGet } from './client';
+import { useEffect, useRef } from 'react';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiGet, apiPost, ApiError } from './client';
 import type {
   Overview,
   Page,
   Politician,
+  RefreshStatus,
   PriceSeries,
   Security,
   SecurityPerformance,
   Status,
   Trade,
   TradeQuery,
+  TriggerResult,
 } from './types';
 
 export const useTrades = (query: TradeQuery) =>
@@ -63,3 +66,40 @@ export const useHealth = () =>
     refetchInterval: 30_000,
     retry: false,
   });
+
+// Desktop background refresh. The web API has no such route (404), which simply means "no banner".
+export function useRefreshStatus() {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ['refresh-status'],
+    queryFn: async () => {
+      try {
+        return await apiGet<RefreshStatus>('/refresh/status');
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) return null;
+        throw e;
+      }
+    },
+    refetchInterval: (q) => (q.state.data?.running ? 2_000 : q.state.data === null ? false : 15_000),
+    retry: false,
+    staleTime: 0,
+  });
+  // When a refresh finishes, everything on screen may be out of date: reload it in place (no blank state).
+  const wasRunning = useRef(false);
+  const running = query.data?.running ?? false;
+  useEffect(() => {
+    if (wasRunning.current && !running) {
+      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'refresh-status' });
+    }
+    wasRunning.current = running;
+  }, [running, queryClient]);
+  return query;
+}
+
+export function useTriggerRefresh() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPost<TriggerResult>('/refresh'),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['refresh-status'] }),
+  });
+}
