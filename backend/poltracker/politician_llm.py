@@ -110,6 +110,7 @@ class AnthropicIdentityResolver:
         self._key, self.model, self._max_tokens = api_key, model, max_tokens
         self._client = client or httpx.Client(timeout=60)
         self.requests_made = 0
+        self.tokens_in = self.tokens_out = 0
 
     def resolve(self, request: IdentityRequest) -> LLMSuggestion:
         body = {
@@ -125,13 +126,68 @@ class AnthropicIdentityResolver:
         if resp.status_code != 200:
             raise LLMError(f"Anthropic API: HTTP {resp.status_code}")  # the body can echo request text; not included
         try:
-            blocks = resp.json().get("content", [])
-        except ValueError as exc:
+            data = resp.json()
+            blocks = data.get("content", [])
+            self.tokens_in += int((data.get("usage") or {}).get("input_tokens", 0))
+            self.tokens_out += int((data.get("usage") or {}).get("output_tokens", 0))
+        except (ValueError, TypeError, AttributeError) as exc:
             raise LLMError("Anthropic API: response was not JSON") from exc
         call = next((b for b in blocks if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") == TOOL["name"]), None)
         if call is None:
             raise LLMError("Anthropic API: no structured answer in the response")
         return parse_suggestion(call.get("input"), self.model)
+
+
+OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+_STRICT_SCHEMA = {  # OpenAI structured outputs: every property required, no extras; ranges are checked by parse_suggestion
+    "type": "object",
+    "properties": {
+        "selected_bioguide_id": {"type": ["string", "null"]},
+        "confidence": {"type": "number"},
+        "explanation": {"type": "string"},
+        "alternate_candidates": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["selected_bioguide_id", "confidence", "explanation", "alternate_candidates"],
+    "additionalProperties": False,
+}
+
+
+class OpenAIIdentityResolver:
+    """OpenAI Chat Completions with a strict JSON-schema response format. Same contract as the Anthropic client."""
+
+    def __init__(self, api_key: str, model: str, client: httpx.Client | None = None, max_tokens: int = 400):
+        self._key, self.model, self._max_tokens = api_key, model, max_tokens
+        self._client = client or httpx.Client(timeout=60)
+        self.requests_made = 0
+        self.tokens_in = self.tokens_out = 0
+
+    def resolve(self, request: IdentityRequest) -> LLMSuggestion:
+        body = {
+            "model": self.model, "temperature": 0, "max_tokens": self._max_tokens,
+            "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": build_user_message(request)}],
+            "response_format": {"type": "json_schema", "json_schema": {"name": "report_identity", "strict": True, "schema": _STRICT_SCHEMA}},
+        }
+        self.requests_made += 1
+        try:
+            resp = self._client.post(OPENAI_URL, json=body, headers={"Authorization": f"Bearer {self._key}"})
+        except httpx.HTTPError as exc:
+            raise LLMError(f"OpenAI API: network error ({type(exc).__name__})") from exc
+        if resp.status_code != 200:
+            raise LLMError(f"OpenAI API: HTTP {resp.status_code}")  # the body can echo request text; not included
+        try:
+            data = resp.json()
+            message = data["choices"][0]["message"]
+            self.tokens_in += int((data.get("usage") or {}).get("prompt_tokens", 0))
+            self.tokens_out += int((data.get("usage") or {}).get("completion_tokens", 0))
+        except (ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
+            raise LLMError("OpenAI API: unexpected response shape") from exc
+        if message.get("refusal"):
+            raise LLMError("OpenAI API: the model refused to answer")
+        try:
+            payload = json.loads(message.get("content") or "")
+        except ValueError as exc:
+            raise LLMError("OpenAI API: the answer was not valid JSON") from exc
+        return parse_suggestion(payload, self.model)
 
 
 def cache_key(request: IdentityRequest, model: str) -> str:
