@@ -261,7 +261,7 @@ def rel(seats, sic, desc=None):
 
 @pytest.mark.parametrize("seats,sic,level", [
     ([A("AS00")], "3760", "direct"),   # guided missiles: Armed Services
-    ([A("AS00")], "3812", "direct"),   # defense electronics
+    ([A("AS00")], "3812", "related"),   # defense electronics: downgraded in round 2 (one SIC code mixes defense and consumer navigation)
     ([A("AS00")], "3730", "direct"),   # shipbuilding
     ([A("BA00")], "6021", "direct"),   # commercial banks: Financial Services
     ([A("BA00")], "6331", "direct"),   # insurance
@@ -271,7 +271,7 @@ def rel(seats, sic, desc=None):
     ([A("IF00", "IF03")], "1311", "direct"),  # oil and gas: Energy and Commerce Energy
     ([A("IF00")], "4813", "direct"),   # telephone communications
     ([A("IF00", "IF14")], "2834", "direct"),  # pharma: E&C Health
-    ([A("WM00", "WM02")], "8062", "direct"),  # hospitals: Ways and Means Health
+    ([A("WM00", "WM02")], "8062", "related"),  # hospitals: Ways and Means Health, downgraded in round 2
     ([A("II00")], "1040", "direct"),   # gold and silver ores: Natural Resources
 ])
 def test_known_core_relationships_hold_in_the_shipped_mappings(seats, sic, level):
