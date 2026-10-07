@@ -118,3 +118,25 @@ Applied 2026-10-07 from the project owner's written instruction. Only the decisi
 - Agriculture/Nutrition 2090-2099 stays direct and `needs_review`, with a note that it should be reconciled with the more conservative handling of adjacent broad food ranges; preliminary preference is related unless official text clearly supports direct.
 - Left untouched until separately reviewed: Energy and Commerce Health 8000-8099, Agriculture 0100-0299 and 2010-2029, water transportation 4400-4499, Science space 3760-3769, remaining Ways and Means Health rows. Round 2 proposals for them are in `docs/review/round2/`.
 - The dataset version stays `2026.1-draft` for all rows; per-row state lives in `review_status` / `reviewed_at` / `reviewed_by`. Promote the whole set to `2026.1` when the review cycle is complete and the set is frozen for Phase 3.
+
+## Round 2 (applied 2026-10-07)
+
+Only these decisions were applied; the other round 2 proposals are in `docs/review/round2/` and remain unapplied.
+
+| Decision | Row before | Row after |
+|---|---|---|
+| Downgrade | `AS00:3812-3812:direct` | `AS00:3812-3812:related` |
+| Related, not direct | `AG00:6221-6221:direct`, `AG00/AG22:6221-6221:direct` | `...:related` |
+| Downgrade | `AG00:2040-2049:direct` | `AG00:2040-2049:related` |
+| Downgrade | `AG00:3523-3523:direct` | `AG00:3523-3523:related` |
+| Downgrade | `WM00/WM02:8000-8099:direct` | `WM00/WM02:8000-8099:related` |
+| Downgrade | `WM00/WM02:6320-6324:direct` | `WM00/WM02:6320-6324:related` |
+| Downgrade | `AG00/AG03:2090-2099:direct` | `AG00/AG03:2090-2099:related` |
+| Approve full range, re-sourced | `IF00/IF14:8000-8099:direct`, `IF00:8000-8099:direct` | same, reviewed |
+| Related, re-sourced, reviewed | `IF00/IF16:7370-7373:related` | same, reviewed |
+| Approve direct, re-sourced | `JU00/JU03:7370-7373:related` | `JU00/JU03:7370-7373:direct` |
+| Approve direct, re-sourced | `SY00/SY16:3760-3769:direct` | same, reviewed |
+
+Official text read on 2026-10-07: E&C Health, E&C Communications & Technology and Science Space and Aeronautics subcommittee pages, and the Judiciary Committee Rules of Procedure, 119th Congress (adopted January 15, 2025), section VI. Their wording is stored in each row's `jurisdiction_text`.
+
+Notes on the sources: the E&C Health text says "the health sector broadly" but does not contain the phrase "health delivery systems"; the Judiciary subcommittee web page says "information technology" and omits "emerging technologies", which the Rules of Procedure PDF contains.

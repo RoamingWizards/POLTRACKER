@@ -9,19 +9,19 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 | Measure | Count |
 |---|---|
 | Mappings | 191 |
-| direct | 97 |
-| related | 79 |
+| direct | 90 |
+| related | 86 |
 | none (reviewed as not industry-specific) | 15 |
 | committee-level / subcommittee-level | 89 / 102 |
-| Explicit-jurisdiction mappings (official wording read) | 91 |
-| Inferred from a subcommittee name | 88 |
+| Explicit-jurisdiction mappings (official wording read) | 95 |
+| Inferred from a subcommittee name | 84 |
 | Inferred from a committee name only | 12 |
-| Rows needing review / already reviewed | 144 / 47 |
+| Rows needing review / already reviewed | 131 / 60 |
 | Trades in the data that have a security | 5380 |
 | Trades with at least one match | 357 |
-| Trades affected by a direct mapping | 181 |
-| Trades affected by related-only mappings | 176 |
-| Rows flagged for any scrutiny reason | 174 |
+| Trades affected by a direct mapping | 175 |
+| Trades affected by related-only mappings | 182 |
+| Rows flagged for any scrutiny reason | 176 |
 | Rows with a priority concern (broad, mixed, many matches, earlier false positive) | 34 |
 | Industry rows matching no current security | 14 |
 | Industry rows matching no current trade | 110 |
@@ -50,8 +50,8 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 | 16 | BA00:6199-6199:related  (Committee on Financial Services) | related | 11 | 4 | 6 | 4 |
 | 17 | FA00:3720-3729:related  (Committee on Foreign Affairs) | related | 11 | 11 | 11 | 2 |
 | 18 | BA00:6500-6599:related  (Committee on Financial Services) | related | 9 | 9 | 8 | 2 |
-| 19 | AS00:3812-3812:direct  (Committee on Armed Services) | direct | 8 | 8 | 5 | 2 |
-| 20 | JU00/JU03:7370-7373:related  (Committee on the Judiciary / Courts, Intellectual Property, Artificial Intelligence, and the Internet) | related | 8 | 8 | 75 | 1 |
+| 19 | AS00:3812-3812:related  (Committee on Armed Services) | related | 8 | 8 | 5 | 2 |
+| 20 | JU00/JU03:7370-7373:direct  (Committee on the Judiciary / Courts, Intellectual Property, Artificial Intelligence, and the Internet) | direct | 8 | 8 | 75 | 1 |
 
 ## Rows that deserve extra scrutiny
 
@@ -75,9 +75,9 @@ Broad ranges, ranges mixing industry groups, rows matching many trades, and rows
 | BA00:6000-6099:direct (Committee on Financial Services) | direct | mixed_industries, many_matches | 47 | 51 |
 | BA00/BA04:6330-6499:direct (Committee on Financial Services / Housing and Insurance) | direct | broad_range, mixed_industries, inferred_from_name | 6 | 26 |
 | AP00/AP07:8000-8099:related (Committee on Appropriations / Labor, Health and Human Services, Education, and Related Agencies) | related | broad_range, mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 4 | 15 |
-| WM00/WM02:8000-8099:direct (Committee on Ways and Means / Health) | direct | broad_range, mixed_industries, inferred_from_name, overlaps_other_committee | 2 | 15 |
+| WM00/WM02:8000-8099:related (Committee on Ways and Means / Health) | related | broad_range, mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 2 | 15 |
 | AG00/AG03:2000-2079:related (Committee on Agriculture / Nutrition and Foreign Agriculture) | related | broad_range, mixed_industries, inferred_from_name, related_level | 0 | 16 |
-| IF00/IF14:8000-8099:direct (Committee on Energy and Commerce / Health) | direct | broad_range, mixed_industries, inferred_from_name, overlaps_other_committee | 0 | 15 |
+| IF00/IF14:8000-8099:direct (Committee on Energy and Commerce / Health) | direct | broad_range, mixed_industries, overlaps_other_committee | 0 | 15 |
 | IF00:8000-8099:direct (Committee on Energy and Commerce) | direct | broad_range, mixed_industries, overlaps_other_committee | 0 | 15 |
 | AS00:3720-3729:direct (Committee on Armed Services) | direct | many_matches, overlaps_other_committee | 27 | 11 |
 | BA00:6200-6299:direct (Committee on Financial Services) | direct | mixed_industries, overlaps_other_committee | 18 | 33 |
@@ -106,7 +106,7 @@ Broad ranges, ranges mixing industry groups, rows matching many trades, and rows
 | VR00/VR03:8050-8099:related (Committee on Veterans' Affairs / Health) | related | mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 0 | 15 |
 | VR00:8050-8099:related (Committee on Veterans' Affairs) | related | mixed_industries, related_level, overlaps_other_committee | 0 | 15 |
 
-### Routine: flagged only for name inference, related level or overlap (140)
+### Routine: flagged only for name inference, related level or overlap (142)
 
 These are flagged in their entries below. The first group applies to nearly every subcommittee row, so it is not repeated here.
 
@@ -120,7 +120,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **IF00:8000-8099:direct** (Committee on Energy and Commerce): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
 - **VR00/VR03:8050-8099:related** (Committee on Veterans' Affairs / Health): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
 - **VR00:8050-8099:related** (Committee on Veterans' Affairs): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
-- **WM00/WM02:8000-8099:direct** (Committee on Ways and Means / Health): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
+- **WM00/WM02:8000-8099:related** (Committee on Ways and Means / Health): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
 - **BA00/BA04:6330-6499:direct** (Committee on Financial Services / Housing and Insurance): [633] 6331 Fire, Marine & Casualty Insurance (16); [636] 6361 Title Insurance (1); [639] 6399 Insurance Carriers, NEC (1); [641] 6411 Insurance Agents, Brokers & Service (8)
 - **BA00/BA16:6200-6299:direct** (Committee on Financial Services / Capital Markets): [620] 6200 Security & Commodity Brokers, Dealers, Exchanges & Services (6); [621] 6211 Security Brokers, Dealers & Flotation Companies (11); [622] 6221 Commodity Contracts Brokers & Dealers (5); [628] 6282 Investment Advice (11)
 - **BA00:6200-6299:direct** (Committee on Financial Services): [620] 6200 Security & Commodity Brokers, Dealers, Exchanges & Services (6); [621] 6211 Security Brokers, Dealers & Flotation Companies (11); [622] 6221 Commodity Contracts Brokers & Dealers (5); [628] 6282 Investment Advice (11)
@@ -207,7 +207,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `mixed_industries`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00:2040-2049:direct`  direct  |  needs_review
+#### `AG00:2040-2049:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 2040-2049
@@ -218,6 +218,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 3 securities (2040 Grain Mill Products x3)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: GIS, INGR, K.
+- **Scrutiny:** `related_level`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): grain mill products include consumer food brands; consistent with the conservative handling of broad food ranges.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00:2060-2079:related`  related  |  reviewed
@@ -263,7 +265,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CF, ICL, MOS, NTR.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00:3523-3523:direct`  direct  |  needs_review
+#### `AG00:3523-3523:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 3523-3523
@@ -274,6 +276,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 1 securities (3523 Farm Machinery & Equipment x1)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: DE.
+- **Scrutiny:** `related_level`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): farm machinery is only indirectly related to the 'plant industry, soils and agricultural engineering' clause.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00:5150-5159:related`  related  |  needs_review
@@ -290,7 +294,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00:6221-6221:direct`  direct  |  needs_review
+#### `AG00:6221-6221:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 6221-6221
@@ -302,10 +306,11 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 5 securities (6221 Commodity Contracts Brokers & Dealers x5)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: BITB, IBIT, PALL, PPLT, SLV.
 - **Overlaps other committees:** BA00 6200-6299 (direct); BA00/BA16 6200-6299 (direct)
-- **Scrutiny:** `overlaps_other_committee`
+- **Scrutiny:** `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): SIC 6221 securities currently matched are commodity-linked ETFs, not commodity exchanges or futures brokers; securities are Financial Services jurisdiction.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00/AG22:6221-6221:direct`  direct  |  needs_review
+#### `AG00/AG22:6221-6221:related`  related  |  reviewed
 
 - **Scope:** subcommittee AG22 (Commodity Markets, Digital Assets, and Rural Development)
 - **SIC range:** 6221-6221
@@ -317,8 +322,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 5 securities (6221 Commodity Contracts Brokers & Dealers x5)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: BITB, IBIT, PALL, PPLT, SLV.
 - **Overlaps other committees:** BA00 6200-6299 (direct); BA00/BA16 6200-6299 (direct)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
-- **Review note:** Needs more source review (owner decision 2026-10-07): the current 6221 securities are commodity-linked ETFs, not exchanges or brokers; decide whether they count as 'commodity markets'. Overlaps Financial Services 6200-6299. Earlier history: Review history: an earlier draft also mapped 6200 (security and commodity brokers, general) here; it was removed after manual review because it matched Nasdaq, an equities exchange, not a commodity market.
+- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): SIC 6221 securities currently matched are commodity-linked ETFs, not commodity exchanges or futures brokers; securities are Financial Services jurisdiction. Earlier history: Needs more source review (owner decision 2026-10-07): the current 6221 securities are commodity-linked ETFs, not exchanges or brokers; decide whether they count as 'commodity markets'. Overlaps Financial Services 6200-6299. Earlier history: Review history: an earlier draft also mapped 6200 (security and commodity brokers, general) here; it was removed after manual review because it matched Nasdaq, an equities exchange, not a commodity market.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG14:0700-0799:direct`  direct  |  needs_review
@@ -511,7 +516,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Review note:** Downgraded from direct to related (owner decision 2026-10-07): broad food manufacturing is a stretch for a nutrition-programs subcommittee; the committee-level meat, dairy and grain rows cover the clear cases. Earlier history: Review history: an earlier draft mapped 2000-2099; beverages (2080-2089) were excluded after it matched PepsiCo, which is not 'human nutrition'.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00/AG03:2090-2099:direct`  direct  |  needs_review
+#### `AG00/AG03:2090-2099:related`  related  |  reviewed
 
 - **Scope:** subcommittee AG03 (Nutrition and Foreign Agriculture)
 - **SIC range:** 2090-2099
@@ -523,8 +528,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 2 securities (2090 Miscellaneous Food Preparations & Kindred Products x2)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: MKC, UTZ.
 - **Overlaps other committees:** II00/II13 2091-2092 (related)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
-- **Review note:** Direct treatment should be reconciled with the more conservative handling of adjacent broad food SIC ranges (the 2000-2079 sibling was downgraded to related). Owner's preliminary preference: related, unless official jurisdiction text clearly supports a direct relationship. Not approved; stays needs_review (owner decision 2026-10-07).
+- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): miscellaneous food preparations are consumer goods; consistent with the already-related adjacent 2000-2079 range. Resolves the earlier reconciliation note. Earlier history: Direct treatment should be reconciled with the more conservative handling of adjacent broad food SIC ranges (the 2000-2079 sibling was downgraded to related). Owner's preliminary preference: related, unless official jurisdiction text clearly supports a direct relationship. Not approved; stays needs_review (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG03:5140-5149:related`  related  |  needs_review
@@ -686,7 +691,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 5 securities (3812 Search, Detection, Navigation, Guidance, Aeronautical Sys x5)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DRS, GRMN, LHX, NOC, TDY.
-- **Overlaps other committees:** AS00 3812-3812 (direct); AS00/AS29 3812-3812 (direct); FA00 3812-3812 (related); HM00 3812-3812 (related)
+- **Overlaps other committees:** AS00 3812-3812 (related); AS00/AS29 3812-3812 (direct); FA00 3812-3812 (related); HM00 3812-3812 (related)
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -763,7 +768,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 4 by 1 politician (primary match for 4). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); WM00/WM02 8000-8099 (direct)
+- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); WM00/WM02 8000-8099 (related)
 - **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -832,7 +837,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AS00:3812-3812:direct`  direct  |  needs_review
+#### `AS00:3812-3812:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 3812-3812
@@ -844,7 +849,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 5 securities (3812 Search, Detection, Navigation, Guidance, Aeronautical Sys x5)
 - **Trades matched:** 8 by 2 politicians (primary match for 8). Examples: DRS, GRMN, LHX, NOC, TDY.
 - **Overlaps other committees:** FA00 3812-3812 (related); HM00 3812-3812 (related); AP00/AP02 3812-3812 (direct)
-- **Scrutiny:** `overlaps_other_committee`
+- **Scrutiny:** `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): SIC 3812 is one code that mixes defense electronics with consumer navigation, so it cannot be split; related keeps the context without a possible flag.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AS00/AS35:7373-7373:related`  related  |  reviewed
@@ -858,7 +864,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 8 securities (7373 Services-Computer Integrated Systems Design x8)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CACI, GDDY, IONQ, JKHY, KD, LDOS, QNT, SAIC.
-- **Overlaps other committees:** IF00/IF16 7370-7373 (related); JU00/JU03 7370-7373 (related)
+- **Overlaps other committees:** IF00/IF16 7370-7373 (related); JU00/JU03 7370-7373 (direct)
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself. Earlier history: Review history: an earlier draft mapped 7373-7374; 7374 (data processing) was excluded after it matched ADP, a payroll processor.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -996,7 +1002,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 33 securities (6200 Security & Commodity Brokers, Dealers, Exchanges & Services x6, 6211 Security Brokers, Dealers & Flotation Companies x11, 6221 Commodity Contracts Brokers & Dealers x5, 6282 Investment Advice x11)
 - **Trades matched:** 18 by 4 politicians (primary match for 4). Examples: AMP, APO, ARES, BEN, BITB, BLK, BX, CBOE.
-- **Overlaps other committees:** AG00 6221-6221 (direct); AG00/AG22 6221-6221 (direct)
+- **Overlaps other committees:** AG00 6221-6221 (related); AG00/AG22 6221-6221 (related)
 - **Scrutiny:** `mixed_industries`; `overlaps_other_committee`
 - **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -1026,7 +1032,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 19 by 4 politicians (primary match for 16). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
-- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (direct)
+- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (related)
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is related.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -1116,7 +1122,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 33 securities (6200 Security & Commodity Brokers, Dealers, Exchanges & Services x6, 6211 Security Brokers, Dealers & Flotation Companies x11, 6221 Commodity Contracts Brokers & Dealers x5, 6282 Investment Advice x11)
 - **Trades matched:** 14 by 3 politicians (primary match for 14). Examples: AMP, APO, ARES, BEN, BITB, BLK, BX, CBOE.
-- **Overlaps other committees:** AG00 6221-6221 (direct); AG00/AG22 6221-6221 (direct)
+- **Overlaps other committees:** AG00 6221-6221 (related); AG00/AG22 6221-6221 (related)
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
 - **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -1221,7 +1227,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 3 by 1 politician (primary match for 3). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
-- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (direct)
+- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (related)
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is related.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -1414,7 +1420,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 5 securities (3812 Search, Detection, Navigation, Guidance, Aeronautical Sys x5)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: DRS, GRMN, LHX, NOC, TDY.
-- **Overlaps other committees:** AS00 3812-3812 (direct); AS00/AS29 3812-3812 (direct); HM00 3812-3812 (related); AP00/AP02 3812-3812 (direct)
+- **Overlaps other committees:** AS00 3812-3812 (related); AS00/AS29 3812-3812 (direct); HM00 3812-3812 (related); AP00/AP02 3812-3812 (direct)
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -1460,7 +1466,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 5 securities (3812 Search, Detection, Navigation, Guidance, Aeronautical Sys x5)
 - **Trades matched:** 1 by 1 politician (primary match for 0). Examples: DRS, GRMN, LHX, NOC, TDY.
-- **Overlaps other committees:** AS00 3812-3812 (direct); AS00/AS29 3812-3812 (direct); FA00 3812-3812 (related); AP00/AP02 3812-3812 (direct)
+- **Overlaps other committees:** AS00 3812-3812 (related); AS00/AS29 3812-3812 (direct); FA00 3812-3812 (related); AP00/AP02 3812-3812 (direct)
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -1744,7 +1750,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
-- **Overlaps other committees:** BA00 6320-6329 (related); BA00/BA04 6320-6329 (related); WM00/WM02 6320-6324 (direct)
+- **Overlaps other committees:** BA00 6320-6329 (related); BA00/BA04 6320-6329 (related); WM00/WM02 6320-6324 (related)
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -1762,7 +1768,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:8000-8099:direct`  direct  |  needs_review
+#### `IF00:8000-8099:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 8000-8099
@@ -1773,8 +1779,9 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
+- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (related)
 - **Scrutiny:** `broad_range`; `mixed_industries`; `overlaps_other_committee`
+- **Review note:** Approved direct as the full range (owner decision 2026-10-07, round 2; the proposed 8050-8069 split was not used). All ten official SIC titles in 8000-8099 are health-service classifications, and Rule X 1(f)(3) names health and health facilities.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00/IF16:3661-3669:direct`  direct  |  needs_review
@@ -1806,20 +1813,20 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00/IF16:7370-7373:related`  related  |  needs_review
+#### `IF00/IF16:7370-7373:related`  related  |  reviewed
 
 - **Scope:** subcommittee IF16 (Communications and Technology)
 - **SIC range:** 7370-7373
 - **Official SIC titles covered:** 7370 Services-Computer Programming, Data Processing, Etc.; 7371 Services-Computer Programming Services; 7372 Services-Prepackaged Software; 7373 Services-Computer Integrated Systems Design
-- **Rationale:** Computer, software and data services: 'Technology' in the subcommittee's name. Official SIC titles in 7370-7373: 7370 Services-Computer Programming, Data Processing, Etc.; 7371 Services-Computer Programming Services; 7372 Services-Prepackaged Software; 7373 Services-Computer Integrated Systems Design.
-- **Official jurisdiction wording used:** (1) Biomedical research and development. (3) Health and health facilities. (6) Exploration, production, storage, supply, marketing, pricing, and regulation of energy resources, including all fossil fuels, solar energy, and other unconventional or renewable energy resources. (9) The generation and marketing of power; reliability and interstate transmission of, and ratemaking for, all power. (10) ... all functions of the Federal Energy Regulatory Commission. (13) Regulation of the domestic nuclear energy industry. (14) Regulation of interstate and foreign communications. (15) Travel and tourism.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(14); subcommittee name  <https://energycommerce.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **Rationale:** Computer, software and data services: the subcommittee's published jurisdiction covers 'technology generally' and cybersecurity, privacy and data security, but names no software or computer-services industry. Official SIC titles in 7370-7373: 7370 Services-Computer Programming, Data Processing, Etc.; 7371 Services-Computer Programming Services; 7372 Services-Prepackaged Software; 7373 Services-Computer Integrated Systems Design.
+- **Official jurisdiction wording used:** Electronic communications, both Interstate and foreign, including voice, video, audio and data, whether transmitted by wire or wirelessly, and whether transmitted by telecommunications, commercial or private mobile service, broadcast, cable, satellite, microwave, or other mode; technology generally; emergency and public safety communications; cybersecurity, privacy, and data security; the Federal Communications Commission, the National Telecommunications and Information Administration, the Office of Emergency Communications in the Department of Homeland Security; and all aspects of the above-referenced jurisdiction related to the Department of Homeland Security.
+- **Citation / source:** House Committee on Energy and Commerce, Communications & Technology Subcommittee jurisdiction page (read 2026-10-07); Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(14)  <https://energycommerce.house.gov/committees/subcommittee/communications-technology>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 75 securities (7370 Services-Computer Programming, Data Processing, Etc. x11, 7371 Services-Computer Programming Services x7, 7372 Services-Prepackaged Software x49, 7373 Services-Computer Integrated Systems Design x8)
 - **Trades matched:** 18 by 3 politicians (primary match for 18). Examples: ACIW, ADBE, ADSK, ALKT, APP, APPF, AZPN, BBAI.
-- **Overlaps other committees:** AS00/AS35 7373-7373 (related); JU00/JU03 7370-7373 (related)
-- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
-- **Review note:** Needs more source review (owner decision 2026-10-07): based only on the word 'Technology' in the subcommittee name; verify the published jurisdiction before relying on it. Earlier history: Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP and Toast.
+- **Overlaps other committees:** AS00/AS35 7373-7373 (related); JU00/JU03 7370-7373 (direct)
+- **Scrutiny:** `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related, reviewed (owner decision 2026-10-07, round 2; replaces the proposed removal). Re-sourced from the subcommittee's published jurisdiction ('technology generally'; data and communications). Supporting context only: it must not trigger a contextual flag by itself. Earlier history: Needs more source review (owner decision 2026-10-07): based only on the word 'Technology' in the subcommittee name; verify the published jurisdiction before relying on it. Earlier history: Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP and Toast.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00/IF03:1200-1299:direct`  direct  |  needs_review
@@ -2053,23 +2060,24 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
-- **Overlaps other committees:** BA00 6320-6329 (related); BA00/BA04 6320-6329 (related); WM00/WM02 6320-6324 (direct)
+- **Overlaps other committees:** BA00 6320-6329 (related); BA00/BA04 6320-6329 (related); WM00/WM02 6320-6324 (related)
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00/IF14:8000-8099:direct`  direct  |  needs_review
+#### `IF00/IF14:8000-8099:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee IF14 (Health)
 - **SIC range:** 8000-8099
 - **Official SIC titles covered:** 8000 Services-Health Services; 8011 Services-Offices & Clinics Of Doctors Of Medicine; 8050 Services-Nursing & Personal Care Facilities; 8051 Services-Skilled Nursing Care Facilities; 8060 Services-Hospitals; 8062 Services-General Medical & Surgical Hospitals, Nec; 8071 Services-Medical Laboratories; 8082 Services-Home Health Care Services; 8090 Services-Misc Health & Allied Services, Nec; 8093 Services-Specialty Outpatient Facilities, Nec
-- **Rationale:** Health services and facilities. Official SIC titles in 8000-8099: 8000 Services-Health Services; 8011 Services-Offices & Clinics Of Doctors Of Medicine; 8050 Services-Nursing & Personal Care Facilities; 8051 Services-Skilled Nursing Care Facilities; 8060 Services-Hospitals; 8062 Services-General Medical & Surgical Hospitals, Nec; +4 more.
-- **Official jurisdiction wording used:** (1) Biomedical research and development. (3) Health and health facilities. (6) Exploration, production, storage, supply, marketing, pricing, and regulation of energy resources, including all fossil fuels, solar energy, and other unconventional or renewable energy resources. (9) The generation and marketing of power; reliability and interstate transmission of, and ratemaking for, all power. (10) ... all functions of the Federal Energy Regulatory Commission. (13) Regulation of the domestic nuclear energy industry. (14) Regulation of interstate and foreign communications. (15) Travel and tourism.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(1),(3),(12); subcommittee name  <https://energycommerce.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **Rationale:** Health services and facilities: the subcommittee's published jurisdiction is 'the health sector broadly', including hospital construction and HHS. Official SIC titles in 8000-8099: 8000 Services-Health Services; 8011 Services-Offices & Clinics Of Doctors Of Medicine; 8050 Services-Nursing & Personal Care Facilities; 8051 Services-Skilled Nursing Care Facilities; 8060 Services-Hospitals; 8062 Services-General Medical & Surgical Hospitals, Nec; +4 more.
+- **Official jurisdiction wording used:** The health sector broadly, including private and public health insurance (Patient Protection and Affordable Care Act, Medicare, Medicaid, CHIP); biomedical research and development; hospital construction; mental health; health information technology, privacy, and cybersecurity; medical malpractice and medical malpractice insurance; the 340B drug discount program; the regulation of food, drugs, and cosmetics; drug abuse; the Department of Health and Human Services; the National Institutes of Health; the Centers for Disease Control; Indian Health Service; and all aspects of the above-referenced jurisdiction related to the Department of Homeland Security.
+- **Citation / source:** House Committee on Energy and Commerce, Health Subcommittee jurisdiction page (read 2026-10-07); Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(1),(3)  <https://energycommerce.house.gov/committees/subcommittee/health>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
-- **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
+- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (related)
+- **Scrutiny:** `broad_range`; `mixed_industries`; `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07, round 2). All ten official SIC titles in 8000-8099 are health-service classifications. Re-sourced from the subcommittee's published jurisdiction. The published text says 'the health sector broadly' but does not use the words 'health delivery systems'.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 
@@ -2274,7 +2282,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 0 securities (no current security in this range)
 - **Trades matched:** 0 by 0 politicians (primary match for 0).
-- **Overlaps other committees:** AG00 2090-2099 (related); AG00/AG03 2090-2099 (direct)
+- **Overlaps other committees:** AG00 2090-2099 (related); AG00/AG03 2090-2099 (related)
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -2336,20 +2344,20 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DLB.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `JU00/JU03:7370-7373:related`  related  |  needs_review
+#### `JU00/JU03:7370-7373:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee JU03 (Courts, Intellectual Property, Artificial Intelligence, and the Internet)
 - **SIC range:** 7370-7373
 - **Official SIC titles covered:** 7370 Services-Computer Programming, Data Processing, Etc.; 7371 Services-Computer Programming Services; 7372 Services-Prepackaged Software; 7373 Services-Computer Integrated Systems Design
-- **Rationale:** Computer, software and internet services: the subcommittee's 'Artificial Intelligence, and the Internet'. Official SIC titles in 7370-7373: 7370 Services-Computer Programming, Data Processing, Etc.; 7371 Services-Computer Programming Services; 7372 Services-Prepackaged Software; 7373 Services-Computer Integrated Systems Design.
-- **Official jurisdiction wording used:** (14) Patents, the Patent and Trademark Office, copyrights, and trademarks. (16) Protection of trade and commerce against unlawful restraints and monopolies.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(l)(14); subcommittee name  <https://judiciary.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **Rationale:** Computer, software and internet services: the committee's Rules of Procedure give the subcommittee jurisdiction over 'information technology' and 'emerging technologies'. Official SIC titles in 7370-7373: 7370 Services-Computer Programming, Data Processing, Etc.; 7371 Services-Computer Programming Services; 7372 Services-Prepackaged Software; 7373 Services-Computer Integrated Systems Design.
+- **Official jurisdiction wording used:** administration of U.S. Courts, Legal Services Corporation, Federal Rules of Evidence, Civil and Appellate Procedure, judicial ethics, patents, trademarks and the Lanham Act, trade secrets, copyright, intellectual property enforcement, information technology, emerging technologies, other appropriate matters as referred by the Chair, and relevant oversight.
+- **Citation / source:** Rules of Procedure, Committee on the Judiciary, 119th Congress (adopted January 15, 2025), section VI (Subcommittees), Subcommittee on Courts, Intellectual Property, Artificial Intelligence, and the Internet  <https://judiciary.house.gov/sites/evo-subsites/judiciary.house.gov/files/evo-media-document/119-hjc-rules_adopted.pdf>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 75 securities (7370 Services-Computer Programming, Data Processing, Etc. x11, 7371 Services-Computer Programming Services x7, 7372 Services-Prepackaged Software x49, 7373 Services-Computer Integrated Systems Design x8)
 - **Trades matched:** 8 by 1 politician (primary match for 8). Examples: ACIW, ADBE, ADSK, ALKT, APP, APPF, AZPN, BBAI.
 - **Overlaps other committees:** AS00/AS35 7373-7373 (related); IF00/IF16 7370-7373 (related)
-- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
-- **Review note:** Needs more source review (owner decision 2026-10-07): based only on 'Artificial Intelligence, and the Internet' in the subcommittee name; verify the published jurisdiction before relying on it. Earlier history: Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP.
+- **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07, round 2), changed from related. Re-sourced to the 119th Congress Judiciary Committee Rules of Procedure, which name information technology and emerging technologies. All four official SIC titles in 7370-7373 are computer programming, software, data-processing or systems-design classifications. Earlier history: Needs more source review (owner decision 2026-10-07): based only on 'Artificial Intelligence, and the Internet' in the subcommittee name; verify the published jurisdiction before relying on it. Earlier history: Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 
@@ -2844,19 +2852,20 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `SY00/SY16:3760-3769:direct`  direct  |  needs_review
+#### `SY00/SY16:3760-3769:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee SY16 (Space and Aeronautics)
 - **SIC range:** 3760-3769
 - **Official SIC titles covered:** 3760 Guided Missiles & Space Vehicles & Parts
-- **Rationale:** Space: missiles and space vehicles. Official SIC titles in 3760-3769: 3760 Guided Missiles & Space Vehicles & Parts.
-- **Official jurisdiction wording used:** (1) All energy research, development, and demonstration. (2) Astronautical research and development. (3) Civil aviation research and development. (8) National Aeronautics and Space Administration. (12) Outer space, including exploration and control thereof. (14) Scientific research, development, and demonstration.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(p)(2),(3),(12); subcommittee name  <https://science.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **Rationale:** Space: missiles and space vehicles; the subcommittee's published jurisdiction covers NASA and its contractors and the exploration and use of outer space. Official SIC titles in 3760-3769: 3760 Guided Missiles & Space Vehicles & Parts.
+- **Official jurisdiction wording used:** Shall have jurisdiction over the following subject matters: all matters relating to astronautical and aeronautical research and development; national space policy, including access to space; sub-orbital access and applications; National Aeronautics and Space Administration and its contractor and government-operated labs; space commercialization, including commercial space activities relating to the Department of Transportation and the Department of Commerce; exploration and use of outer space; international space cooperation; the National Space Council; space applications, space communications and related matters; Earth remote sensing policy; civil aviation including unmanned aerial systems, research, development, and demonstration; research, development, and demonstration programs of the Federal Aviation Administration; space law; other appropriate matters as referred by the Chair; and relevant oversight.
+- **Citation / source:** House Committee on Science, Space, and Technology, Subcommittee on Space and Aeronautics jurisdiction page (read 2026-10-07); Rules of the House of Representatives, 119th Congress, Rule X, clause 1(p)(2),(8),(12)  <https://science.house.gov/subcommittee-space-aeronautics>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 2 securities (3760 Guided Missiles & Space Vehicles & Parts x2)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: LMT, VOYG.
 - **Overlaps other committees:** AS00 3760-3769 (direct); AS00/AS29 3760-3769 (direct); FA00 3760-3769 (related); AP00/AP02 3760-3769 (direct); AP00/AP19 3760-3769 (related)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
+- **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07, round 2). Re-sourced to the subcommittee's published jurisdiction (NASA and its contractors, outer space). The only official SIC title in 3760-3769 is 3760 Guided Missiles & Space Vehicles & Parts. Missile makers match through the research and space-vehicle clauses.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 
@@ -2873,7 +2882,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
+- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (related)
 - **Scrutiny:** `mixed_industries`; `related_level`; `overlaps_other_committee`
 - **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -2904,7 +2913,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
+- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (related)
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Review note:** Downgraded from direct to related (owner decision 2026-10-07): direct jurisdiction over private health providers is not established; the VA is itself the provider. Consistent with the committee-level related row.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
@@ -2952,7 +2961,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `WM00/WM02:6320-6324:direct`  direct  |  needs_review
+#### `WM00/WM02:6320-6324:related`  related  |  reviewed
 
 - **Scope:** subcommittee WM02 (Health)
 - **SIC range:** 6320-6324
@@ -2964,10 +2973,11 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 2 by 1 politician (primary match for 2). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
 - **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); BA00 6320-6329 (related); BA00/BA04 6320-6329 (related)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
+- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): health-plan insurers are related, consistent with the Financial Services decision; Ways and Means oversees Medicare payment, not insurers.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `WM00/WM02:8000-8099:direct`  direct  |  needs_review
+#### `WM00/WM02:8000-8099:related`  related  |  reviewed
 
 - **Scope:** subcommittee WM02 (Health)
 - **SIC range:** 8000-8099
@@ -2979,8 +2989,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 2 by 2 politicians (primary match for 2). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
 - **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related)
-- **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
-- **Review note:** Needs more source review (owner decision 2026-10-07): verify the Health Subcommittee's published jurisdiction (Medicare Parts A and B); Rule X gives Ways and Means only payroll-funded health programs. Do not treat as direct until verified.
+- **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, round 2): Rule X gives Ways and Means only payroll-funded health programs and names no providers; Energy and Commerce carries the direct health-services signal. Earlier history: Needs more source review (owner decision 2026-10-07): verify the Health Subcommittee's published jurisdiction (Medicare Parts A and B); Rule X gives Ways and Means only payroll-funded health programs. Do not treat as direct until verified.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 

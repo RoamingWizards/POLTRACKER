@@ -29,11 +29,11 @@ def mrow(code, start, end, level="direct", sub=None, basis="rule_x_text", note=N
 
 # --- the review fields in the mapping format -------------------------------------------------------------------
 
-def test_shipped_review_status_is_consistent_and_limited_to_the_round_1_decisions():
+def test_shipped_review_status_is_consistent_and_limited_to_the_recorded_decisions():
     rows = load_rows(REAL)
     assert len(rows) == 191
     reviewed = [r for r in rows if r["review_status"] == "reviewed"]
-    assert len(reviewed) == 47 and len(rows) - len(reviewed) == 144
+    assert len(reviewed) == 60 and len(rows) - len(reviewed) == 131
     assert all((r["review_status"] == "reviewed") == (r["reviewed_at"] is not None) for r in rows)
     assert all(r["reviewed_by"] and r["review_note"] for r in reviewed)  # every reviewed row says who decided and why
     assert all(r["reviewed_by"] is None for r in rows if r["review_status"] == "needs_review")
@@ -43,7 +43,10 @@ def test_shipped_review_status_is_consistent_and_limited_to_the_round_1_decision
 def test_the_shipped_basis_matches_what_was_actually_read():
     rows = load_rows(REAL)
     subs = [r for r in rows if r["subcommittee_code"]]
-    assert {r["jurisdiction_basis"] for r in subs if r["committee_code"] != "PW00"} == {"subcommittee_name"}  # only Transportation publishes subcommittee text
+    # Transportation publishes its subcommittee text; four others were re-sourced to official published text in round 2 (Health, Comms and Tech, Courts/IP/AI, Space).
+    resourced = {(r["committee_code"], r["subcommittee_code"]) for r in subs if r["committee_code"] != "PW00" and r["jurisdiction_basis"] == "committee_published_text"}
+    assert resourced == {("IF00", "IF14"), ("IF00", "IF16"), ("JU00", "JU03"), ("SY00", "SY16")}
+    assert {r["jurisdiction_basis"] for r in subs if r["committee_code"] != "PW00" and (r["committee_code"], r["subcommittee_code"]) not in resourced} == {"subcommittee_name"}
     assert {r["jurisdiction_basis"] for r in subs if r["committee_code"] == "PW00"} == {"committee_published_text"}
     committee_level = {r["committee_code"]: r["jurisdiction_basis"] for r in rows if not r["subcommittee_code"]}
     assert committee_level["AS00"] == "rule_x_text" and committee_level["BA00"] == "rule_x_text"
@@ -361,11 +364,10 @@ def test_round_1_downgrades_and_removals():
     assert not any(k.startswith(("SY00:8731", "SY00/SY15:8731")) for k in rows)  # clinical-research-contractor mapping removed consistently
 
 
-def test_round_1_rows_needing_more_source_review_stay_needs_review_with_a_note():
+def test_round_1_rows_needing_more_source_review_were_decided_in_round_2_not_before():
     rows = shipped()
-    for key in ["WM00/WM02:8000-8099:direct", "AG00/AG22:6221-6221:direct", "IF00/IF16:7370-7373:related", "JU00/JU03:7370-7373:related"]:
-        assert rows[key]["review_status"] == "needs_review" and rows[key]["review_note"].startswith("Needs more source review")
-    assert rows["AG00/AG03:2090-2099:direct"]["review_status"] == "needs_review"  # not named in the decisions: left alone
+    assert "WM00/WM02:8000-8099:related" in rows and "AG00/AG22:6221-6221:related" in rows  # round 2 downgrades
+    assert "IF00/IF16:7370-7373:related" in rows and "JU00/JU03:7370-7373:direct" in rows  # round 2: related kept / re-sourced and approved
 
 
 def test_review_category_only_credits_reviewed_direct_matches():
@@ -384,27 +386,56 @@ def test_review_category_only_credits_reviewed_direct_matches():
 
 # --- round 2: reviewing an explicit set of rows --------------------------------------------------------------------
 
-def test_the_round_2_table_covers_exactly_the_chosen_rows_and_changes_no_mapping(session_factory):
-    path = ROOT / "docs" / "review" / "round2" / "priority_recommendations_2026.1-draft.json"
-    recs_ = rv.load_recommendations(path)
-    before = hashlib.sha256(REAL.read_bytes()).hexdigest()
+def test_the_archived_round_2_proposals_are_well_formed_and_select_rows_orders_current_rows(session_factory):
+    # The round 2 proposals were written against the pre-decision rows (some were then downgraded or re-sourced), so only their format is checked.
+    recs_ = rv.load_recommendations(ROOT / "docs" / "review" / "round2" / "priority_recommendations_2026.1-draft.json")
+    assert len(recs_) == 37 and all(rec["action"] in rv.ACTIONS and rec["reason"].strip() for rec in recs_.values())
     review_ = rv.build_review(session_factory, load_rows(REAL), json.loads((ROOT / "data" / "sic_codes.json").read_text())["codes"])
-    selected = rv.select_rows(review_, list(recs_))
-    assert len(selected) == len(recs_) == 37 and all(r.mapping.review_status == "needs_review" for r in selected)  # only unreviewed rows
-    table = rv.render_priority_table(review_, recs_, selected, "Round 2 review table")
-    assert table.startswith("# Round 2 review table") and table.count("\n| ") >= 37
-    assert hashlib.sha256(REAL.read_bytes()).hexdigest() == before
+    before = hashlib.sha256(REAL.read_bytes()).hexdigest()
+    keys = ["IF00:1311-1311:direct", "IF00:2833-2836:direct", "WM00/WM02:2833-2836:related"]
+    selected = rv.select_rows(review_, keys)
+    assert [r.mapping.relevance_level for r in selected] == ["direct", "direct", "related"]
+    table = rv.render_priority_table(review_, {k: {"key": k, "action": "NEEDS MORE SOURCE REVIEW" if "related" not in k else "KEEP RELATED", "reason": "x"} for k in keys}, selected, "Round N")
+    assert table.startswith("# Round N") and hashlib.sha256(REAL.read_bytes()).hexdigest() == before
 
 
 def test_select_rows_rejects_an_unknown_key_and_validate_rejects_a_missing_recommendation(session_factory):
     review_ = rv.build_review(session_factory, load_rows(REAL), json.loads((ROOT / "data" / "sic_codes.json").read_text())["codes"])
     with pytest.raises(rv.RecommendationError):
         rv.select_rows(review_, ["XX00:1111-1111:direct"])
-    one = rv.select_rows(review_, ["IF00:1311-1311:direct", "AS00:3812-3812:direct"])
+    one = rv.select_rows(review_, ["IF00:1311-1311:direct", "IF00:2833-2836:direct"])
     with pytest.raises(rv.RecommendationError):
         rv.validate_recommendations(review_, {"IF00:1311-1311:direct": {"key": "IF00:1311-1311:direct", "action": "APPROVE DIRECT", "reason": "x"}}, one)
 
 
-def test_the_ag03_2090_note_records_the_reconciliation_and_the_row_is_still_needs_review():
-    row = shipped()["AG00/AG03:2090-2099:direct"]
-    assert row["review_status"] == "needs_review" and "reconciled" in row["review_note"] and "related" in row["review_note"]
+def test_the_ag03_2090_row_was_downgraded_in_round_2_and_keeps_its_reconciliation_note():
+    row = shipped()["AG00/AG03:2090-2099:related"]  # downgraded in round 2; the earlier reconciliation note is kept in its history
+    assert row["review_status"] == "reviewed" and "reconciled" in row["review_note"] and "Downgraded" in row["review_note"]
+
+
+# --- round 2 decisions -------------------------------------------------------------------------------------------
+
+def test_round_2_downgrades_are_reviewed_related_rows():
+    rows = shipped()
+    for key in ["AS00:3812-3812:related", "AG00:6221-6221:related", "AG00/AG22:6221-6221:related", "AG00:2040-2049:related", "AG00:3523-3523:related",
+                "WM00/WM02:8000-8099:related", "WM00/WM02:6320-6324:related", "AG00/AG03:2090-2099:related"]:
+        assert rows[key]["review_status"] == "reviewed" and "round 2" in rows[key]["review_note"], key
+    assert not any(k in rows for k in ["AS00:3812-3812:direct", "AG00:6221-6221:direct", "WM00/WM02:8000-8099:direct"])
+
+
+def test_round_2_resourced_rows_cite_the_official_subcommittee_text_not_the_name():
+    rows = shipped()
+    health, tech, jud, space = (rows[k] for k in ["IF00/IF14:8000-8099:direct", "IF00/IF16:7370-7373:related", "JU00/JU03:7370-7373:direct", "SY00/SY16:3760-3769:direct"])
+    for r in (health, tech, jud, space):
+        assert r["review_status"] == "reviewed" and r["jurisdiction_basis"] == "committee_published_text" and r["jurisdiction_text"] and "name" not in r["jurisdiction_basis"]
+    assert health["jurisdiction_text"].startswith("The health sector broadly") and "technology generally" in tech["jurisdiction_text"]
+    assert "information technology, emerging technologies" in jud["jurisdiction_text"] and "National Aeronautics and Space Administration" in space["jurisdiction_text"]
+    assert tech["relevance_level"] == "related"  # must not trigger a flag by itself
+    assert "IF00:8000-8099:direct" in rows and rows["IF00:8000-8099:direct"]["review_status"] == "reviewed"
+
+
+def test_round_2_leaves_the_other_proposals_unapplied():
+    rows = shipped()
+    for key in ["IF00:2833-2836:direct", "IF00/IF14:2833-2836:direct", "SY00:3760-3769:direct", "AG00:0100-0299:direct", "AG00:2010-2029:direct", "PW00:4400-4499:direct",
+                "WM00/WM02:2833-2836:related", "WM00/WM02:3841-3845:related", "AS00:3730-3732:direct", "IF00:1311-1311:direct"]:
+        assert rows[key]["review_status"] == "needs_review", key
