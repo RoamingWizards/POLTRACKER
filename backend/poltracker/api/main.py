@@ -104,7 +104,7 @@ def _politician_out(session: Session, pol: Politician) -> PoliticianOut:
         trade_count=count, latest_trade_date=latest,
         bioguide_id=pol.bioguide_id, district=pol.district, official_url=pol.official_url, active=pol.active,
         term_start_year=pol.term_start_year, term_end_year=pol.term_end_year, enriched_at=pol.enriched_at,
-        enrichment_source=pol.enrichment_source, enrichment_status=pol.enrichment_status,
+        enrichment_source=pol.enrichment_source, enrichment_status=pol.enrichment_status, enrichment_method=pol.enrichment_method,
     )
 
 

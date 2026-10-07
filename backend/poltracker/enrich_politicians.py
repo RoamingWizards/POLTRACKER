@@ -388,7 +388,8 @@ def main(argv: list[str] | None = None) -> int:
                 session.rollback()
                 print(f"Overrides rejected, nothing was recorded: {exc}")
                 return 3
-        print(f"Recorded {len(rows)} reviewed override(s).")
+        print(f"Recorded {len(rows)} reviewed override(s)."
+              + (f" Skipped {len(rows.skipped)} for politicians not in this database." if rows.skipped else ""))
     report = enrich_politicians(
         factory, provider, None if args.no_committees else clerk,
         stale_days=settings.politician_enrich_stale_days, retry_days=settings.politician_retry_days,

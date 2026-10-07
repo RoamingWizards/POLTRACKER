@@ -1,5 +1,6 @@
 """Enriched fields are exposed by the API; un-enriched politicians serialize cleanly with nulls and no committees."""
 
+import json
 from datetime import datetime
 
 import pytest
@@ -23,7 +24,7 @@ def client(session_factory):
         s.add_all([
             Politician(canonical_key="house:a", name="Enriched Person", chamber="house", party="D", state="TX", bioguide_id="D000399",
                        district="37", official_url="https://www.congress.gov/member/x/D000399", active=True, term_start_year=2025,
-                       enriched_at=datetime(2026, 10, 7), enrichment_source="congress.gov", enrichment_status="matched"),
+                       enriched_at=datetime(2026, 10, 7), enrichment_source="congress.gov", enrichment_status="matched", enrichment_method="override", enrichment_note="private reason text"),
             Politician(canonical_key="house:b", name="Plain Person", chamber="house"),
         ])
         s.flush()
@@ -42,7 +43,8 @@ def test_an_enriched_politician_serializes_official_fields_and_ordered_committee
     assert body["enrichment_status"] == "matched" and body["enrichment_source"] == "congress.gov"
     assert [(c["committee_name"], c["subcommittee_name"]) for c in body["committees"]] == [
         ("Committee on Agriculture", None), ("Committee on Agriculture", "Nutrition"), ("Committee on Zebras", None)]
-    assert "enrichment_note" not in body
+    assert body["enrichment_method"] == "override"
+    assert "enrichment_note" not in body and "private reason" not in json.dumps(body)
 
 
 def test_an_unenriched_politician_has_nulls_and_no_committees(client):

@@ -1,97 +1,111 @@
 [
  {
-  "politician_id": 7,
+  "canonical_key": "house:richardallen",
+  "politician_name": "Richard W. Allen",
   "bioguide_id": "A000372",
   "reason": "Rick is a short form of Richard; middle initial W matches; the only Allen in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/A000372",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 9,
+  "canonical_key": "senate:amitchellmcconnelljr",
+  "politician_name": "A. Mitchell McConnell Jr.",
   "bioguide_id": "M000355",
   "reason": "Mitch is a short form of Mitchell (A. Mitchell McConnell Jr.); the only McConnell in the 119th Senate",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/M000355",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 36,
+  "canonical_key": "senate:thomastuberville",
+  "politician_name": "Thomas H Tuberville",
   "bioguide_id": "T000278",
   "reason": "Tommy is a short form of Thomas; the only Tuberville in the 119th Senate",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/T000278",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 45,
+  "canonical_key": "house:danielcrenshaw",
+  "politician_name": "Daniel Crenshaw",
   "bioguide_id": "C001120",
   "reason": "Dan is a short form of Daniel; the only Crenshaw in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/C001120",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 55,
+  "canonical_key": "house:matthewrobertvanepps",
+  "politician_name": "Matthew Robert Van Epps",
   "bioguide_id": "V000139",
   "reason": "Matt is a short form of Matthew; the only Van Epps in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/V000139",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 57,
+  "canonical_key": "senate:jamesbanks",
+  "politician_name": "James Banks",
   "bioguide_id": "B001299",
   "reason": "Jim is a short form of James; the only Banks in the 119th Senate",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/B001299",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 64,
+  "canonical_key": "house:valeriehoyle",
+  "politician_name": "Valerie Hoyle",
   "bioguide_id": "H001094",
   "reason": "Val is a short form of Valerie; the only Hoyle in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/H001094",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 70,
+  "canonical_key": "house:elizabethfletcher",
+  "politician_name": "Elizabeth Fletcher",
   "bioguide_id": "F000468",
   "reason": "Lizzie is a short form of Elizabeth; the only Fletcher in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/F000468",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 77,
+  "canonical_key": "house:gregsteube",
+  "politician_name": "Greg Steube",
   "bioguide_id": "S001214",
   "reason": "Greg is a short form of Gregory (official name W. Gregory Steube); the only Steube in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/S001214",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 90,
+  "canonical_key": "house:jamesfrenchhill",
+  "politician_name": "James French Hill",
   "bioguide_id": "H001072",
   "reason": "Middle name French matches; J. is the initial of James; the only Hill in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/H001072",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 92,
+  "canonical_key": "house:jamesjordan",
+  "politician_name": "James D Jordan",
   "bioguide_id": "J000289",
   "reason": "Jim is a short form of James; the only Jordan in the 119th House; the middle initial D cannot be checked against the official record",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/J000289",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 96,
+  "canonical_key": "house:robbresnahan",
+  "politician_name": "Rob Bresnahan",
   "bioguide_id": "B001327",
   "reason": "Rob is a short form of Robert; the only Bresnahan in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/B001327",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 98,
+  "canonical_key": "house:peterallenstauber",
+  "politician_name": "Peter Allen Stauber",
   "bioguide_id": "S001212",
   "reason": "Pete is a short form of Peter; the only Stauber in the 119th House",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/S001212",
   "reviewed_at": "2026-10-07"
  },
  {
-  "politician_id": 101,
+  "canonical_key": "senate:rafaelcruz",
+  "politician_name": "Rafael E Cruz",
   "bioguide_id": "C001098",
   "reason": "Rafael E Cruz is Senator Ted Cruz (Rafael Edward Cruz, known as Ted); the only Cruz in the 119th Senate; this link rests on public knowledge, not the official record",
   "source": "Owner-reviewed 2026-10-07; official record https://api.congress.gov/v3/member/C001098",
