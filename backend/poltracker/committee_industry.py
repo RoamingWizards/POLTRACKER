@@ -15,7 +15,7 @@ import re
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 
 from sqlalchemy import delete, select
@@ -77,6 +77,8 @@ class Assignment:
     subcommittee_code: str | None = None
     subcommittee_name: str | None = None
     chamber: str = "house"
+    start_date: date | None = None  # when the seat began; None when the source does not say (the House Clerk snapshot never does)
+    end_date: date | None = None
 
 
 @dataclass(frozen=True)
@@ -272,4 +274,4 @@ def load_mappings(session: Session, version: str | None = None) -> list[Mapping]
 
 def load_assignments(session: Session, politician_id: int) -> list[Assignment]:
     rows = session.scalars(select(CommitteeAssignment).where(CommitteeAssignment.politician_id == politician_id))
-    return [Assignment(r.committee_code, r.committee_name, r.subcommittee_code or None, r.subcommittee_name, r.chamber) for r in rows]
+    return [Assignment(r.committee_code, r.committee_name, r.subcommittee_code or None, r.subcommittee_name, r.chamber, r.start_date, r.end_date) for r in rows]

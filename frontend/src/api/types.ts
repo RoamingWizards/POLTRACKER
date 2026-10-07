@@ -27,6 +27,9 @@ export interface Trade {
   amount_min: number | null;
   amount_max: number | null;
   source_url: string | null;
+  /** Same politician + security + transaction date + type. Display grouping only: rows are never merged. */
+  group_key?: string | null;
+  group_size?: number | null;
   /** Null until the context analyzer has run. */
   context?: TradeContext | null;
 }
@@ -63,6 +66,10 @@ export interface TradeContext {
   excess_horizon_days: number | null;
   signals: Record<string, boolean | null>;
   signal_count: number;
+  secondary_signal_count: number | null;
+  committee_temporal_status: 'temporally_verified' | 'current_assignment_only' | 'unavailable' | null;
+  meets_flag_rule: boolean | null;
+  flag_pending_temporal_verification: boolean;
   flagged_for_contextual_review: boolean;
   evidence: ContextEvidence[];
   notice: string;

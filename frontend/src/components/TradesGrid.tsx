@@ -20,12 +20,12 @@ function contextColumn(open: (t: Trade) => void): GridColDef<Trade> {
   return {
     field: 'context',
     headerName: 'Context',
-    width: 150,
+    width: 200,
     sortable: false,
     renderCell: ({ row }) => {
       const c = row.context;
       if (!c) return '—';
-      const label = c.flagged_for_contextual_review ? 'Flagged for review' : c.committee_relevance ? 'Committee-relevant' : c.committee_relevance === null ? 'Unknown' : 'No flag';
+      const label = c.flagged_for_contextual_review ? 'Flagged for review' : c.flag_pending_temporal_verification ? 'Rule met, timing unverified' : c.committee_relevance ? 'Committee-relevant' : c.committee_relevance === null ? 'Unknown' : 'No flag';
       return (
         <Chip
           size="small"

@@ -51,7 +51,7 @@ def test_upgrade_adds_empty_nullable_columns_and_preserves_every_row_and_relatio
         assert [tuple(r) for r in c.exec_driver_sql("select id, ticker, name, price_status from securities order by id")] == before
         assert [tuple(r) for r in c.exec_driver_sql("select * from trades")] == tbefore
         assert c.exec_driver_sql("select count(*) from securities where profile_status is not null or cik is not null or sector is not null").scalar() == 0
-        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0012"
+        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0013"
 
 
 def test_downgrade_removes_only_the_new_columns(db):

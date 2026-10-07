@@ -13,7 +13,7 @@ from ..config import Settings, get_settings
 from ..db import make_session_factory
 from ..models import CommitteeIndustryMapping, IngestState, PriceBar, Politician, Security, Trade, TradeContext
 from ..performance import load_benchmark, load_series, trade_performance
-from ..trade_context import NOTICE, SIGNALS, ContextConfig
+from ..trade_context import NOTICE, SIGNALS, ContextConfig, trade_group_key
 from .ordering import nulls_last, text_order
 from .schemas import (
     ContextEvidenceOut,
@@ -62,6 +62,14 @@ def _context_key(session: Session) -> tuple[str, str] | None:
 
 def _trade_outs(session: Session, trades: list[Trade]) -> list[TradeOut]:
     outs = [TradeOut.model_validate(t) for t in trades]
+    if trades:  # how many disclosed rows share each group key (display only; nothing is merged)
+        pols, dates = {t.politician_id for t in trades}, {t.transaction_date for t in trades}
+        counts = Counter(trade_group_key(p, sid, tk, d, ty) for p, sid, tk, d, ty in session.execute(
+            select(Trade.politician_id, Trade.security_id, Trade.ticker, Trade.transaction_date, Trade.transaction_type)
+            .where(Trade.politician_id.in_(pols), Trade.transaction_date.in_(dates))))
+        for o, t in zip(outs, trades):
+            o.group_key = trade_group_key(t.politician_id, t.security_id, t.ticker, t.transaction_date, t.transaction_type)
+            o.group_size = counts[o.group_key]
     key = _context_key(session)
     if key is None or not outs:
         return outs
@@ -83,6 +91,8 @@ def _trade_outs(session: Session, trades: list[Trade]) -> list[TradeOut]:
                 excess_return=c.excess_return, excess_return_direction_adjusted=c.excess_return_direction_adjusted,
                 excess_horizon_days=c.performance_horizon_days,
                 signals={name: getattr(c, name) for name in SIGNALS}, signal_count=c.signal_count,
+                secondary_signal_count=c.secondary_signal_count, committee_temporal_status=c.committee_temporal_status, meets_flag_rule=c.meets_flag_rule,
+                flag_pending_temporal_verification=bool(c.meets_flag_rule and not c.flagged_for_contextual_review),
                 flagged_for_contextual_review=c.flagged_for_contextual_review,
                 evidence=[ContextEvidenceOut(signal_type=e.signal_type, evidence_type=e.evidence_type, committee_code=e.committee_code,
                                              subcommittee_code=e.subcommittee_code, source_url=e.source_url, description=e.description,

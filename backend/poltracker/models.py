@@ -316,6 +316,10 @@ class TradeContext(Base):
     performance_horizon_days: Mapped[int | None] = mapped_column()
 
     signal_count: Mapped[int] = mapped_column(default=0)  # how many of the four signals are True
+    secondary_signal_count: Mapped[int | None] = mapped_column()  # how many of size / delay / excess are True (NULL on rows made before this column)
+    # How well the committee seat behind committee_relevance is tied to the transaction date: temporally_verified | current_assignment_only | unavailable.
+    committee_temporal_status: Mapped[str | None] = mapped_column(String(30))
+    meets_flag_rule: Mapped[bool | None] = mapped_column(Boolean)  # committee + enough secondary signals, before the temporal check
     flagged_for_contextual_review: Mapped[bool] = mapped_column(Boolean, default=False)
 
     evidence: Mapped[list["TradeContextEvidence"]] = relationship(

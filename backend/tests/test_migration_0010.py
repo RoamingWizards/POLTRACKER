@@ -47,7 +47,7 @@ def test_upgrade_adds_an_empty_table_and_changes_no_existing_data(db):
     assert "committee_industry_mappings" in sa.inspect(engine).get_table_names() and snapshot(engine) == before
     with engine.connect() as c:
         assert c.exec_driver_sql("select count(*) from committee_industry_mappings").scalar() == 0
-        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0012"
+        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0013"
 
 
 def test_downgrade_removes_only_the_new_table(db):
