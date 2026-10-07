@@ -267,3 +267,80 @@ class CommitteeIndustryMapping(Base):
     jurisdiction_basis: Mapped[str | None] = mapped_column(String(30))
     mapping_version: Mapped[str] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class TradeContext(Base):
+    """Deterministic context signals for one trade under one context-engine version and one committee-mapping version.
+
+    Computed only from stored public data (the trade's disclosed range and dates, the politician's committee seats, the security's SIC
+    code, cached prices). A signal is True, False, or NULL (unknown). `flagged_for_contextual_review` is a review aid, not a finding:
+    it never implies wrongdoing. Rows of an older context version are kept, never overwritten by a newer one.
+    """
+
+    __tablename__ = "trade_context"
+    __table_args__ = (
+        UniqueConstraint("trade_id", "context_version", "mapping_version"),
+        Index("ix_trade_context_version_flagged", "context_version", "mapping_version", "flagged_for_contextual_review"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trade_id: Mapped[int] = mapped_column(ForeignKey("trades.id"), index=True)
+    context_version: Mapped[str] = mapped_column(String(60))
+    mapping_version: Mapped[str | None] = mapped_column(String(40))  # the committee/industry mapping version evaluated
+    result_digest: Mapped[str] = mapped_column(String(64))  # hash of the whole result; a rerun leaves a row alone when it is unchanged
+    analyzed_at: Mapped[datetime] = mapped_column(DateTime)
+
+    committee_relevance: Mapped[bool | None] = mapped_column(Boolean)
+    trade_size_anomaly: Mapped[bool | None] = mapped_column(Boolean)
+    disclosure_delay_signal: Mapped[bool | None] = mapped_column(Boolean)
+    excess_return_signal: Mapped[bool | None] = mapped_column(Boolean)
+
+    # committee_relevance detail
+    committee_relevance_reason: Mapped[str | None] = mapped_column(String(40))  # direct_match | no_direct_match | no_sic | no_committee_assignments | unmapped_committees
+    # trade size: the representative value is derived from a disclosed RANGE, never an exact transaction value
+    trade_size_value: Mapped[float | None] = mapped_column(Float)
+    trade_size_basis: Mapped[str | None] = mapped_column(String(30))  # range_midpoint | open_ended_lower_bound | exact_figure
+    trade_size_percentile: Mapped[float | None] = mapped_column(Float)  # 0-100, among the same politician's earlier trades
+    trade_size_sample_size: Mapped[int | None] = mapped_column()
+    trade_size_median: Mapped[float | None] = mapped_column(Float)
+    # disclosure delay
+    disclosure_delay_days: Mapped[int | None] = mapped_column()
+    # post-trade performance, from the transaction-date anchor to the latest cached bar (raw security figures)
+    performance_status: Mapped[str | None] = mapped_column(String(30))
+    security_return: Mapped[float | None] = mapped_column(Float)
+    spy_return: Mapped[float | None] = mapped_column(Float)
+    excess_return: Mapped[float | None] = mapped_column(Float)
+    excess_return_direction_adjusted: Mapped[float | None] = mapped_column(Float)  # separate view; +1 buys, -1 sells, NULL for exchanges
+    performance_anchor_date: Mapped[date | None] = mapped_column(Date)
+    performance_through_date: Mapped[date | None] = mapped_column(Date)  # anchor + horizon
+    performance_horizon_days: Mapped[int | None] = mapped_column()
+
+    signal_count: Mapped[int] = mapped_column(default=0)  # how many of the four signals are True
+    flagged_for_contextual_review: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    evidence: Mapped[list["TradeContextEvidence"]] = relationship(
+        back_populates="context", cascade="all, delete-orphan", order_by="TradeContextEvidence.id"
+    )
+
+
+class TradeContextEvidence(Base):
+    """Why a signal has its value. Mapping evidence is a self-contained snapshot (no foreign key to the mapping table, whose rows are
+    replaced when a mapping version is reloaded), so an explanation stays readable after the mapping changes."""
+
+    __tablename__ = "trade_context_evidence"
+    __table_args__ = (UniqueConstraint("trade_context_id", "signal_type", "evidence_key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trade_context_id: Mapped[int] = mapped_column(ForeignKey("trade_context.id", ondelete="CASCADE"), index=True)
+    trade_id: Mapped[int] = mapped_column(ForeignKey("trades.id"), index=True)
+    signal_type: Mapped[str] = mapped_column(String(30))  # committee_relevance | trade_size_anomaly | disclosure_delay_signal | excess_return_signal
+    evidence_type: Mapped[str] = mapped_column(String(30))  # reviewed_direct_mapping | reviewed_related_mapping | metric
+    evidence_key: Mapped[str] = mapped_column(String(60))  # mapping:<id> or metric: makes (context, signal, key) unique
+    committee_code: Mapped[str | None] = mapped_column(String(20))
+    subcommittee_code: Mapped[str | None] = mapped_column(String(20))
+    mapping_id: Mapped[int | None] = mapped_column()  # informational only: mapping rows are replaced on reload
+    source_url: Mapped[str | None] = mapped_column(String(500))
+    description: Mapped[str] = mapped_column(Text)
+    metadata_json: Mapped[str | None] = mapped_column(Text)
+
+    context: Mapped[TradeContext] = relationship(back_populates="evidence")
