@@ -222,7 +222,7 @@ Do not push further, merge to main, sign, or notarize until reviewed.
 ## [~] Phase 9A — Official politician enrichment (`politician-enrichment` branch)
 
 Migration 0006, Congress.gov + House Clerk providers, conservative matcher, `python -m poltracker.enrich_politicians`,
-Politician Detail profile. See `docs/POLITICIAN_ENRICHMENT.md`. No LLM, scoring or allegations. Awaiting review.
+Politician Detail profile. See `docs/POLITICIAN_ENRICHMENT.md`. Reviewed alias overrides (0007) and opt-in LLM-assisted identity resolution (0008) added; no trade analysis, scoring or allegations. Awaiting review.
 
 ---
 

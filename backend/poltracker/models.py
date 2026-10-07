@@ -79,6 +79,32 @@ class PoliticianAliasOverride(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+class PoliticianLlmSuggestion(Base):
+    """Cache and audit trail of LLM identity suggestions.
+
+    The raw suggestion is cached so the same unresolved name is never sent twice. It is only a suggestion: every use
+    re-runs the deterministic validation, and `outcome`/`reason` record the latest decision.
+    """
+
+    __tablename__ = "politician_llm_suggestions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    cache_key: Mapped[str] = mapped_column(String(64), unique=True)
+    politician_id: Mapped[int | None] = mapped_column(ForeignKey("politicians.id"), index=True)
+    incoming_name: Mapped[str] = mapped_column(String(200))
+    chamber: Mapped[str] = mapped_column(String(10))
+    candidate_ids: Mapped[str] = mapped_column(String(2000))  # comma-separated Bioguide IDs shown to the model
+    selected_bioguide_id: Mapped[str | None] = mapped_column(String(10))
+    confidence: Mapped[float | None] = mapped_column(Float)
+    explanation: Mapped[str | None] = mapped_column(String(2000))
+    alternates: Mapped[str | None] = mapped_column(String(500))  # comma-separated Bioguide IDs
+    model: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    outcome: Mapped[str | None] = mapped_column(String(12))  # accepted | rejected
+    reason: Mapped[str | None] = mapped_column(String(300))  # why it was rejected
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
 class CommitteeAssignment(Base):
     """One committee or subcommittee seat. A subcommittee row also carries its parent committee's name/code."""
 
