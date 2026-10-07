@@ -7,6 +7,7 @@ recorded with a reason. A missing API key or a provider outage is reported and c
 
 import argparse
 import logging
+from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
@@ -15,7 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from .config import get_settings
 from .db import make_session_factory
-from .models import CommitteeAssignment, Politician, _now
+from .models import CommitteeAssignment, Politician, PoliticianAliasOverride, _now
 from .politician_match import match_politician
 from .providers.base import ProviderError
 from .providers.politicians import CommitteeProvider, NotConfigured, PoliticianProvider
@@ -43,6 +44,8 @@ class EnrichmentReport:
     unresolved: list[Unresolved] = field(default_factory=list)
     committee_seats: int = 0
     committee_message: str = ""
+    overrides_applied: list[tuple[int, str, str]] = field(default_factory=list)  # (id, name, bioguide)
+    warnings: list[str] = field(default_factory=list)
     requests: int = 0
     dry_run: bool = False
 
@@ -55,12 +58,15 @@ class EnrichmentReport:
         )
 
 
-def _select(session: Session, now, stale_days, retry_days, force, only_ids, limit, report) -> list[Politician]:
+def _select(session: Session, now, stale_days, retry_days, force, only_ids, limit, report, overrides) -> list[Politician]:
     stmt = select(Politician).order_by(Politician.id)
     if only_ids:
         stmt = stmt.where(Politician.id.in_(only_ids))
     due = []
     for pol in session.scalars(stmt):
+        if pol.id in overrides and pol.enrichment_status != "matched":
+            due.append(pol)  # a reviewed override is applied on the next run, not after the retry window
+            continue
         if not force:
             if pol.enrichment_status == "matched" and pol.enriched_at and now - pol.enriched_at < timedelta(days=stale_days):
                 report.skipped_current += 1
@@ -88,7 +94,8 @@ def enrich_politicians(
     now = now or _now()
     report = EnrichmentReport(dry_run=dry_run)
     with session_factory() as session:
-        due = _select(session, now, stale_days, retry_days, force, only_ids, limit, report)
+        overrides = {o.politician_id: o for o in session.scalars(select(PoliticianAliasOverride))}
+        due = _select(session, now, stale_days, retry_days, force, only_ids, limit, report, overrides)
         report.considered = len(due)
         if not due:
             report.status, report.message = "nothing_to_do", "every politician is current or was tried recently"
@@ -105,19 +112,32 @@ def enrich_politicians(
         finally:
             report.requests = getattr(provider, "requests_made", 0)
 
+        roster_by_id = {m.bioguide_id: m for m in roster}
         taken = {
             b: pid for b, pid in session.execute(select(Politician.bioguide_id, Politician.id).where(Politician.bioguide_id.is_not(None)))
         }
         matched_ids: dict[int, str] = {}
         for pol in due:
-            result = match_politician(pol.name, pol.chamber, pol.state, roster)
-            status, note, member = result.status, result.note, result.member
+            result = match_politician(pol.name, pol.chamber, pol.state, roster)  # the deterministic matcher always runs first
+            status, note, member, method = result.status, result.note, result.member, result.rule
+            override = overrides.get(pol.id)
+            by_override = False
+            if override is not None and status == "unmatched":  # only for records the matcher could not resolve
+                status, note, member = _resolve_override(pol, override, roster_by_id)
+                by_override = member is not None
+                method = "override" if by_override else None
+            elif override is not None and member is not None and member.bioguide_id != override.bioguide_id:
+                report.warnings.append(
+                    f"#{pol.id} {pol.name}: override {override.bioguide_id} ignored; the automatic match {member.bioguide_id} was kept"
+                )
             if member is not None:
                 owner = taken.get(member.bioguide_id)
                 if owner is not None and owner != pol.id:
                     status, note, member = "conflict", f"{member.bioguide_id} ({member.full_name}) is already linked to politician #{owner}; not merged", None
+                    by_override = False
                 elif pol.bioguide_id and pol.bioguide_id != member.bioguide_id:
                     status, note, member = "conflict", f"already linked to {pol.bioguide_id}; the official match is {member.bioguide_id}; left unchanged", None
+                    by_override = False
             if member is None:
                 report.unresolved.append(Unresolved(pol.id, pol.name, pol.chamber, status, note))
                 if not dry_run:
@@ -126,6 +146,8 @@ def enrich_politicians(
                         pol.enrichment_status, pol.enrichment_note = status, note
                 continue
             report.matched.append((pol.id, pol.name, member.bioguide_id))
+            if by_override:
+                report.overrides_applied.append((pol.id, pol.name, member.bioguide_id))
             taken[member.bioguide_id] = pol.id
             matched_ids[pol.id] = member.bioguide_id
             if not dry_run:
@@ -138,7 +160,11 @@ def enrich_politicians(
                 pol.term_start_year, pol.term_end_year = member.term_start_year, member.term_end_year
                 pol.enriched_at = pol.enrichment_checked_at = now
                 pol.enrichment_source = member.source or provider.name
-                pol.enrichment_status, pol.enrichment_note = "matched", None
+                pol.enrichment_status, pol.enrichment_method = "matched", method
+                pol.enrichment_note = (
+                    f"Reviewed override: {override.reason} (source: {override.source}; reviewed {override.reviewed_at:%Y-%m-%d})"[:500]
+                    if by_override else None
+                )
 
         if committees is not None and matched_ids:
             _sync_committees(session, committees, due, matched_ids, report, now, dry_run)
@@ -147,6 +173,18 @@ def enrich_politicians(
         else:
             session.rollback()
     return report
+
+
+def _resolve_override(pol: Politician, override: PoliticianAliasOverride, roster_by_id: dict) -> tuple[str, str | None, object]:
+    """Check a reviewed override against the live official roster. Anything off fails safely as a 'conflict'."""
+    member = roster_by_id.get(override.bioguide_id)
+    if member is None:
+        return "conflict", f"override {override.bioguide_id} is not in the official roster; not applied", None
+    if member.chamber != pol.chamber:
+        return "conflict", f"override {override.bioguide_id} is a {member.chamber} member but this politician is in the {pol.chamber}; not applied", None
+    if pol.state and member.state and member.state != pol.state:
+        return "conflict", f"override {override.bioguide_id} is from {member.state} but this politician is recorded as {pol.state}; not applied", None
+    return "matched", None, member
 
 
 def _sync_committees(session, provider: CommitteeProvider, due, matched_ids, report, now, dry_run) -> None:
@@ -195,6 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="ignore the recency rules")
     parser.add_argument("--dry-run", action="store_true", help="match and report, write nothing")
     parser.add_argument("--no-committees", action="store_true")
+    parser.add_argument("--overrides", type=Path, help="JSON file of reviewed politician -> Bioguide ID overrides to record first")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -207,8 +246,21 @@ def main(argv: list[str] | None = None) -> int:
         settings.congress_api_key, base_url=settings.congress_api_base_url, congress=settings.congress_number,
         min_interval=settings.politician_request_interval,
     )
+    factory = make_session_factory()
+    if args.overrides:
+        from .politician_overrides import OverrideError, load_overrides_file
+
+        with factory() as session:
+            try:
+                rows = load_overrides_file(session, args.overrides)
+                session.commit()
+            except OverrideError as exc:
+                session.rollback()
+                print(f"Overrides rejected, nothing was recorded: {exc}")
+                return 3
+        print(f"Recorded {len(rows)} reviewed override(s).")
     report = enrich_politicians(
-        make_session_factory(), provider, None if args.no_committees else clerk,
+        factory, provider, None if args.no_committees else clerk,
         stale_days=settings.politician_enrich_stale_days, retry_days=settings.politician_retry_days,
         force=args.force, only_ids=set(args.ids) if args.ids else None, limit=args.limit, dry_run=args.dry_run,
     )
@@ -217,6 +269,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  matched    #{pid:<4} {name:<28} {bioguide}")
     for u in report.unresolved:
         print(f"  {u.status:<10} #{u.politician_id:<4} {u.name:<28} {u.note}")
+    for pid, name, bioguide in report.overrides_applied:
+        print(f"  override   #{pid:<4} {name:<28} {bioguide} (reviewed override)")
+    for w in report.warnings:
+        print(f"  warning    {w}")
     if report.committee_message:
         print(f"  committees: {report.committee_message}")
     return {"ok": 0, "nothing_to_do": 0, "not_configured": 2, "provider_error": 1}[report.status]

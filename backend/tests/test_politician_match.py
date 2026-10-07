@@ -88,7 +88,7 @@ def test_two_officials_with_one_name_are_ambiguous_and_nothing_is_chosen():
 
 def test_a_known_state_resolves_the_tie_and_a_wrong_state_rules_out_the_match():
     assert run("Mike Johnson", state="OH").member.bioguide_id == "J000999"
-    assert run("Mike Johnson", state="LA").rule.endswith("+state")
+    assert run("Mike Johnson", state="LA").rule == "exact_name+chamber"  # same label with or without a known state
     assert run("Mike Johnson", state="TX").status == "unmatched"
 
 

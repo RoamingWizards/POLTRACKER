@@ -54,11 +54,29 @@ class Politician(Base):
     enrichment_status: Mapped[str | None] = mapped_column(String(20))  # matched | unmatched | ambiguous | conflict
     enrichment_note: Mapped[str | None] = mapped_column(String(500))  # why a politician is unresolved
     enrichment_checked_at: Mapped[datetime | None] = mapped_column(DateTime)  # last attempt, matched or not
+    enrichment_method: Mapped[str | None] = mapped_column(String(40))  # how it matched: exact_name+chamber..., override
 
     trades: Mapped[list["Trade"]] = relationship(back_populates="politician")
     committees: Mapped[list["CommitteeAssignment"]] = relationship(
         back_populates="politician", cascade="all, delete-orphan", order_by="CommitteeAssignment.id"
     )
+
+
+class PoliticianAliasOverride(Base):
+    """A human-reviewed link from one POLTRACKER politician to one official Bioguide ID.
+
+    Only ever used for a politician the deterministic matcher left unmatched. Never created automatically.
+    """
+
+    __tablename__ = "politician_alias_overrides"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    politician_id: Mapped[int] = mapped_column(ForeignKey("politicians.id"), unique=True)
+    bioguide_id: Mapped[str] = mapped_column(String(10), unique=True)
+    reason: Mapped[str] = mapped_column(String(500))
+    source: Mapped[str] = mapped_column(String(200))  # what the reviewer checked, e.g. a URL or record
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
 class CommitteeAssignment(Base):
