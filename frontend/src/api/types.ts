@@ -67,6 +67,7 @@ export interface Politician {
   enriched_at: string | null;
   enrichment_source: string | null;
   enrichment_status: 'matched' | 'unmatched' | 'ambiguous' | 'conflict' | 'review' | null;
+  enrichment_method: string | null;
 }
 
 export interface CommitteeSeat {

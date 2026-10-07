@@ -50,7 +50,8 @@ class PoliticianOut(BaseModel):
     term_end_year: int | None = None
     enriched_at: datetime | None = None
     enrichment_source: str | None = None
-    enrichment_status: str | None = None  # matched | unmatched | ambiguous | conflict | null (never attempted)
+    enrichment_status: str | None = None  # matched | unmatched | ambiguous | conflict | review | null (never attempted)
+    enrichment_method: str | None = None  # how it matched: exact_name+chamber, name_with_extra_middle+chamber, override, llm
 
 
 class CommitteeOut(BaseModel):

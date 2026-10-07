@@ -40,6 +40,14 @@ function termText(p: PoliticianDetail) {
   return `${p.term_start_year} – ${p.term_end_year ?? 'present'}`;
 }
 
+const METHOD: Record<string, string> = {
+  override: 'Reviewed manually',
+  llm: 'Suggested by an AI model and approved',
+  'exact_name+chamber': 'Automatic: exact name match',
+  'name_with_extra_middle+chamber': 'Automatic: name match (extra middle name)',
+};
+const methodText = (m: string | null) => (m ? (METHOD[m] ?? m) : 'Automatic: name match');
+
 const unavailableReason = (p: PoliticianDetail) =>
   p.enrichment_status === 'review'
     ? 'A possible match has been found and is waiting for review.'
@@ -78,6 +86,7 @@ export default function OfficialProfile({ p }: { p: PoliticianDetail }) {
                   </Row>
                   <Row label="Serving in chamber">{termText(p) ?? NA}</Row>
                   <Row label="Bioguide ID">{p.bioguide_id}</Row>
+                  <Row label="Identity match">{methodText(p.enrichment_method)}</Row>
                   <Row label="Official page">
                     {p.official_url ? (
                       <Link href={p.official_url} target="_blank" rel="noopener noreferrer">

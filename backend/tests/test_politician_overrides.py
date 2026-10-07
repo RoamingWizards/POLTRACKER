@@ -225,28 +225,72 @@ def test_an_unreadable_or_non_list_file_is_rejected(session_factory, tmp_path):
             load_overrides_file(s, tmp_path / "o.json")
 
 
-def test_the_committed_reviewed_overrides_file_is_well_formed():
+COMMITTED = None
+
+
+def committed():
     from pathlib import Path
+
+    return Path(__file__).resolve().parents[2] / "data" / "reviewed_politician_overrides.json"
+
+
+def test_the_committed_reviewed_overrides_file_is_well_formed():
     import re
 
-    entries = json.loads((Path(__file__).resolve().parents[2] / "data" / "reviewed_politician_overrides.json").read_text())
+    entries = json.loads(committed().read_text())
     assert len(entries) == 14
-    assert len({e["politician_id"] for e in entries}) == 14 and len({e["bioguide_id"] for e in entries}) == 14
+    assert len({e["canonical_key"] for e in entries}) == 14 and len({e["bioguide_id"] for e in entries}) == 14
     for e in entries:
+        assert "politician_id" not in e  # ids are database-local; the stable key is canonical_key
+        assert re.fullmatch(r"(house|senate):[a-z0-9]+", e["canonical_key"]) and e["politician_name"]
         assert re.fullmatch(r"[A-Z]\d{6}", e["bioguide_id"]) and e["bioguide_id"] in e["source"]
         assert 10 < len(e["reason"]) <= 500 and len(e["source"]) <= 200 and e["reviewed_at"] == "2026-10-07"
         assert not re.search(r"llm|gpt|openai|model", e["reason"] + e["source"], re.I)  # provenance is the human review, not a model
 
 
-def test_the_committed_overrides_file_loads_cleanly_into_a_database_with_those_politicians(session_factory):
-    from pathlib import Path
+def seed_file_politicians(sf, id_offset=0, only=None):
+    entries = json.loads(committed().read_text())
+    with sf() as s:
+        for n, e in enumerate(entries):
+            if only is None or e["canonical_key"] in only:
+                s.add(Politician(id=1000 + id_offset + (len(entries) - n), canonical_key=e["canonical_key"], name=e["politician_name"],
+                                 chamber=e["canonical_key"].split(":")[0]))
+        s.commit()
+    return entries
 
-    path = Path(__file__).resolve().parents[2] / "data" / "reviewed_politician_overrides.json"
-    ids = [e["politician_id"] for e in json.loads(path.read_text())]
+
+def test_the_committed_file_loads_into_a_database_whatever_its_numeric_ids_are(session_factory):
+    seed_file_politicians(session_factory, id_offset=0)  # ids in reverse order, none matching any other database
     with session_factory() as s:
-        for i in ids:
-            s.add(Politician(id=i, canonical_key=f"k{i}", name=f"P{i}", chamber="house"))
+        rows = load_overrides_file(s, committed())
         s.commit()
-        assert len(load_overrides_file(s, path)) == 14
+        assert len(rows) == 14 and rows.skipped == []
+        for e in json.loads(committed().read_text()):
+            pol = s.scalar(select(Politician).where(Politician.canonical_key == e["canonical_key"]))
+            ov = s.scalar(select(PoliticianAliasOverride).where(PoliticianAliasOverride.politician_id == pol.id))
+            assert ov.bioguide_id == e["bioguide_id"]  # each override landed on the person it names, not on a different id
+        assert len(load_overrides_file(s, committed())) == 14  # reloading is safe
+
+
+def test_entries_for_politicians_this_database_does_not_have_are_skipped_and_reported(session_factory):
+    seed_file_politicians(session_factory, only={"house:danielcrenshaw", "senate:rafaelcruz"})
+    with session_factory() as s:
+        rows = load_overrides_file(s, committed())
         s.commit()
-        assert len(load_overrides_file(s, path)) == 14  # reloading the reviewed file is safe
+        assert len(rows) == 2 and len(rows.skipped) == 12 and "house:richardallen" in rows.skipped
+
+
+def test_a_numeric_id_that_disagrees_with_the_canonical_key_is_rejected(session_factory, pols, tmp_path):
+    entry = {"canonical_key": "house:lloyddoggett", "politician_id": pols["Daniel Crenshaw"], "bioguide_id": "D000399", "reason": "r" * 12,
+             "source": "s", "reviewed_at": "2026-10-07"}
+    path = tmp_path / "o.json"
+    path.write_text(json.dumps([entry]))
+    with session_factory() as s, pytest.raises(OverrideError, match="does not belong to"):
+        load_overrides_file(s, path)
+
+
+def test_an_entry_with_neither_a_key_nor_an_id_is_rejected(session_factory, tmp_path):
+    path = tmp_path / "o.json"
+    path.write_text(json.dumps([{"bioguide_id": "D000399", "reason": "r" * 12, "source": "s", "reviewed_at": "2026-10-07"}]))
+    with session_factory() as s, pytest.raises(OverrideError, match="canonical_key is required"):
+        load_overrides_file(s, path)
