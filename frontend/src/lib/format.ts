@@ -22,7 +22,9 @@ export const formatInt = (n: number | null | undefined) => (n == null ? '—' : 
 export function formatPct(fraction: number | null | undefined, digits = 1): string {
   if (fraction == null || Number.isNaN(fraction)) return '—';
   const pct = fraction * 100;
-  return `${pct > 0 ? '+' : ''}${pct.toFixed(digits)}%`;
+  const text = pct.toFixed(digits);
+  if (Number(text) === 0) return `${(0).toFixed(digits)}%`; // never show "-0.0%"
+  return `${pct > 0 ? '+' : ''}${text}%`;
 }
 
 export function formatDateTime(iso: string | null | undefined): string {

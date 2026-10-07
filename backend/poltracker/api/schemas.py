@@ -187,6 +187,53 @@ class SecurityActivityOut(BaseModel):
     undated: int  # trades for this ticker left out because they have no date for the chosen basis
 
 
+class TradeRefOut(BaseModel):
+    trade_id: int
+    ticker: str | None
+    transaction_type: str
+    return_: float | None = Field(None, serialization_alias="return")
+    excess_return: float | None
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ReturnStatOut(BaseModel):
+    n: int
+    n_benchmarked: int
+    mean_return: float | None
+    median_return: float | None
+    mean_benchmark_return: float | None
+    mean_excess_return: float | None
+    median_excess_return: float | None
+    outperformed: int
+    best: TradeRefOut | None
+    worst: TradeRefOut | None
+
+
+class LegSummaryOut(BaseModel):
+    raw: ReturnStatOut
+    adjusted: ReturnStatOut  # sells flipped; shown separately from the raw security return
+
+
+class PoliticianAnalyticsOut(BaseModel):
+    """Equal-weighted statistics over the politician's trades in the period. Returns are fractions (0.10 = +10%)."""
+
+    politician_id: int
+    period: Literal["7d", "1m", "3m", "6m", "1y", "all"]
+    basis: Literal["disclosure", "transaction"]
+    start: date | None
+    end: date
+    benchmark: str
+    weighting: Literal["equal"] = "equal"
+    trades_in_period: int
+    priced: int
+    unpriced: dict[str, int]
+    by_type: dict[str, int]
+    undated: int
+    transaction: LegSummaryOut  # return from the trade date
+    disclosure: LegSummaryOut  # return from the disclosure date (what a follower could have captured)
+
+
 class DailyCount(BaseModel):
     date: date
     count: int

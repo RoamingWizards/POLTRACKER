@@ -11,6 +11,7 @@ import ChartCard from '../components/ChartCard';
 import { ChamberChip } from '../components/Chips';
 import MonthlyBarChart from '../components/MonthlyBarChart';
 import OfficialProfile from '../components/OfficialProfile';
+import PoliticianReturns from '../components/PoliticianReturns';
 import QueryError from '../components/QueryError';
 import StatCard from '../components/StatCard';
 import TopTickersChart from '../components/TopTickersChart';
@@ -75,6 +76,7 @@ export default function PoliticianDetail() {
         </Alert>
       )}
       {p && <OfficialProfile p={p} />}
+      <PoliticianReturns id={id} />
       <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard title="Trades" loading={politician.isLoading} value={formatInt(p?.trade_count)} interval="All disclosed trades" />

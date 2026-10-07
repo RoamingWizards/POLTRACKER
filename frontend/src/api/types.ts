@@ -240,3 +240,43 @@ export interface SecurityActivity {
   buckets: { start: string; end: string; buys: number; sells: number; other: number }[];
   undated: number;
 }
+
+export type AnalyticsPeriod = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
+
+export interface TradeRef {
+  trade_id: number;
+  ticker: string | null;
+  transaction_type: string;
+  return: number | null;
+  excess_return: number | null;
+}
+
+export interface ReturnStat {
+  n: number;
+  n_benchmarked: number;
+  mean_return: number | null;
+  median_return: number | null;
+  mean_benchmark_return: number | null;
+  mean_excess_return: number | null;
+  median_excess_return: number | null;
+  outperformed: number;
+  best: TradeRef | null;
+  worst: TradeRef | null;
+}
+
+export interface PoliticianAnalytics {
+  politician_id: number;
+  period: AnalyticsPeriod;
+  basis: ActivityBasis;
+  start: string | null;
+  end: string;
+  benchmark: string;
+  weighting: 'equal';
+  trades_in_period: number;
+  priced: number;
+  unpriced: Record<string, number>;
+  by_type: { buys: number; sells: number; other: number };
+  undated: number;
+  transaction: { raw: ReturnStat; adjusted: ReturnStat };
+  disclosure: { raw: ReturnStat; adjusted: ReturnStat };
+}

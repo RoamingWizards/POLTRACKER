@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from ..config import Settings, get_settings
 from ..db import make_session_factory
 from ..activity import Basis, Period, compute_activity
+from ..politician_analytics import AnalyticsPeriod, period_window, summarize
 from ..models import IngestState, PriceBar, Politician, Security, Trade
 from ..performance import load_benchmark, load_series, trade_performance
 from .ordering import nulls_last, text_order
@@ -23,6 +24,10 @@ from .schemas import (
     TopPolitician,
     TopTicker,
     PoliticianDetailOut,
+    PoliticianAnalyticsOut,
+    LegSummaryOut,
+    ReturnStatOut,
+    TradeRefOut,
     PoliticianOut,
     PoliticianPageOut,
     PriceSeriesOut,
@@ -137,6 +142,50 @@ def get_politician(politician_id: int, session: Session = Depends(get_session)) 
         raise HTTPException(404, "Politician not found")
     seats = sorted(pol.committees, key=lambda c: (c.committee_name, c.subcommittee_name is not None, c.subcommittee_name or ""))
     return PoliticianDetailOut(**_politician_out(session, pol).model_dump(), committees=seats)
+
+
+def _stat_out(st) -> ReturnStatOut:
+    ref = lambda r: None if r is None else TradeRefOut(trade_id=r.trade_id, ticker=r.ticker, transaction_type=r.transaction_type, return_=r.return_, excess_return=r.excess_return)  # noqa: E731
+    return ReturnStatOut(
+        n=st.n, n_benchmarked=st.n_benchmarked, mean_return=st.mean_return, median_return=st.median_return,
+        mean_benchmark_return=st.mean_benchmark_return, mean_excess_return=st.mean_excess_return,
+        median_excess_return=st.median_excess_return, outperformed=st.outperformed, best=ref(st.best), worst=ref(st.worst),
+    )
+
+
+@router.get("/politicians/{politician_id}/analytics", response_model=PoliticianAnalyticsOut)
+def get_politician_analytics(
+    politician_id: int,
+    period: AnalyticsPeriod = Query("1y", description="trades in the past 7 days, 1/3/6 months, 1 year, or all"),
+    basis: Basis = Query("transaction", description="select trades by the date they were made or the date they were disclosed"),
+    session: Session = Depends(get_session),
+) -> PoliticianAnalyticsOut:
+    """Aggregate return of all of a politician's trades in the period: since the trade date and since the disclosure date."""
+    if session.get(Politician, politician_id) is None:
+        raise HTTPException(404, "Politician not found")
+    today = _today()
+    start, end = period_window(period, today)
+    when = Trade.disclosure_date if basis == "disclosure" else Trade.transaction_date
+    stmt = select(Trade).where(Trade.politician_id == politician_id, when.is_not(None), when <= end)
+    if start is not None:
+        stmt = stmt.where(when >= start)
+    trades = session.scalars(stmt.order_by(Trade.id)).all()
+    undated = session.scalar(select(func.count(Trade.id)).where(Trade.politician_id == politician_id, when.is_(None))) or 0
+    bench_ticker = get_settings().benchmark_ticker
+    bench, cache = load_benchmark(session, bench_ticker), {}
+    entries = []
+    for t in trades:
+        series = None
+        if t.security_id:
+            series = cache.get(t.security_id) or cache.setdefault(t.security_id, load_series(session, t.security_id))
+        entries.append((t, trade_performance(t, series, bench, bench_ticker, today)))
+    a = summarize(entries, start, end)
+    return PoliticianAnalyticsOut(
+        politician_id=politician_id, period=period, basis=basis, start=a.start, end=a.end, benchmark=bench_ticker,
+        trades_in_period=a.trades_in_period, priced=a.priced, unpriced=a.unpriced, by_type=a.by_type, undated=undated,
+        transaction=LegSummaryOut(raw=_stat_out(a.transaction.raw), adjusted=_stat_out(a.transaction.adjusted)),
+        disclosure=LegSummaryOut(raw=_stat_out(a.disclosure.raw), adjusted=_stat_out(a.disclosure.adjusted)),
+    )
 
 
 @router.get("/securities/{ticker}", response_model=SecurityOut)
