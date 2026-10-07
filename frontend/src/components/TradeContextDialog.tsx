@@ -18,6 +18,12 @@ const UNKNOWN_REASON: Record<string, string> = {
   unmapped_committees: 'a committee has no industry mapping',
 };
 
+const TIMING: Record<string, string> = {
+  temporally_verified: 'Seat timing verified for the trade date',
+  current_assignment_only: 'Current committee assignment only: whether the seat applied on the trade date is not established',
+  unavailable: 'No committee data for this member',
+};
+
 function ordinal(n: number): string {
   const v = Math.round(n);
   const s = ['th', 'st', 'nd', 'rd'];
@@ -78,6 +84,11 @@ export default function TradeContextDialog({ trade, onClose }: { trade: Trade | 
                       )}
                     </Typography>
                   ))}
+                  {c.committee_temporal_status && (
+                    <Typography variant="caption" color="text.secondary">
+                      {TIMING[c.committee_temporal_status]}
+                    </Typography>
+                  )}
                 </Stack>
               ) : c.committee_relevance === false ? (
                 <Typography variant="body2">No reviewed direct mapping applies</Typography>
@@ -102,7 +113,7 @@ export default function TradeContextDialog({ trade, onClose }: { trade: Trade | 
             <Row label="Disclosure delay">
               {c.disclosure_delay_days != null ? (
                 <Typography variant="body2">
-                  {c.disclosure_delay_days} days{c.disclosure_delay_signal ? ' · long delay' : ''}
+                  {c.disclosure_delay_days} days after the transaction{c.disclosure_delay_signal ? ' · more than 45 days' : ''}
                 </Typography>
               ) : (
                 <Typography variant="body2" color="text.secondary">
@@ -132,10 +143,19 @@ export default function TradeContextDialog({ trade, onClose }: { trade: Trade | 
             <Row label="Status">
               {c.flagged_for_contextual_review ? (
                 <Chip size="small" color="warning" variant="outlined" label="Flagged for contextual review" />
+              ) : c.flag_pending_temporal_verification ? (
+                <Typography variant="body2">Not flagged: the context rule is met, but committee seat timing for the trade date is not established</Typography>
               ) : (
-                <Typography variant="body2">Not flagged</Typography>
+                <Typography variant="body2">Not flagged{c.secondary_signal_count != null ? ` (${c.secondary_signal_count} of 3 secondary signals; two are needed with committee relevance)` : ''}</Typography>
               )}
             </Row>
+            {trade && trade.group_size != null && trade.group_size > 1 && (
+              <Row label="Related rows">
+                <Typography variant="body2" color="text.secondary">
+                  {trade.group_size} disclosed rows share this politician, security, date and type (owner codes can differ). Each is a separate disclosure and none are merged.
+                </Typography>
+              </Row>
+            )}
             {related.length > 0 && (
               <Row label="Supporting context">
                 <Stack spacing={0.5}>

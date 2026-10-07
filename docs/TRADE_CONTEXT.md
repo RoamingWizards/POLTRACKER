@@ -3,9 +3,9 @@
 Deterministic, public-data context for each trade. It uses no network, no language model, and stores no suspicion score. A "flag" is a prompt for a
 person to look at public context. It does not mean wrongdoing, and it does not estimate whether a member knew anything.
 
-Run: `python -m poltracker.analyze_trade_context` (`--dry-run`, `--force`, `--limit N`, `--trade-id ID`, `--politician ID|NAME`, `--ticker T`).
-It reads trades, committee seats, SIC codes, the committee/industry mappings and cached price bars, and writes only `trade_context` and
-`trade_context_evidence` (migration 0012). Reruns leave unchanged rows alone.
+Run: `python -m poltracker.analyze_trade_context` (`--dry-run`, `--force`, `--limit N`, `--trade-id ID`, `--politician ID|NAME`, `--ticker T`, and the threshold
+options below). It reads trades, committee seats, SIC codes, the committee/industry mappings and cached price bars, and writes only `trade_context` and
+`trade_context_evidence` (migrations 0012, 0013). Reruns leave unchanged rows alone.
 
 ## Signals (each True, False, or unknown)
 
@@ -13,38 +13,65 @@ It reads trades, committee seats, SIC codes, the committee/industry mappings and
 |---|---|---|
 | `committee_relevance` | a **reviewed + direct** mapping applies to the member's committee/subcommittee seats and the security's SIC code | no SIC, no committee seats, or an unmapped committee and no direct match |
 | `trade_size_anomaly` | the trade's representative value is at or above the 90th percentile of the same politician's earlier trades, with at least 10 earlier trades | no usable range, an untrustworthy date, or fewer than 10 earlier trades |
-| `disclosure_delay_signal` | disclosure date minus transaction date is at least 30 days | a missing, future or inconsistent date (a negative delay is never repaired) |
-| `excess_return_signal` | the absolute excess return versus SPY over 90 days from the transaction anchor is at least 10 percentage points | no prices, an invalid date, or the 90-day window has not elapsed |
+| `disclosure_delay_signal` | disclosure date minus transaction date is **more than 45 days** | a missing, future or inconsistent date (a negative delay is never repaired) |
+| `excess_return_signal` | the absolute excess return versus SPY over the 90 days from the transaction anchor is **at least 20 percentage points** | no prices, an invalid date, or the 90-day window has not elapsed |
 
 `needs_review` mappings never affect a signal. `reviewed + related` mappings are stored as **supporting context** and never create the committee signal.
 A trade has one committee signal with one evidence row per supporting mapping, so a parent and a subcommittee mapping are not double counted.
 
-## The flag
+## The flag rule
 
-`flagged_for_contextual_review = committee_relevance AND (trade_size_anomaly OR disclosure_delay_signal OR excess_return_signal)`.
-Committee relevance is mandatory. Size, delay or excess return alone never flags a trade, and unknown never counts as true.
+```
+meets_flag_rule = committee_relevance
+                  AND at least TWO of (trade_size_anomaly, disclosure_delay_signal, excess_return_signal)
+flagged_for_contextual_review = meets_flag_rule AND the committee evidence is temporally_verified
+```
 
-## Methodology (engine version `2026.1`)
+Committee relevance is mandatory; unknown never counts as true. Examples: committee + size + delay flags; committee + one secondary does not;
+three secondary signals without committee relevance do not; performance alone never flags. `secondary_signal_count` (0-3) is stored on every row, and
+`--min-secondary` changes the number needed. When the rule is met but seat timing is unverified, the row has `meets_flag_rule = true`, is not flagged, and the API
+sets `flag_pending_temporal_verification`.
+
+## Methodology (engine version `2026.2`)
 
 - **Trade size.** Disclosures give a range. The representative value is the midpoint of a closed range, the lower bound of an open-ended range
   ("Over $50,000,000", which can only understate), and the figure itself when min equals max. It is never an exact transaction value. The percentile is the
   mid-rank among the politician's trades with a strictly **earlier** transaction date (ties count half). Only that politician's own trades are used,
   so a result does not change when later trades arrive.
-- **Excess return.** The existing performance engine, over a fixed 90-day window (`--excess-horizon-days`). Measured to the latest bar, a year-old trade
-  needs far less luck to exceed 10 points than a recent one. The absolute raw excess return drives the signal. The direction-adjusted figure for sells is
-  stored separately.
-- **Committee seats are current seats.** The House Clerk gives no seat history, so an older trade is matched to the seats held now. Senate members have no
-  committee data yet, so their trades are unknown.
+- **Disclosure delay.** The raw `disclosure_delay_days` is always kept. A periodic transaction report is generally due by the earlier of 30 days after the filer
+  became aware of the transaction and 45 days after it. The awareness date is not public, so the transaction date is the only reference POLTRACKER has, and the
+  signal marks a delay of more than 45 days. It does not say a filing was late, excused or improper: the filing circumstances are unknown.
+- **Excess return.** The existing performance engine over a **fixed 90-calendar-day horizon** from the transaction anchor (`--excess-horizon-days`). A fixed window
+  gives every trade a comparable horizon, stops older trades accumulating years of performance, and keeps the age of a trade from driving the signal. A trade younger
+  than the horizon, or whose prices stop sooner, is unknown. The absolute raw excess return drives the signal. The direction-adjusted figure for sells is stored
+  separately. The 20-point threshold is configurable (`--excess-return`).
+- **Committee seats and time.** The House Clerk publishes a point-in-time snapshot (`MemberData.xml`: a publish date, the Congress number and, per seat, only a
+  committee code, rank and leadership role). It has **no seat start or end dates**, so a seat is known to exist now, not on the day of an older trade. Each piece of
+  committee evidence carries a temporal status:
+
+  | Status | Meaning |
+  |---|---|
+  | `temporally_verified` | the seat has a recorded start date on or before the transaction date and no end date before it |
+  | `current_assignment_only` | the seat is known only from a current snapshot; whether it applied on the transaction date is not established |
+  | `unavailable` | no committee data for the member (the Senate, or an unmatched politician) |
+
+  The committee/industry match is kept as context in every case, but only `temporally_verified` evidence can flag a trade. A seat that has dates and does not cover
+  the transaction date is ignored. Dates are never invented, and no third-party committee history is used. Every House seat is `current_assignment_only` today,
+  so no trade can be flagged until a future data phase supplies dated committee history (for example from official Congress committee-membership records).
+  `--ignore-temporal-status` exists only for what-if comparisons and writes under a custom version label.
+- **Duplicate-looking rows.** Rows are never merged or deleted. The API adds `group_key` (politician + security + transaction date + type) and `group_size` so a
+  UI can show that rows belong together. Owner codes (self, spouse, joint, dependent) can mark separate reportable transactions.
 
 ## Versioning
 
-`context_version` is the engine version (`2026.1`) and changes when the flag rule, the size methodology or the default thresholds change. A non-default
-threshold on the command line gets its own label (`2026.1+custom-xxxxxx`) so it never overwrites default rows. Rows are keyed by trade, context version
-and mapping version, so loading a new mapping version adds rows and keeps the old ones. A changed input (new prices, a corrected disclosure) updates
-that trade's row in place and sets `analyzed_at`.
+`context_version` is `2026.2`. It changes when the flag rule, the size methodology or the default thresholds change; `2026.1` used a 30-day delay, a 10-point
+excess return over a variable horizon, one secondary signal and no temporal gate. A non-default option on the command line gets its own label
+(`2026.2+custom-xxxxxx`) so it never overwrites default rows. Rows are keyed by trade, context version and mapping version, so a new mapping version or engine
+version adds rows and keeps the old ones. A changed input (new prices, a corrected disclosure) updates that trade's row in place and sets `analyzed_at`.
 
 ## API
 
-`GET /trades` and `GET /trades/{id}` carry an optional `context` object (null until the analyzer has run) with the signals, percentile, delay, returns,
-`flagged_for_contextual_review`, `evidence` and a `notice`. `GET /trades?flagged=true` returns flagged trades only. Existing fields are unchanged.
-The Trades page has a Context column and a "Flagged for contextual review" filter; clicking a chip shows the signals and their evidence.
+`GET /trades` and `GET /trades/{id}` carry `group_key`, `group_size` and an optional `context` object (null until the analyzer has run) with the signals, percentile,
+delay, returns, `secondary_signal_count`, `committee_temporal_status`, `meets_flag_rule`, `flag_pending_temporal_verification`, `flagged_for_contextual_review`,
+`evidence` and a `notice`. `GET /trades?flagged=true` returns flagged trades only. Existing fields are unchanged. The Trades page has a Context column and a
+"Flagged for contextual review" filter; clicking a chip shows the signals, their evidence and the seat-timing caveat.

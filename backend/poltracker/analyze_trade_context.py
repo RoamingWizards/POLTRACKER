@@ -45,6 +45,12 @@ class AnalysisSummary:
     delay: Counter = field(default_factory=Counter)
     excess: Counter = field(default_factory=Counter)
     flagged: int = 0
+    meets_rule: int = 0  # the context rule is met, whether or not the temporal gate then allows a flag
+    pending_temporal: int = 0  # rule met but not flagged because the committee evidence is not temporally verified
+    secondary_distribution: Counter = field(default_factory=Counter)  # all trades
+    secondary_distribution_committee: Counter = field(default_factory=Counter)  # trades with committee relevance true
+    temporal_status: Counter = field(default_factory=Counter)  # temporal status of the committee evidence, all trades
+    temporal_status_committee: Counter = field(default_factory=Counter)  # ... among committee-relevant trades
     flagged_politicians: set = field(default_factory=set)
     flagged_tickers: set = field(default_factory=set)
     committee_unknown_reasons: Counter = field(default_factory=Counter)
@@ -60,6 +66,11 @@ class AnalysisSummary:
             f"Trade-size anomalies: {_tri(self.size)}",
             f"Long disclosure delays: {_tri(self.delay)}",
             f"Large excess returns: {_tri(self.excess)}",
+            f"Secondary signals true (size/delay/excess), all trades: " + ", ".join(f"{k}: {n(self.secondary_distribution[k])}" for k in range(4)),
+            f"Secondary signals true, committee-relevant trades: " + ", ".join(f"{k}: {n(self.secondary_distribution_committee[k])}" for k in range(4)),
+            f"Committee seat timing, all trades: " + ", ".join(f"{k} {n(v)}" for k, v in sorted(self.temporal_status.items())),
+            f"Committee seat timing, committee-relevant trades: " + (", ".join(f"{k} {n(v)}" for k, v in sorted(self.temporal_status_committee.items())) or "none"),
+            f"Context rule met: {n(self.meets_rule)}  (not flagged because seat timing is unverified: {n(self.pending_temporal)})",
             f"Flagged for contextual review: {n(self.flagged)}  ({n(len(self.flagged_politicians))} politicians, {n(len(self.flagged_tickers))} tickers)",
             f"Committee relevance unknown because: " + (", ".join(f"{k} {n(v)}" for k, v in self.committee_unknown_reasons.most_common()) or "none"),
             f"Trades with a needs_review mapping that was ignored: {n(self.needs_review_matches_ignored)}",
@@ -176,6 +187,13 @@ class TradeContextAnalyzer:
             summary.committee_unknown_reasons[res.committee.reason] += 1
         if res.committee.pending_review:
             summary.needs_review_matches_ignored += 1
+        summary.secondary_distribution[res.secondary] += 1
+        summary.temporal_status[res.committee.temporal_status] += 1
+        if res.committee.value is True:
+            summary.secondary_distribution_committee[res.secondary] += 1
+            summary.temporal_status_committee[res.committee.temporal_status] += 1
+        summary.meets_rule += res.meets_rule
+        summary.pending_temporal += res.pending_temporal
         if res.flagged:
             summary.flagged += 1
             summary.flagged_politicians.add(t.politician_id)
@@ -206,6 +224,9 @@ class TradeContextAnalyzer:
         row.performance_horizon_days = horizon_days if measured else None
         row.performance_through_date = leg.anchor_date + timedelta(days=horizon_days) if measured else None
         row.signal_count = res.count
+        row.secondary_signal_count = res.secondary
+        row.committee_temporal_status = res.committee.temporal_status
+        row.meets_flag_rule = res.meets_rule
         row.flagged_for_contextual_review = res.flagged
         if row.id is None:
             session.add(row)
@@ -231,13 +252,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ticker")
     parser.add_argument("--mapping-version", help="committee/industry mapping version (default: the most recently loaded)")
     defaults = ContextConfig()
-    parser.add_argument("--delay-days", type=int, default=defaults.delay_days)
-    parser.add_argument("--excess-return", type=float, default=defaults.excess_return, help="absolute excess-return threshold as a fraction (0.10 = 10 points)")
+    parser.add_argument("--delay-days", type=int, default=defaults.delay_days, help="the signal marks a delay of MORE than this many days")
+    parser.add_argument("--excess-return", type=float, default=defaults.excess_return, help="absolute excess-return threshold as a fraction (0.20 = 20 points)")
     parser.add_argument("--excess-horizon-days", type=int, default=defaults.excess_horizon_days, help="measure excess return over this many days from the transaction anchor")
     parser.add_argument("--size-percentile", type=float, default=defaults.size_percentile)
     parser.add_argument("--min-history", type=int, default=defaults.min_history)
+    parser.add_argument("--min-secondary", type=int, default=defaults.min_secondary_signals, help="how many of size/delay/excess must be true, with committee relevance, to flag")
+    parser.add_argument("--ignore-temporal-status", action="store_true", help="what-if only: let current-assignment-only committee evidence flag (stored under a custom version label)")
     args = parser.parse_args(argv)
-    cfg = ContextConfig(args.delay_days, args.excess_return, args.size_percentile, args.excess_horizon_days, args.min_history, get_settings().benchmark_ticker)
+    cfg = ContextConfig(delay_days=args.delay_days, excess_return=args.excess_return, size_percentile=args.size_percentile, excess_horizon_days=args.excess_horizon_days,
+                        min_history=args.min_history, min_secondary_signals=args.min_secondary, require_temporal_verification=not args.ignore_temporal_status,
+                        benchmark=get_settings().benchmark_ticker)
     analyzer = TradeContextAnalyzer(make_session_factory(), cfg, mapping_version=args.mapping_version)
     try:
         summary = analyzer.run(dry_run=args.dry_run, force=args.force, limit=args.limit, trade_ids=args.trade_id, politician=args.politician, ticker=args.ticker)

@@ -40,6 +40,10 @@ class TradeContextOut(BaseModel):
     excess_horizon_days: int | None
     signals: dict[str, bool | None]
     signal_count: int
+    secondary_signal_count: int | None = None  # how many of size / delay / excess are true
+    committee_temporal_status: str | None = None  # temporally_verified | current_assignment_only | unavailable
+    meets_flag_rule: bool | None = None  # committee relevance plus enough secondary signals, before the temporal check
+    flag_pending_temporal_verification: bool = False  # the rule is met but seat timing is not established, so the trade is not flagged
     flagged_for_contextual_review: bool
     evidence: list[ContextEvidenceOut]
     notice: str
@@ -64,6 +68,8 @@ class TradeOut(BaseModel):
     amount_min: int | None
     amount_max: int | None
     source_url: str | None
+    group_key: str | None = None  # same politician + security + transaction date + type; for display grouping only, rows are never merged
+    group_size: int | None = None  # how many disclosed rows share that group_key (owner codes may differ; each is a separate disclosure)
     context: TradeContextOut | None = None  # null until `python -m poltracker.analyze_trade_context` has run
 
 
