@@ -1,0 +1,36 @@
+{
+ "committees": [
+  {
+   "activities": [
+    {
+     "date": "2026-01-13T18:06:38Z",
+     "name": "Reported By"
+    },
+    {
+     "date": "2025-04-09T13:15:40Z",
+     "name": "Markup By"
+    },
+    {
+     "date": "2025-04-03T15:01:45Z",
+     "name": "Referred To"
+    }
+   ],
+   "chamber": "House",
+   "name": "Education and Workforce Committee",
+   "systemCode": "hsed00",
+   "type": "Standing",
+   "url": "https://api.congress.gov/v3/committee/house/hsed00?format=json"
+  }
+ ],
+ "pagination": {
+  "count": 1
+ },
+ "request": {
+  "billNumber": "2617",
+  "billType": "hr",
+  "billUrl": "https://api.congress.gov/v3/bill/119/hr/2617?format=json",
+  "congress": "119",
+  "contentType": "application/json",
+  "format": "json"
+ }
+}

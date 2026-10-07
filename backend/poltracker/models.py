@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     MetaData,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -212,3 +213,142 @@ class IngestState(Base):
     # Drives the stale-ingestion warning; max(trades.created_at) cannot, because quiet days add no trades.
     last_success_at: Mapped[datetime | None] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+
+# --- Legislative data (official Congress.gov records). Populated by `python -m poltracker.ingest_legislation`. ----------
+
+
+class Legislation(Base):
+    """One bill or resolution. Identity is the official (congress, type, number), never the title."""
+
+    __tablename__ = "legislation"
+    __table_args__ = (
+        UniqueConstraint("congress", "bill_type", "bill_number"),
+        Index("ix_legislation_latest_action_date", "latest_action_date"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    congress: Mapped[int] = mapped_column()
+    bill_type: Mapped[str] = mapped_column(String(10))  # hr, s, hjres, sjres, hconres, sconres, hres, sres
+    bill_number: Mapped[int] = mapped_column()
+    title: Mapped[str | None] = mapped_column(Text)
+    origin_chamber: Mapped[str | None] = mapped_column(String(20))
+    summary: Mapped[str | None] = mapped_column(Text)  # latest official CRS summary, markup removed, not rephrased
+    summary_date: Mapped[date | None] = mapped_column(Date)  # the action date the summary describes
+    introduced_date: Mapped[date | None] = mapped_column(Date)
+    latest_action_date: Mapped[date | None] = mapped_column(Date)
+    latest_action_text: Mapped[str | None] = mapped_column(Text)
+    policy_area: Mapped[str | None] = mapped_column(String(200))
+    sponsor_bioguide_id: Mapped[str | None] = mapped_column(String(10))  # kept even if the sponsor is not a POLTRACKER politician
+    sponsor_name: Mapped[str | None] = mapped_column(String(200))
+    cosponsor_count: Mapped[int | None] = mapped_column()
+    source_url: Mapped[str | None] = mapped_column(String(300))  # public congress.gov page
+    api_update_date: Mapped[date | None] = mapped_column(Date)  # Congress.gov's own updateDate, used to skip unchanged bills
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)  # when POLTRACKER last wrote it
+
+    subjects: Mapped[list["LegislationSubject"]] = relationship(back_populates="legislation", cascade="all, delete-orphan")
+    committees: Mapped[list["LegislationCommittee"]] = relationship(back_populates="legislation", cascade="all, delete-orphan")
+    actions: Mapped[list["BillAction"]] = relationship(back_populates="legislation", cascade="all, delete-orphan", order_by="BillAction.action_date")
+    politician_links: Mapped[list["PoliticianLegislation"]] = relationship(back_populates="legislation", cascade="all, delete-orphan")
+
+
+class LegislationSubject(Base):
+    __tablename__ = "legislation_subjects"
+    __table_args__ = (UniqueConstraint("legislation_id", "subject"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    legislation_id: Mapped[int] = mapped_column(ForeignKey("legislation.id"))
+    subject: Mapped[str] = mapped_column(String(300))
+
+    legislation: Mapped[Legislation] = relationship(back_populates="subjects")
+
+
+class LegislationCommittee(Base):
+    """A committee a bill was referred to or acted on by. `committee_code` is Congress.gov's system code (for example
+    hsed00), a different scheme from the House Clerk codes in committee_assignments; mapping them is a later concern."""
+
+    __tablename__ = "legislation_committees"
+    __table_args__ = (UniqueConstraint("legislation_id", "committee_code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    legislation_id: Mapped[int] = mapped_column(ForeignKey("legislation.id"))
+    committee_code: Mapped[str] = mapped_column(String(20))
+    committee_name: Mapped[str] = mapped_column(String(300))
+    chamber: Mapped[str | None] = mapped_column(String(20))
+
+    legislation: Mapped[Legislation] = relationship(back_populates="committees")
+
+
+class PoliticianLegislation(Base):
+    """Sponsor / cosponsor links, only for politicians POLTRACKER already has, matched by Bioguide ID."""
+
+    __tablename__ = "politician_legislation"
+    __table_args__ = (
+        UniqueConstraint("politician_id", "legislation_id", "relationship"),
+        Index("ix_politician_legislation_legislation_id", "legislation_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    politician_id: Mapped[int] = mapped_column(ForeignKey("politicians.id"))
+    legislation_id: Mapped[int] = mapped_column(ForeignKey("legislation.id"))
+    relationship_type: Mapped[str] = mapped_column("relationship", String(20))  # sponsor | cosponsor
+    sponsorship_date: Mapped[date | None] = mapped_column(Date)
+    is_original: Mapped[bool | None] = mapped_column(Boolean)  # original cosponsor
+    withdrawn_date: Mapped[date | None] = mapped_column(Date)  # a withdrawn cosponsor stays recorded, with the date
+
+    legislation: Mapped[Legislation] = relationship(back_populates="politician_links")
+
+
+class BillAction(Base):
+    """Official legislative actions inside the ingestion window. `action_key` (hash of date, code and text) makes re-runs
+    idempotent; two truly identical actions on one day collapse into one."""
+
+    __tablename__ = "bill_actions"
+    __table_args__ = (
+        UniqueConstraint("legislation_id", "action_key"),
+        Index("ix_bill_actions_legislation_id_action_date", "legislation_id", "action_date"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    legislation_id: Mapped[int] = mapped_column(ForeignKey("legislation.id"))
+    action_date: Mapped[date] = mapped_column(Date)
+    action_text: Mapped[str] = mapped_column(Text)
+    action_code: Mapped[str | None] = mapped_column(String(20))
+    action_type: Mapped[str | None] = mapped_column(String(60))
+    action_key: Mapped[str] = mapped_column(String(40))
+
+    legislation: Mapped[Legislation] = relationship(back_populates="actions")
+
+
+class Hearing(Base):
+    """A congressional hearing record. Identity is (congress, chamber, jacket number)."""
+
+    __tablename__ = "hearings"
+    __table_args__ = (UniqueConstraint("congress", "chamber", "jacket_number"), Index("ix_hearings_hearing_date", "hearing_date"))
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    congress: Mapped[int] = mapped_column()
+    chamber: Mapped[str] = mapped_column(String(20))  # house | senate | nochamber
+    jacket_number: Mapped[int] = mapped_column()
+    event_id: Mapped[str | None] = mapped_column(String(40))  # linked committee-meeting event, when Congress.gov has one
+    title: Mapped[str | None] = mapped_column(Text)
+    citation: Mapped[str | None] = mapped_column(String(60))
+    hearing_date: Mapped[date | None] = mapped_column(Date)  # first date; a multi-day hearing also has hearing_end_date
+    hearing_end_date: Mapped[date | None] = mapped_column(Date)
+    source_url: Mapped[str | None] = mapped_column(String(300))  # the official API record
+    api_update_date: Mapped[datetime | None] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+    committees: Mapped[list["HearingCommittee"]] = relationship(back_populates="hearing", cascade="all, delete-orphan")
+
+
+class HearingCommittee(Base):
+    __tablename__ = "hearing_committees"
+    __table_args__ = (UniqueConstraint("hearing_id", "committee_code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    hearing_id: Mapped[int] = mapped_column(ForeignKey("hearings.id"))
+    committee_code: Mapped[str] = mapped_column(String(20))
+    committee_name: Mapped[str] = mapped_column(String(300))
+
+    hearing: Mapped[Hearing] = relationship(back_populates="committees")

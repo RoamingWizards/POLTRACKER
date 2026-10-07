@@ -1,0 +1,29 @@
+{
+ "pagination": {
+  "count": 3
+ },
+ "request": {
+  "billNumber": "2617",
+  "billType": "hr",
+  "billUrl": "https://api.congress.gov/v3/bill/119/hr/2617?format=json",
+  "congress": "119",
+  "contentType": "application/json",
+  "format": "json"
+ },
+ "subjects": {
+  "legislativeSubjects": [
+   {
+    "name": "Elementary and secondary education",
+    "updateDate": "2025-04-14T18:06:04Z"
+   },
+   {
+    "name": "Sex, gender, sexual orientation discrimination",
+    "updateDate": "2025-04-14T18:06:10Z"
+   }
+  ],
+  "policyArea": {
+   "name": "Education",
+   "updateDate": "2025-04-04T17:02:40Z"
+  }
+ }
+}

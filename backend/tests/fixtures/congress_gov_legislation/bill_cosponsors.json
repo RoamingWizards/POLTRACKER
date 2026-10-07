@@ -1,0 +1,55 @@
+{
+ "cosponsors": [
+  {
+   "bioguideId": "M001239",
+   "district": 5,
+   "firstName": "John",
+   "fullName": "Rep. McGuire, John [R-VA-5]",
+   "isOriginalCosponsor": true,
+   "lastName": "McGuire",
+   "middleName": "J.",
+   "party": "R",
+   "sponsorshipDate": "2025-04-03",
+   "state": "VA",
+   "url": "https://api.congress.gov/v3/member/M001239?format=json"
+  },
+  {
+   "bioguideId": "Y000067",
+   "district": 2,
+   "firstName": "Rudy",
+   "fullName": "Rep. Yakym, Rudy [R-IN-2]",
+   "isOriginalCosponsor": false,
+   "lastName": "Yakym",
+   "party": "R",
+   "sponsorshipDate": "2025-05-01",
+   "state": "IN",
+   "url": "https://api.congress.gov/v3/member/Y000067?format=json"
+  },
+  {
+   "bioguideId": "S001214",
+   "district": 17,
+   "firstName": "W.",
+   "fullName": "Rep. Steube, W. Gregory [R-FL-17]",
+   "isOriginalCosponsor": false,
+   "lastName": "Steube",
+   "middleName": "Gregory",
+   "party": "R",
+   "sponsorshipDate": "2025-06-23",
+   "state": "FL",
+   "url": "https://api.congress.gov/v3/member/S001214?format=json"
+  }
+ ],
+ "pagination": {
+  "count": 4,
+  "countIncludingWithdrawnCosponsors": 4,
+  "next": "https://api.congress.gov/v3/bill/119/hr/2617/cosponsors?offset=3&limit=3&format=json"
+ },
+ "request": {
+  "billNumber": "2617",
+  "billType": "hr",
+  "billUrl": "https://api.congress.gov/v3/bill/119/hr/2617?format=json",
+  "congress": "119",
+  "contentType": "application/json",
+  "format": "json"
+ }
+}

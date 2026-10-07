@@ -1,0 +1,36 @@
+{
+ "hearings": [
+  {
+   "chamber": "Senate",
+   "congress": 119,
+   "jacketNumber": 61880,
+   "number": 191,
+   "updateDate": "2026-10-07T14:49:21Z",
+   "url": "https://api.congress.gov/v3/hearing/119/senate/61880"
+  },
+  {
+   "chamber": "Senate",
+   "congress": 119,
+   "jacketNumber": 1,
+   "number": 191,
+   "updateDate": "2026-10-07T14:49:21Z",
+   "url": "https://api.congress.gov/v3/hearing/119/senate/1"
+  },
+  {
+   "chamber": "House",
+   "congress": 119,
+   "jacketNumber": 60951,
+   "updateDate": "2026-10-07T14:49:21Z",
+   "url": "https://api.congress.gov/v3/hearing/119/house/60951"
+  }
+ ],
+ "pagination": {
+  "count": 1024,
+  "next": "https://api.congress.gov/v3/hearing/119?fromDateTime=2026-09-01T00:00:00Z&offset=3&limit=3&format=json"
+ },
+ "request": {
+  "congress": "119",
+  "contentType": "application/json",
+  "format": "json"
+ }
+}

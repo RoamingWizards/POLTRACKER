@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     # override). Turn on only to let validated suggestions apply directly.
     politician_llm_auto_accept: bool = False
 
+    # Legislative ingestion (python -m poltracker.ingest_legislation): the default window starts this many days before the
+    # earliest trade, but never before the start of the current Congress.
+    legislation_buffer_days: int = Field(30, ge=0)
+
     benchmark_ticker: str = "SPY"
     price_batch_size: int = 40
     price_retry_days: int = 7  # how long before re-checking a ticker the provider had no data for

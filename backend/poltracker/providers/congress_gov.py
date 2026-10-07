@@ -7,13 +7,14 @@ cannot leak through logged URLs or exception text.
 import logging
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from datetime import date
 from typing import Any
 
 import httpx
 
 from .base import ProviderError, ProviderRateLimited
+from . import legislation as leg
 from .politicians import NotConfigured, OfficialMember, PoliticianProvider
 
 log = logging.getLogger(__name__)
@@ -128,7 +129,7 @@ def normalize_member(rec: dict[str, Any]) -> OfficialMember | None:
     )
 
 
-class CongressGovProvider(PoliticianProvider):
+class CongressGovProvider(PoliticianProvider, leg.LegislationProvider):
     name = SOURCE
 
     def __init__(
@@ -230,6 +231,101 @@ class CongressGovProvider(PoliticianProvider):
         terms = _terms(rec.get("terms"))
         rec["terms"] = terms
         return normalize_member(rec)
+
+
+    # --- legislation (same client, pacing, retry and key handling as the roster above) --------------------------
+
+    def _paged(self, path: str, key: str, params: dict[str, Any] | None = None, *, limit: int | None = None) -> Iterator[dict]:
+        """Yield the records under `key`, following Congress.gov's offset pagination. Stops after `limit` records."""
+        offset, yielded = 0, 0
+        while True:
+            body = self._get(path, {**(params or {}), "limit": PAGE_SIZE, "offset": offset})
+            records = body.get(key)
+            if records is None:
+                return
+            if not isinstance(records, list):
+                raise ProviderError(f"{path}: unexpected response shape for {key!r}")
+            for rec in records:
+                yield rec
+                yielded += 1
+                if limit is not None and yielded >= limit:
+                    return
+            offset += len(records)
+            if not records or not (body.get("pagination") or {}).get("next"):
+                return
+
+    @staticmethod
+    def _bill_path(ref: leg.BillRef) -> str:
+        return f"/bill/{ref.congress}/{ref.bill_type}/{ref.number}"
+
+    def _skipped(self, what: str, rec: Any) -> None:
+        log.warning("Skipping unusable Congress.gov %s record", what)
+
+    def list_bills(self, congress: int, *, from_date: date | None = None, limit: int | None = None) -> Iterator[leg.BillRef]:
+        """Bills of a Congress, most recently updated first. `from_date` filters on the record's update date only."""
+        params: dict[str, Any] = {"sort": "updateDate desc"}
+        if from_date:
+            params["fromDateTime"] = f"{from_date.isoformat()}T00:00:00Z"
+        for rec in self._paged(f"/bill/{congress}", "bills", params, limit=limit):
+            ref = leg.parse_bill_ref(rec)
+            if ref is None:
+                self._skipped("bill", rec)
+            else:
+                yield ref
+
+    def get_bill(self, ref: leg.BillRef) -> leg.Bill | None:
+        try:
+            body = self._get(self._bill_path(ref))
+        except ProviderError as exc:
+            if "HTTP 404" in str(exc):
+                return None  # a removed or renumbered bill is simply absent
+            raise
+        bill = leg.parse_bill(body.get("bill"))
+        return bill if bill is not None and bill.ref.key == ref.key else None
+
+    def get_bill_actions(self, ref: leg.BillRef) -> list[leg.BillAction]:
+        out = []
+        for rec in self._paged(f"{self._bill_path(ref)}/actions", "actions"):
+            action = leg.parse_action(rec)
+            out.append(action) if action else self._skipped("action", rec)
+        return out
+
+    def get_bill_subjects(self, ref: leg.BillRef) -> tuple[str | None, list[str]]:
+        body = self._get(f"{self._bill_path(ref)}/subjects", {"limit": PAGE_SIZE})
+        node = body.get("subjects")
+        if not isinstance(node, dict):
+            return None, []
+        area = node.get("policyArea") if isinstance(node.get("policyArea"), dict) else {}
+        names = [s.get("name").strip() for s in node.get("legislativeSubjects") or [] if isinstance(s, dict) and isinstance(s.get("name"), str) and s["name"].strip()]
+        return (area.get("name") or None), list(dict.fromkeys(names))
+
+    def get_bill_summaries(self, ref: leg.BillRef) -> list[leg.BillSummary]:
+        return [s for s in (leg.parse_summary(r) for r in self._paged(f"{self._bill_path(ref)}/summaries", "summaries")) if s]
+
+    def get_bill_cosponsors(self, ref: leg.BillRef) -> list[leg.BillCosponsor]:
+        return [c for c in (leg.parse_cosponsor(r) for r in self._paged(f"{self._bill_path(ref)}/cosponsors", "cosponsors")) if c]
+
+    def get_bill_committees(self, ref: leg.BillRef) -> list[leg.CommitteeRef]:
+        found = [c for c in (leg.parse_committee(r) for r in self._paged(f"{self._bill_path(ref)}/committees", "committees")) if c]
+        return list({c.code: c for c in found}.values())
+
+    def list_hearings(self, congress: int, *, limit: int | None = None) -> Iterator[leg.HearingRef]:
+        for rec in self._paged(f"/hearing/{congress}", "hearings", limit=limit):
+            ref = leg.parse_hearing_ref(rec)
+            if ref is None:
+                self._skipped("hearing", rec)
+            else:
+                yield ref
+
+    def get_hearing(self, ref: leg.HearingRef) -> leg.Hearing | None:
+        try:
+            body = self._get(f"/hearing/{ref.congress}/{ref.chamber}/{ref.jacket_number}")
+        except ProviderError as exc:
+            if "HTTP 404" in str(exc):
+                return None
+            raise
+        hearing = leg.parse_hearing(body.get("hearing"))
+        return hearing if hearing is not None and (hearing.ref.congress, hearing.ref.chamber, hearing.ref.jacket_number) == (ref.congress, ref.chamber, ref.jacket_number) else None
 
 
 def _retry_after(resp: httpx.Response) -> float | None:

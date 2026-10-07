@@ -1,0 +1,83 @@
+{
+ "bill": {
+  "actions": {
+   "count": 8,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/actions?format=json"
+  },
+  "cboCostEstimates": [
+   {
+    "description": "As ordered reported by the House Committee on Education and Workforce on April 9, 2025",
+    "pubDate": "2025-04-21T18:22:00Z",
+    "title": "H.R. 2617, Say No to Indoctrination Act",
+    "url": "https://www.cbo.gov/publication/61353"
+   }
+  ],
+  "committeeReports": [
+   {
+    "citation": "H. Rept. 119-442",
+    "url": "https://api.congress.gov/v3/committee-report/119/HRPT/442?format=json"
+   }
+  ],
+  "committees": {
+   "count": 1,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/committees?format=json"
+  },
+  "congress": 119,
+  "constitutionalAuthorityStatementText": "(trimmed)",
+  "cosponsors": {
+   "count": 4,
+   "countIncludingWithdrawnCosponsors": 4,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/cosponsors?format=json"
+  },
+  "introducedDate": "2025-04-03",
+  "latestAction": {
+   "actionDate": "2026-01-13",
+   "text": "Placed on the Union Calendar, Calendar No. 378."
+  },
+  "legislationUrl": "https://www.congress.gov/bill/119th-congress/house-bill/2617",
+  "number": "2617",
+  "originChamber": "House",
+  "originChamberCode": "H",
+  "policyArea": {
+   "name": "Education"
+  },
+  "relatedBills": {
+   "count": 1,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/relatedbills?format=json"
+  },
+  "sponsors": [
+   {
+    "bioguideId": "O000086",
+    "district": 4,
+    "firstName": "Burgess",
+    "fullName": "Rep. Owens, Burgess [R-UT-4]",
+    "isByRequest": "N",
+    "lastName": "Owens",
+    "party": "R",
+    "state": "UT",
+    "url": "https://api.congress.gov/v3/member/O000086?format=json"
+   }
+  ],
+  "subjects": {
+   "count": 3,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/subjects?format=json"
+  },
+  "summaries": {
+   "count": 1,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/summaries?format=json"
+  },
+  "textVersions": {
+   "count": 2,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/text?format=json"
+  },
+  "title": "Say No to Indoctrination Act",
+  "titles": {
+   "count": 4,
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617/titles?format=json"
+  },
+  "type": "HR",
+  "updateDate": "2026-10-07T13:56:24Z",
+  "updateDateIncludingText": "2026-10-07T13:56:24Z"
+ },
+ "request": {}
+}

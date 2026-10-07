@@ -1,0 +1,34 @@
+{
+ "hearing": {
+  "chamber": "Senate",
+  "citation": "S.Hrg.119-191",
+  "congress": 119,
+  "dates": [
+   {
+    "date": "2025-04-02"
+   }
+  ],
+  "formats": [
+   {
+    "type": "Formatted Text",
+    "url": "https://congress.gov/119/chrg/CHRG-119shrg61880/generated/CHRG-119shrg61880.htm"
+   },
+   {
+    "type": "PDF",
+    "url": "https://congress.gov/119/chrg/CHRG-119shrg61880/CHRG-119shrg61880.pdf"
+   }
+  ],
+  "jacketNumber": 61880,
+  "libraryOfCongressIdentifier": "LC76023",
+  "number": 191,
+  "title": "RULE BY DISTRICT JUDGES II: EXPLORING LEGISLATIVE SOLUTIONS TO THE BIPARTISAN PROBLEM OF UNIVERSAL INJUNCTIONS",
+  "updateDate": "2026-10-07T14:19:25Z"
+ },
+ "request": {
+  "chamber": "senate",
+  "congress": "119",
+  "contentType": "application/json",
+  "format": "json",
+  "jacketNumber": "61880"
+ }
+}

@@ -1,0 +1,45 @@
+{
+ "bills": [
+  {
+   "congress": 119,
+   "introducedDate": "2025-04-03",
+   "latestAction": {
+    "actionDate": "2026-01-13",
+    "text": "Placed on the Union Calendar, Calendar No. 378."
+   },
+   "number": "2617",
+   "originChamber": "House",
+   "originChamberCode": "H",
+   "title": "Say No to Indoctrination Act",
+   "type": "HR",
+   "updateDate": "2026-10-07",
+   "updateDateIncludingText": "2026-10-07",
+   "url": "https://api.congress.gov/v3/bill/119/hr/2617?format=json"
+  },
+  {
+   "congress": 119,
+   "introducedDate": "2026-06-08",
+   "latestAction": {
+    "actionDate": "2026-09-08",
+    "text": "Placed on the Union Calendar, Calendar No. 700."
+   },
+   "number": "9203",
+   "originChamber": "House",
+   "originChamberCode": "H",
+   "title": "Student Protection and University Accountability Act",
+   "type": "HR",
+   "updateDate": "2026-10-07",
+   "updateDateIncludingText": "2026-10-07",
+   "url": "https://api.congress.gov/v3/bill/119/hr/9203?format=json"
+  }
+ ],
+ "pagination": {
+  "count": 2117,
+  "next": "https://api.congress.gov/v3/bill/119?fromDateTime=2026-09-28T00:00:00Z&sort=updateDate desc&offset=3&limit=3&format=json"
+ },
+ "request": {
+  "congress": "119",
+  "contentType": "application/json",
+  "format": "json"
+ }
+}

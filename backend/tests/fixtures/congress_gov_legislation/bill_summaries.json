@@ -1,0 +1,22 @@
+{
+ "pagination": {
+  "count": 1
+ },
+ "request": {
+  "billNumber": "2617",
+  "billType": "hr",
+  "billUrl": "https://api.congress.gov/v3/bill/119/hr/2617?format=json",
+  "congress": "119",
+  "contentType": "application/json",
+  "format": "json"
+ },
+ "summaries": [
+  {
+   "actionDate": "2025-04-03",
+   "actionDesc": "Introduced in House",
+   "text": "<p><strong>Say No to Indoctrination Act</strong></p><p>This bill prohibits the use of federal elementary and secondary education funds to teach or advance concepts related to gender ideology as defined by Executive Order 14168.&nbsp;This executive order, titled&nbsp;<em>Defending Women From Gender Ideology Extremism and Restoring Biological Truth to the Federal Government</em>, was published on January 20, 2025.</p>",
+   "updateDate": "2026-08-24T20:39:56Z",
+   "versionCode": "00"
+  }
+ ]
+}
