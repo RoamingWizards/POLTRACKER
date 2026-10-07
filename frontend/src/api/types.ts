@@ -214,3 +214,29 @@ export interface TriggerResult {
   accepted: boolean;
   reason: string;
 }
+
+export type ActivityPeriod = '7d' | '1m' | '3m' | '6m';
+export type ActivityBasis = 'disclosure' | 'transaction';
+
+export interface SecurityActivity {
+  ticker: string;
+  period: ActivityPeriod;
+  basis: ActivityBasis;
+  start: string;
+  end: string;
+  bucket: 'day' | 'week' | 'month';
+  lean: 'more_bought' | 'more_sold' | 'balanced' | 'no_activity';
+  totals: {
+    buys: number;
+    sells: number;
+    other: number;
+    net: number;
+    buy_amount_min: number;
+    buy_amount_max: number;
+    sell_amount_min: number;
+    sell_amount_max: number;
+    trades_without_amount: number;
+  };
+  buckets: { start: string; end: string; buys: number; sells: number; other: number }[];
+  undated: number;
+}

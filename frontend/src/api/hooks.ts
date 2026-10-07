@@ -2,6 +2,9 @@ import { useEffect, useRef } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost, ApiError } from './client';
 import type {
+  ActivityBasis,
+  ActivityPeriod,
+  SecurityActivity,
   Overview,
   Page,
   Politician,
@@ -104,3 +107,10 @@ export function useTriggerRefresh() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['refresh-status'] }),
   });
 }
+
+export const useSecurityActivity = (ticker: string, period: ActivityPeriod, basis: ActivityBasis) =>
+  useQuery({
+    queryKey: ['activity', ticker, period, basis],
+    queryFn: () => apiGet<SecurityActivity>(`/securities/${ticker}/activity`, { period, basis }),
+    placeholderData: keepPreviousData, // keep the old bars on screen while the next period loads
+  });

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..config import Settings, get_settings
 from ..db import make_session_factory
+from ..activity import Basis, Period, compute_activity
 from ..models import IngestState, PriceBar, Politician, Security, Trade
 from ..performance import load_benchmark, load_series, trade_performance
 from .ordering import nulls_last, text_order
@@ -26,6 +27,9 @@ from .schemas import (
     PoliticianPageOut,
     PriceSeriesOut,
     SecurityOut,
+    SecurityActivityOut,
+    ActivityBucketOut,
+    ActivityTotalsOut,
     SecurityPerformanceOut,
     TradeOut,
     TradePageOut,
@@ -176,6 +180,40 @@ def get_prices(
     bars = session.scalars(stmt.order_by(PriceBar.date)).all()
     return PriceSeriesOut(
         ticker=sec.ticker, price_status=sec.price_status, price_from=sec.price_from, price_to=sec.price_to, bars=bars
+    )
+
+
+def _today() -> date:
+    return date.today()  # a function so tests can pin the date
+
+
+@router.get("/securities/{ticker}/activity", response_model=SecurityActivityOut)
+def get_activity(
+    ticker: str,
+    period: Period = Query("3m", description="past 7 days, 1 month, 3 months or 6 months"),
+    basis: Basis = Query("disclosure", description="count by the date a trade was disclosed or the date it was made"),
+    session: Session = Depends(get_session),
+) -> SecurityActivityOut:
+    """Were this ticker's disclosed trades mostly buys or mostly sells over the period? Counts of trades, by day/week/month."""
+    sec = _security_or_404(session, ticker)
+    when = Trade.disclosure_date if basis == "disclosure" else Trade.transaction_date
+    rows = [
+        (t, w, lo, hi)
+        for t, w, lo, hi in session.execute(
+            select(Trade.transaction_type, when, Trade.amount_min, Trade.amount_max).where(Trade.security_id == sec.id, when.is_not(None))
+        )
+    ]
+    undated = session.scalar(select(func.count(Trade.id)).where(Trade.security_id == sec.id, when.is_(None))) or 0
+    act = compute_activity(rows, period, _today())
+    t = act.totals
+    return SecurityActivityOut(
+        ticker=sec.ticker, period=period, basis=basis, start=act.start, end=act.end, bucket=act.bucket, lean=act.lean,
+        totals=ActivityTotalsOut(
+            buys=t.buys, sells=t.sells, other=t.other, net=t.net, buy_amount_min=t.buy_amount_min, buy_amount_max=t.buy_amount_max,
+            sell_amount_min=t.sell_amount_min, sell_amount_max=t.sell_amount_max, trades_without_amount=t.trades_without_amount,
+        ),
+        buckets=[ActivityBucketOut(start=b.start, end=b.end, buys=b.buys, sells=b.sells, other=b.other) for b in act.buckets],
+        undated=undated,
     )
 
 

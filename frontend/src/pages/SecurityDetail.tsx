@@ -22,6 +22,7 @@ import ChartCard from '../components/ChartCard';
 import { TypeChip } from '../components/Chips';
 import PriceChart from '../components/PriceChart';
 import QueryError from '../components/QueryError';
+import TickerActivityChart from '../components/TickerActivityChart';
 import StatCard from '../components/StatCard';
 import { formatInt, formatPct, formatUsd } from '../lib/format';
 
@@ -268,6 +269,9 @@ export default function SecurityDetail() {
               </Typography>
             )}
           </ChartCard>
+        </Grid>
+        <Grid size={12}>
+          <TickerActivityChart ticker={ticker} />
         </Grid>
       </Grid>
 

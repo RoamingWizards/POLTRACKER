@@ -1,3 +1,4 @@
+from typing import Literal
 from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -150,6 +151,40 @@ class SecurityPerformanceOut(BaseModel):
     status_counts: dict[str, int]
     total: int
     items: list[TradePerformanceOut]
+
+
+class ActivityBucketOut(BaseModel):
+    start: date
+    end: date
+    buys: int
+    sells: int
+    other: int
+
+
+class ActivityTotalsOut(BaseModel):
+    buys: int
+    sells: int
+    other: int
+    net: int  # buys minus sells, in trades
+    # Sums of the reported amount ranges: lower and upper bounds of what was disclosed, never a single value.
+    buy_amount_min: int
+    buy_amount_max: int
+    sell_amount_min: int
+    sell_amount_max: int
+    trades_without_amount: int
+
+
+class SecurityActivityOut(BaseModel):
+    ticker: str
+    period: Literal["7d", "1m", "3m", "6m"]
+    basis: Literal["disclosure", "transaction"]
+    start: date
+    end: date
+    bucket: Literal["day", "week", "month"]
+    lean: Literal["more_bought", "more_sold", "balanced", "no_activity"]
+    totals: ActivityTotalsOut
+    buckets: list[ActivityBucketOut]
+    undated: int  # trades for this ticker left out because they have no date for the chosen basis
 
 
 class DailyCount(BaseModel):
