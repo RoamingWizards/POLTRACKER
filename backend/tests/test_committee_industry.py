@@ -240,7 +240,7 @@ def real_matcher():
 def test_the_shipped_mapping_file_is_valid_complete_and_cited():
     matcher, rows = real_matcher()
     validate_rows(rows)
-    assert {r["mapping_version"] for r in rows} == {"2026.1-draft"} and all(r["reviewed_at"] is None for r in rows)  # a draft until a person reviews it
+    assert {r["mapping_version"] for r in rows} == {"2026.1-draft"} and all((r["reviewed_at"] is not None) == (r["review_status"] == "reviewed") for r in rows)  # reviewed_at set exactly for reviewed rows
     assert matcher.mapped_committees == KNOWN_COMMITTEES  # every committee POLTRACKER tracks has an explicit decision
     for r in rows:
         assert r["source_url"].startswith("https://") and r["rationale"].strip() and r["source_citation"] and r["jurisdiction_text"]

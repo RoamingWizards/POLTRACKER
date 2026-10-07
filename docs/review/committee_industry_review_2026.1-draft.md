@@ -8,23 +8,23 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 
 | Measure | Count |
 |---|---|
-| Mappings | 184 |
-| direct | 103 |
-| related | 66 |
+| Mappings | 191 |
+| direct | 97 |
+| related | 79 |
 | none (reviewed as not industry-specific) | 15 |
-| committee-level / subcommittee-level | 86 / 98 |
-| Explicit-jurisdiction mappings (official wording read) | 87 |
-| Inferred from a subcommittee name | 85 |
+| committee-level / subcommittee-level | 89 / 102 |
+| Explicit-jurisdiction mappings (official wording read) | 91 |
+| Inferred from a subcommittee name | 88 |
 | Inferred from a committee name only | 12 |
-| Rows needing review / already reviewed | 184 / 0 |
+| Rows needing review / already reviewed | 144 / 47 |
 | Trades in the data that have a security | 5380 |
 | Trades with at least one match | 357 |
-| Trades affected by a direct mapping | 212 |
-| Trades affected by related-only mappings | 145 |
-| Rows flagged for any scrutiny reason | 168 |
-| Rows with a priority concern (broad, mixed, many matches, earlier false positive) | 50 |
+| Trades affected by a direct mapping | 181 |
+| Trades affected by related-only mappings | 176 |
+| Rows flagged for any scrutiny reason | 174 |
+| Rows with a priority concern (broad, mixed, many matches, earlier false positive) | 34 |
 | Industry rows matching no current security | 14 |
-| Industry rows matching no current trade | 105 |
+| Industry rows matching no current trade | 110 |
 
 **Phase 3 policy:** only mappings that are both `reviewed` and `direct` may contribute to a contextual-review flag. `reviewed` + `related` is supporting context only. `needs_review` mappings never affect a flag. A trade has one committee-relevance signal with possibly several evidence records (see the docs).
 
@@ -32,23 +32,23 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 
 | # | Mapping | Level | Trades matched | Primary for | Securities | Politicians |
 |---|---|---|---|---|---|---|
-| 1 | BA00:6300-6499:direct  (Committee on Financial Services) | direct | 52 | 43 | 38 | 4 |
-| 2 | BA00:6000-6099:direct  (Committee on Financial Services) | direct | 47 | 46 | 51 | 5 |
+| 1 | BA00:6000-6099:direct  (Committee on Financial Services) | direct | 47 | 46 | 51 | 5 |
+| 2 | BA00:6330-6499:direct  (Committee on Financial Services) | direct | 33 | 27 | 26 | 4 |
 | 3 | AS00:3720-3729:direct  (Committee on Armed Services) | direct | 27 | 27 | 11 | 1 |
-| 4 | BA00:6795-6799:related  (Committee on Financial Services) | related | 19 | 19 | 41 | 2 |
-| 5 | BA00:6200-6299:direct  (Committee on Financial Services) | direct | 18 | 4 | 33 | 4 |
-| 6 | IF00/IF16:7370-7373:related  (Committee on Energy and Commerce / Communications and Technology) | related | 18 | 18 | 75 | 3 |
-| 7 | AP00/AP01:2833-2836:related  (Committee on Appropriations / Agriculture, Rural Development, Food and Drug Administration, and Related Agencies) | related | 16 | 16 | 48 | 3 |
-| 8 | AP00/AP07:2833-2836:related  (Committee on Appropriations / Labor, Health and Human Services, Education, and Related Agencies) | related | 14 | 0 | 48 | 1 |
-| 9 | BA00/BA16:6200-6299:direct  (Committee on Financial Services / Capital Markets) | direct | 14 | 14 | 33 | 3 |
-| 10 | IF00:2833-2836:direct  (Committee on Energy and Commerce) | direct | 14 | 2 | 48 | 4 |
-| 11 | SY00:3720-3729:related  (Committee on Science, Space, and Technology) | related | 13 | 11 | 11 | 2 |
-| 12 | WM00/WM02:2833-2836:related  (Committee on Ways and Means / Health) | related | 13 | 13 | 48 | 4 |
-| 13 | IF00/IF14:2833-2836:direct  (Committee on Energy and Commerce / Health) | direct | 12 | 12 | 48 | 3 |
-| 14 | WM00/WM02:3841-3845:related  (Committee on Ways and Means / Health) | related | 12 | 12 | 24 | 1 |
-| 15 | BA00:6100-6199:direct  (Committee on Financial Services) | direct | 11 | 4 | 7 | 4 |
-| 16 | FA00:3720-3729:related  (Committee on Foreign Affairs) | related | 11 | 11 | 11 | 2 |
-| 17 | BA00/BA04:6300-6499:direct  (Committee on Financial Services / Housing and Insurance) | direct | 9 | 9 | 38 | 1 |
+| 4 | BA00:6320-6329:related  (Committee on Financial Services) | related | 19 | 16 | 9 | 4 |
+| 5 | BA00:6795-6799:related  (Committee on Financial Services) | related | 19 | 19 | 41 | 2 |
+| 6 | BA00:6200-6299:direct  (Committee on Financial Services) | direct | 18 | 4 | 33 | 4 |
+| 7 | IF00/IF16:7370-7373:related  (Committee on Energy and Commerce / Communications and Technology) | related | 18 | 18 | 75 | 3 |
+| 8 | AP00/AP01:2833-2836:related  (Committee on Appropriations / Agriculture, Rural Development, Food and Drug Administration, and Related Agencies) | related | 16 | 16 | 48 | 3 |
+| 9 | AP00/AP07:2833-2836:related  (Committee on Appropriations / Labor, Health and Human Services, Education, and Related Agencies) | related | 14 | 0 | 48 | 1 |
+| 10 | BA00/BA16:6200-6299:direct  (Committee on Financial Services / Capital Markets) | direct | 14 | 14 | 33 | 3 |
+| 11 | IF00:2833-2836:direct  (Committee on Energy and Commerce) | direct | 14 | 2 | 48 | 4 |
+| 12 | SY00:3720-3729:related  (Committee on Science, Space, and Technology) | related | 13 | 11 | 11 | 2 |
+| 13 | WM00/WM02:2833-2836:related  (Committee on Ways and Means / Health) | related | 13 | 13 | 48 | 4 |
+| 14 | IF00/IF14:2833-2836:direct  (Committee on Energy and Commerce / Health) | direct | 12 | 12 | 48 | 3 |
+| 15 | WM00/WM02:3841-3845:related  (Committee on Ways and Means / Health) | related | 12 | 12 | 24 | 1 |
+| 16 | BA00:6199-6199:related  (Committee on Financial Services) | related | 11 | 4 | 6 | 4 |
+| 17 | FA00:3720-3729:related  (Committee on Foreign Affairs) | related | 11 | 11 | 11 | 2 |
 | 18 | BA00:6500-6599:related  (Committee on Financial Services) | related | 9 | 9 | 8 | 2 |
 | 19 | AS00:3812-3812:direct  (Committee on Armed Services) | direct | 8 | 8 | 5 | 2 |
 | 20 | JU00/JU03:7370-7373:related  (Committee on the Judiciary / Courts, Intellectual Property, Artificial Intelligence, and the Internet) | related | 8 | 8 | 75 | 1 |
@@ -65,29 +65,24 @@ Why a row is flagged:
 - `overlaps_other_committee`: overlaps a mapping of another committee
 - `false_positive_history`: adjusted after a false positive found in an earlier manual review
 
-### Priority: rows with a substantive concern (50)
+### Priority: rows with a substantive concern (34)
 
 Broad ranges, ranges mixing industry groups, rows matching many trades, and rows adjusted after an earlier false positive.
 
 | Row | Level | Reasons | Trades matched | Securities |
 |---|---|---|---|---|
-| BA00:6300-6499:direct (Committee on Financial Services) | direct | broad_range, mixed_industries, many_matches, overlaps_other_committee | 52 | 38 |
-| AG00/AG03:2000-2079:direct (Committee on Agriculture / Nutrition and Foreign Agriculture) | direct | broad_range, mixed_industries, inferred_from_name, false_positive_history | 0 | 16 |
+| BA00:6330-6499:direct (Committee on Financial Services) | direct | broad_range, mixed_industries, many_matches | 33 | 26 |
 | BA00:6000-6099:direct (Committee on Financial Services) | direct | mixed_industries, many_matches | 47 | 51 |
-| BA00/BA04:6300-6499:direct (Committee on Financial Services / Housing and Insurance) | direct | broad_range, mixed_industries, inferred_from_name, overlaps_other_committee | 9 | 38 |
+| BA00/BA04:6330-6499:direct (Committee on Financial Services / Housing and Insurance) | direct | broad_range, mixed_industries, inferred_from_name | 6 | 26 |
 | AP00/AP07:8000-8099:related (Committee on Appropriations / Labor, Health and Human Services, Education, and Related Agencies) | related | broad_range, mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 4 | 15 |
 | WM00/WM02:8000-8099:direct (Committee on Ways and Means / Health) | direct | broad_range, mixed_industries, inferred_from_name, overlaps_other_committee | 2 | 15 |
+| AG00/AG03:2000-2079:related (Committee on Agriculture / Nutrition and Foreign Agriculture) | related | broad_range, mixed_industries, inferred_from_name, related_level | 0 | 16 |
 | IF00/IF14:8000-8099:direct (Committee on Energy and Commerce / Health) | direct | broad_range, mixed_industries, inferred_from_name, overlaps_other_committee | 0 | 15 |
 | IF00:8000-8099:direct (Committee on Energy and Commerce) | direct | broad_range, mixed_industries, overlaps_other_committee | 0 | 15 |
 | AS00:3720-3729:direct (Committee on Armed Services) | direct | many_matches, overlaps_other_committee | 27 | 11 |
-| BA00:6795-6799:related (Committee on Financial Services) | related | related_level, false_positive_history | 19 | 41 |
 | BA00:6200-6299:direct (Committee on Financial Services) | direct | mixed_industries, overlaps_other_committee | 18 | 33 |
-| IF00/IF16:7370-7373:related (Committee on Energy and Commerce / Communications and Technology) | related | inferred_from_name, related_level, overlaps_other_committee, false_positive_history | 18 | 75 |
 | BA00/BA16:6200-6299:direct (Committee on Financial Services / Capital Markets) | direct | mixed_industries, inferred_from_name, overlaps_other_committee | 14 | 33 |
-| BA00:6100-6199:direct (Committee on Financial Services) | direct | mixed_industries | 11 | 7 |
 | BA00:6500-6599:related (Committee on Financial Services) | related | mixed_industries, related_level | 9 | 8 |
-| JU00/JU03:7370-7373:related (Committee on the Judiciary / Courts, Intellectual Property, Artificial Intelligence, and the Internet) | related | inferred_from_name, related_level, overlaps_other_committee, false_positive_history | 8 | 75 |
-| BA00/BA20:6100-6199:direct (Committee on Financial Services / Financial Institutions) | direct | mixed_industries, inferred_from_name | 7 | 7 |
 | IF00/IF16:4800-4899:direct (Committee on Energy and Commerce / Communications and Technology) | direct | mixed_industries, inferred_from_name | 3 | 19 |
 | IF00:4800-4899:direct (Committee on Energy and Commerce) | direct | mixed_industries | 3 | 19 |
 | AP00/AP10:4911-4939:related (Committee on Appropriations / Energy and Water Development and Related Agencies) | related | mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 2 | 35 |
@@ -97,32 +92,21 @@ Broad ranges, ranges mixing industry groups, rows matching many trades, and rows
 | BA00/BA04:1520-1531:related (Committee on Financial Services / Housing and Insurance) | related | mixed_industries, inferred_from_name, related_level | 1 | 7 |
 | BA00/BA20:6000-6099:direct (Committee on Financial Services / Financial Institutions) | direct | mixed_industries, inferred_from_name | 1 | 51 |
 | II00:1000-1099:direct (Committee on Natural Resources) | direct | mixed_industries | 1 | 12 |
-| PW00:4730-4739:direct (Committee on Transportation and Infrastructure) | direct | false_positive_history | 1 | 3 |
 | AG00/AG15:2400-2429:related (Committee on Agriculture / Forestry and Horticulture) | related | mixed_industries, inferred_from_name, related_level | 0 | 2 |
-| AG00/AG16:2060-2079:direct (Committee on Agriculture / General Farm Commodities, Risk Management, and Credit) | direct | mixed_industries, inferred_from_name | 0 | 3 |
-| AG00/AG22:6221-6221:direct (Committee on Agriculture / Commodity Markets, Digital Assets, and Rural Development) | direct | inferred_from_name, overlaps_other_committee, false_positive_history | 0 | 5 |
 | AG00:0100-0299:direct (Committee on Agriculture) | direct | broad_range, overlaps_other_committee | 0 | 1 |
 | AG00:2010-2029:direct (Committee on Agriculture) | direct | mixed_industries | 0 | 3 |
 | AP00/AP01:0100-0299:related (Committee on Appropriations / Agriculture, Rural Development, Food and Drug Administration, and Related Agencies) | related | broad_range, inferred_from_name, related_level, overlaps_other_committee | 0 | 1 |
 | AP00/AP10:1600-1629:related (Committee on Appropriations / Energy and Water Development and Related Agencies) | related | mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 0 | 6 |
-| AS00/AS35:7373-7373:related (Committee on Armed Services / Cyber, Information Technologies, and  Innovation) | related | inferred_from_name, related_level, overlaps_other_committee, false_positive_history | 0 | 8 |
-| BA00/BA04:6500-6599:direct (Committee on Financial Services / Housing and Insurance) | direct | mixed_industries, inferred_from_name | 0 | 8 |
-| BA00:6700-6793:related (Committee on Financial Services) | related | related_level, false_positive_history | 0 | 1 |
+| BA00/BA04:6500-6599:related (Committee on Financial Services / Housing and Insurance) | related | mixed_industries, inferred_from_name, related_level | 0 | 8 |
 | HM00/HM07:4400-4499:related (Committee on Homeland Security / Transportation and Maritime Security) | related | mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 0 | 6 |
-| IF00:4700-4729:related (Committee on Energy and Commerce) | related | related_level, false_positive_history | 0 | 2 |
 | II00/II06:1000-1099:direct (Committee on Natural Resources / Energy and Mineral Resources) | direct | mixed_industries, inferred_from_name | 0 | 12 |
-| PW00/PW02:1623-1623:direct (Committee on Transportation and Infrastructure / Water Resources and Environment) | direct | overlaps_other_committee, false_positive_history | 0 | 3 |
-| PW00/PW02:4941-4941:direct (Committee on Transportation and Infrastructure / Water Resources and Environment) | direct | false_positive_history | 0 | 2 |
 | PW00/PW07:4400-4499:direct (Committee on Transportation and Infrastructure / Coast Guard and Maritime Transportation) | direct | mixed_industries, overlaps_other_committee | 0 | 6 |
-| PW00/PW12:1600-1629:direct (Committee on Transportation and Infrastructure / Highways and Transit) | direct | mixed_industries, overlaps_other_committee | 0 | 6 |
-| PW00:1600-1629:direct (Committee on Transportation and Infrastructure) | direct | mixed_industries, overlaps_other_committee | 0 | 6 |
 | PW00:4400-4499:direct (Committee on Transportation and Infrastructure) | direct | mixed_industries, overlaps_other_committee | 0 | 6 |
-| SY00/SY15:8731-8731:direct (Committee on Science, Space, and Technology / Research and Technology) | direct | inferred_from_name, false_positive_history | 0 | 3 |
 | SY00:3760-3769:direct (Committee on Science, Space, and Technology) | direct | overlaps_other_committee, false_positive_history | 0 | 2 |
-| VR00/VR03:8050-8099:direct (Committee on Veterans' Affairs / Health) | direct | mixed_industries, inferred_from_name, overlaps_other_committee | 0 | 15 |
+| VR00/VR03:8050-8099:related (Committee on Veterans' Affairs / Health) | related | mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 0 | 15 |
 | VR00:8050-8099:related (Committee on Veterans' Affairs) | related | mixed_industries, related_level, overlaps_other_committee | 0 | 15 |
 
-### Routine: flagged only for name inference, related level or overlap (118)
+### Routine: flagged only for name inference, related level or overlap (140)
 
 These are flagged in their entries below. The first group applies to nearly every subcommittee row, so it is not repeated here.
 
@@ -130,40 +114,35 @@ These are flagged in their entries below. The first group applies to nearly ever
 
 Grouped by the first three digits of the SIC code (a SIC industry group). Whether the groups are *materially* different is for the reviewer to judge.
 
-- **AG00/AG03:2000-2079:direct** (Committee on Agriculture / Nutrition and Foreign Agriculture): [200] 2000 Food and Kindred Products (5); [201] 2011 Meat Packing Plants (1), 2015 Poultry Slaughtering and Processing (1); [202] 2024 Ice Cream & Frozen Desserts (1); [203] 2030 Canned, Frozen & Preservd Fruit, Veg & Food Specialties (1), 2033 Canned, Fruits, Veg, Preserves, Jams & Jellies (1); [204] 2040 Grain Mill Products (3); [206] 2060 Sugar & Confectionery Products (1); [207] 2070 Fats & Oils (2)
-- **BA00/BA04:6300-6499:direct** (Committee on Financial Services / Housing and Insurance): [631] 6311 Life Insurance (3); [632] 6321 Accident & Health Insurance (3), 6324 Hospital & Medical Service Plans (6); [633] 6331 Fire, Marine & Casualty Insurance (16); [636] 6361 Title Insurance (1); [639] 6399 Insurance Carriers, NEC (1); [641] 6411 Insurance Agents, Brokers & Service (8)
-- **BA00:6300-6499:direct** (Committee on Financial Services): [631] 6311 Life Insurance (3); [632] 6321 Accident & Health Insurance (3), 6324 Hospital & Medical Service Plans (6); [633] 6331 Fire, Marine & Casualty Insurance (16); [636] 6361 Title Insurance (1); [639] 6399 Insurance Carriers, NEC (1); [641] 6411 Insurance Agents, Brokers & Service (8)
+- **AG00/AG03:2000-2079:related** (Committee on Agriculture / Nutrition and Foreign Agriculture): [200] 2000 Food and Kindred Products (5); [201] 2011 Meat Packing Plants (1), 2015 Poultry Slaughtering and Processing (1); [202] 2024 Ice Cream & Frozen Desserts (1); [203] 2030 Canned, Frozen & Preservd Fruit, Veg & Food Specialties (1), 2033 Canned, Fruits, Veg, Preserves, Jams & Jellies (1); [204] 2040 Grain Mill Products (3); [206] 2060 Sugar & Confectionery Products (1); [207] 2070 Fats & Oils (2)
 - **AP00/AP07:8000-8099:related** (Committee on Appropriations / Labor, Health and Human Services, Education, and Related Agencies): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
 - **IF00/IF14:8000-8099:direct** (Committee on Energy and Commerce / Health): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
 - **IF00:8000-8099:direct** (Committee on Energy and Commerce): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
-- **VR00/VR03:8050-8099:direct** (Committee on Veterans' Affairs / Health): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
+- **VR00/VR03:8050-8099:related** (Committee on Veterans' Affairs / Health): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
 - **VR00:8050-8099:related** (Committee on Veterans' Affairs): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
 - **WM00/WM02:8000-8099:direct** (Committee on Ways and Means / Health): [805] 8050 Services-Nursing & Personal Care Facilities (1); [806] 8060 Services-Hospitals (1), 8062 Services-General Medical & Surgical Hospitals, NEC (4); [807] 8071 Services-Medical Laboratories (6); [808] 8082 Services-Home Health Care Services (1); [809] 8090 Services-Misc Health & Allied Services, NEC (1), 8093 Services-Specialty Outpatient Facilities, NEC (1)
+- **BA00/BA04:6330-6499:direct** (Committee on Financial Services / Housing and Insurance): [633] 6331 Fire, Marine & Casualty Insurance (16); [636] 6361 Title Insurance (1); [639] 6399 Insurance Carriers, NEC (1); [641] 6411 Insurance Agents, Brokers & Service (8)
 - **BA00/BA16:6200-6299:direct** (Committee on Financial Services / Capital Markets): [620] 6200 Security & Commodity Brokers, Dealers, Exchanges & Services (6); [621] 6211 Security Brokers, Dealers & Flotation Companies (11); [622] 6221 Commodity Contracts Brokers & Dealers (5); [628] 6282 Investment Advice (11)
 - **BA00:6200-6299:direct** (Committee on Financial Services): [620] 6200 Security & Commodity Brokers, Dealers, Exchanges & Services (6); [621] 6211 Security Brokers, Dealers & Flotation Companies (11); [622] 6221 Commodity Contracts Brokers & Dealers (5); [628] 6282 Investment Advice (11)
+- **BA00:6330-6499:direct** (Committee on Financial Services): [633] 6331 Fire, Marine & Casualty Insurance (16); [636] 6361 Title Insurance (1); [639] 6399 Insurance Carriers, NEC (1); [641] 6411 Insurance Agents, Brokers & Service (8)
 - **IF00/IF16:4800-4899:direct** (Committee on Energy and Commerce / Communications and Technology): [481] 4812 Radiotelephone Communications (1), 4813 Telephone Communications (No Radiotelephone) (5); [483] 4832 Radio Broadcasting Stations (2), 4833 Television Broadcasting Stations (5); [484] 4841 Cable & Other Pay Television Services (4); [489] 4899 Communications Services, NEC (2)
 - **IF00:4800-4899:direct** (Committee on Energy and Commerce): [481] 4812 Radiotelephone Communications (1), 4813 Telephone Communications (No Radiotelephone) (5); [483] 4832 Radio Broadcasting Stations (2), 4833 Television Broadcasting Stations (5); [484] 4841 Cable & Other Pay Television Services (4); [489] 4899 Communications Services, NEC (2)
 - **AP00/AP10:4911-4939:related** (Committee on Appropriations / Energy and Water Development and Related Agencies): [491] 4911 Electric Services (14); [492] 4922 Natural Gas Transmission (6), 4923 Natural Gas Transmisison & Distribution (1), 4924 Natural Gas Distribution (4); [493] 4931 Electric & Other Services Combined (9), 4932 Gas & Other Services Combined (1)
-- **BA00/BA04:6500-6599:direct** (Committee on Financial Services / Housing and Insurance): [650] 6500 Real Estate (4); [651] 6510 Real Estate Operators (No Developers) & Lessors (1); [653] 6531 Real Estate Agents & Managers (For Others) (3)
+- **BA00/BA04:6500-6599:related** (Committee on Financial Services / Housing and Insurance): [650] 6500 Real Estate (4); [651] 6510 Real Estate Operators (No Developers) & Lessors (1); [653] 6531 Real Estate Agents & Managers (For Others) (3)
 - **BA00:6500-6599:related** (Committee on Financial Services): [650] 6500 Real Estate (4); [651] 6510 Real Estate Operators (No Developers) & Lessors (1); [653] 6531 Real Estate Agents & Managers (For Others) (3)
 - **IF00/IF03:4911-4939:direct** (Committee on Energy and Commerce / Energy): [491] 4911 Electric Services (14); [492] 4922 Natural Gas Transmission (6), 4923 Natural Gas Transmisison & Distribution (1), 4924 Natural Gas Distribution (4); [493] 4931 Electric & Other Services Combined (9), 4932 Gas & Other Services Combined (1)
 - **IF00:4911-4939:direct** (Committee on Energy and Commerce): [491] 4911 Electric Services (14); [492] 4922 Natural Gas Transmission (6), 4923 Natural Gas Transmisison & Distribution (1), 4924 Natural Gas Distribution (4); [493] 4931 Electric & Other Services Combined (9), 4932 Gas & Other Services Combined (1)
 - **II00/II06:1000-1099:direct** (Committee on Natural Resources / Energy and Mineral Resources): [100] 1000 Metal Mining (5); [104] 1040 Gold and Silver Ores (6); [109] 1090 Miscellaneous Metal Ores (1)
 - **II00:1000-1099:direct** (Committee on Natural Resources): [100] 1000 Metal Mining (5); [104] 1040 Gold and Silver Ores (6); [109] 1090 Miscellaneous Metal Ores (1)
 - **AG00/AG15:2400-2429:related** (Committee on Agriculture / Forestry and Horticulture): [240] 2400 Lumber & Wood Products (No Furniture) (1); [242] 2421 Sawmills & Planting Mills, General (1)
-- **AG00/AG16:2060-2079:direct** (Committee on Agriculture / General Farm Commodities, Risk Management, and Credit): [206] 2060 Sugar & Confectionery Products (1); [207] 2070 Fats & Oils (2)
 - **AG00:2010-2029:direct** (Committee on Agriculture): [201] 2011 Meat Packing Plants (1), 2015 Poultry Slaughtering and Processing (1); [202] 2024 Ice Cream & Frozen Desserts (1)
 - **AG00:2060-2079:related** (Committee on Agriculture): [206] 2060 Sugar & Confectionery Products (1); [207] 2070 Fats & Oils (2)
 - **AP00/AP10:1600-1629:related** (Committee on Appropriations / Energy and Water Development and Related Agencies): [160] 1600 Heavy Construction Other Than Bldg Const - Contractors (3); [162] 1623 Water, Sewer, Pipeline, Comm & Power Line Construction (3)
 - **BA00/BA04:1520-1531:related** (Committee on Financial Services / Housing and Insurance): [152] 1520 General Bldg Contractors - Residential Bldgs (2); [153] 1531 Operative Builders (5)
 - **BA00/BA20:6000-6099:direct** (Committee on Financial Services / Financial Institutions): [602] 6021 National Commercial Banks (18), 6022 State Commercial Banks (19), 6029 Commercial Banks, NEC (11); [603] 6035 Savings Institution, Federally Chartered (2), 6036 Savings Institutions, Not Federally Chartered (1)
-- **BA00/BA20:6100-6199:direct** (Committee on Financial Services / Financial Institutions): [615] 6159 Miscellaneous Business Credit Institution (1); [619] 6199 Finance Services (6)
 - **BA00:6000-6099:direct** (Committee on Financial Services): [602] 6021 National Commercial Banks (18), 6022 State Commercial Banks (19), 6029 Commercial Banks, NEC (11); [603] 6035 Savings Institution, Federally Chartered (2), 6036 Savings Institutions, Not Federally Chartered (1)
-- **BA00:6100-6199:direct** (Committee on Financial Services): [615] 6159 Miscellaneous Business Credit Institution (1); [619] 6199 Finance Services (6)
 - **HM00/HM07:4400-4499:related** (Committee on Homeland Security / Transportation and Maritime Security): [440] 4400 Water Transportation (4); [441] 4412 Deep Sea Foreign Transportation of  Freight (2)
 - **PW00/PW07:4400-4499:direct** (Committee on Transportation and Infrastructure / Coast Guard and Maritime Transportation): [440] 4400 Water Transportation (4); [441] 4412 Deep Sea Foreign Transportation of  Freight (2)
-- **PW00/PW12:1600-1629:direct** (Committee on Transportation and Infrastructure / Highways and Transit): [160] 1600 Heavy Construction Other Than Bldg Const - Contractors (3); [162] 1623 Water, Sewer, Pipeline, Comm & Power Line Construction (3)
-- **PW00:1600-1629:direct** (Committee on Transportation and Infrastructure): [160] 1600 Heavy Construction Other Than Bldg Const - Contractors (3); [162] 1623 Water, Sewer, Pipeline, Comm & Power Line Construction (3)
 - **PW00:4400-4499:direct** (Committee on Transportation and Infrastructure): [440] 4400 Water Transportation (4); [441] 4412 Deep Sea Foreign Transportation of  Freight (2)
 
 ## Review entries, by committee and subcommittee
@@ -241,7 +220,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: GIS, INGR, K.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00:2060-2079:related`  related  |  needs_review
+#### `AG00:2060-2079:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 2060-2079
@@ -253,6 +232,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 3 securities (2060 Sugar & Confectionery Products x1, 2070 Fats & Oils x2)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: ADM, BG, HSY.
 - **Scrutiny:** `mixed_industries`; `related_level`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00:2090-2099:related`  related  |  needs_review
@@ -337,8 +317,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 5 securities (6221 Commodity Contracts Brokers & Dealers x5)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: BITB, IBIT, PALL, PPLT, SLV.
 - **Overlaps other committees:** BA00 6200-6299 (direct); BA00/BA16 6200-6299 (direct)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`; `false_positive_history`
-- **Review note:** Review history: an earlier draft also mapped 6200 (security and commodity brokers, general) here; it was removed after manual review because it matched Nasdaq, an equities exchange, not a commodity market.
+- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
+- **Review note:** Needs more source review (owner decision 2026-10-07): the current 6221 securities are commodity-linked ETFs, not exchanges or brokers; decide whether they count as 'commodity markets'. Overlaps Financial Services 6200-6299. Earlier history: Review history: an earlier draft also mapped 6200 (security and commodity brokers, general) here; it was removed after manual review because it matched Nasdaq, an equities exchange, not a commodity market.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG14:0700-0799:direct`  direct  |  needs_review
@@ -399,7 +379,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00/AG15:2400-2429:related`  related  |  needs_review
+#### `AG00/AG15:2400-2429:related`  related  |  reviewed
 
 - **Scope:** subcommittee AG15 (Forestry and Horticulture)
 - **SIC range:** 2400-2429
@@ -411,6 +391,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 2 securities (2400 Lumber & Wood Products (No Furniture) x1, 2421 Sawmills & Planting Mills, General x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: LPX, UFPI.
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG16:0100-0199:direct`  direct  |  needs_review
@@ -442,18 +423,34 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00/AG16:2060-2079:direct`  direct  |  needs_review
+#### `AG00/AG16:2060-2069:related`  related  |  reviewed
 
 - **Scope:** subcommittee AG16 (General Farm Commodities, Risk Management, and Credit)
-- **SIC range:** 2060-2079
-- **Official SIC titles covered:** 2060 Sugar & Confectionery Products; 2070 Fats & Oils
-- **Rationale:** Sugar, fats and oils processing of farm commodities. Official SIC titles in 2060-2079: 2060 Sugar & Confectionery Products; 2070 Fats & Oils.
+- **SIC range:** 2060-2069
+- **Official SIC titles covered:** 2060 Sugar & Confectionery Products
+- **Rationale:** Sugar, fats and oils processing of farm commodities. Official SIC titles in 2060-2069: 2060 Sugar & Confectionery Products.
 - **Official jurisdiction wording used:** (2) Agriculture generally. (3) Agricultural and industrial chemistry. (7) Agricultural production and marketing and stabilization of prices of agricultural products, and commodities. (9) Commodity exchanges. (11) Dairy industry. (14) Inspection of livestock, poultry, meat products, and seafood and seafood products. (15) Forestry in general. (16) Human nutrition. (17) Plant industry, soils, and agricultural engineering.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(a)(7),(13); subcommittee name  <https://agriculture.house.gov/subcommittees/>
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
-- **In POLTRACKER data:** 3 securities (2060 Sugar & Confectionery Products x1, 2070 Fats & Oils x2)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: ADM, BG, HSY.
-- **Scrutiny:** `mixed_industries`; `inferred_from_name`
+- **In POLTRACKER data:** 1 securities (2060 Sugar & Confectionery Products x1)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: HSY.
+- **Scrutiny:** `inferred_from_name`; `related_level`
+- **Review note:** Split from 2060-2079 direct (owner decision 2026-10-07): Fats and oils processing of farm commodities (2070-2079) stays direct; sugar and confectionery (2060-2069) is largely consumer goods and is separated as related. This piece is related.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `AG00/AG16:2070-2079:direct`  direct  |  reviewed
+
+- **Scope:** subcommittee AG16 (General Farm Commodities, Risk Management, and Credit)
+- **SIC range:** 2070-2079
+- **Official SIC titles covered:** 2070 Fats & Oils
+- **Rationale:** Sugar, fats and oils processing of farm commodities. Official SIC titles in 2070-2079: 2070 Fats & Oils.
+- **Official jurisdiction wording used:** (2) Agriculture generally. (3) Agricultural and industrial chemistry. (7) Agricultural production and marketing and stabilization of prices of agricultural products, and commodities. (9) Commodity exchanges. (11) Dairy industry. (14) Inspection of livestock, poultry, meat products, and seafood and seafood products. (15) Forestry in general. (16) Human nutrition. (17) Plant industry, soils, and agricultural engineering.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(a)(7),(13); subcommittee name  <https://agriculture.house.gov/subcommittees/>
+- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **In POLTRACKER data:** 2 securities (2070 Fats & Oils x2)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: ADM, BG.
+- **Scrutiny:** `inferred_from_name`
+- **Review note:** Split from 2060-2079 direct (owner decision 2026-10-07): Fats and oils processing of farm commodities (2070-2079) stays direct; sugar and confectionery (2060-2069) is largely consumer goods and is separated as related. This piece is direct.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG29:0200-0299:direct`  direct  |  needs_review
@@ -499,7 +496,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00/AG03:2000-2079:direct`  direct  |  needs_review
+#### `AG00/AG03:2000-2079:related`  related  |  reviewed
 
 - **Scope:** subcommittee AG03 (Nutrition and Foreign Agriculture)
 - **SIC range:** 2000-2079
@@ -510,8 +507,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 16 securities (2000 Food and Kindred Products x5, 2011 Meat Packing Plants x1, 2015 Poultry Slaughtering and Processing x1, 2024 Ice Cream & Frozen Desserts x1, 2030 Canned, Frozen & Preservd Fruit, Veg & Food Specialties x1, 2033 Canned, Fruits, Veg, Preserves, Jams & Jellies x1, 2040 Grain Mill Products x3, 2060 Sugar & Confectionery Products x1, 2070 Fats & Oils x2)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: ADM, BG, CAG, CPB, FLO, GIS, HRL, HSY.
-- **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `false_positive_history`
-- **Review note:** Review history: an earlier draft mapped 2000-2099; beverages (2080-2089) were excluded after it matched PepsiCo, which is not 'human nutrition'.
+- **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `related_level`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07): broad food manufacturing is a stretch for a nutrition-programs subcommittee; the committee-level meat, dairy and grain rows cover the clear cases. Earlier history: Review history: an earlier draft mapped 2000-2099; beverages (2080-2089) were excluded after it matched PepsiCo, which is not 'human nutrition'.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG03:2090-2099:direct`  direct  |  needs_review
@@ -571,7 +568,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AP00/AP01:0100-0299:related`  related  |  needs_review
+#### `AP00/AP01:0100-0299:related`  related  |  reviewed
 
 - **Scope:** subcommittee AP01 (Agriculture, Rural Development, Food and Drug Administration, and Related Agencies)
 - **SIC range:** 0100-0299
@@ -584,6 +581,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CTVA.
 - **Overlaps other committees:** AG00 0100-0299 (direct); AG00/AG15 0180-0189 (direct); AG00/AG16 0100-0199 (direct); AG00/AG29 0200-0299 (direct)
 - **Scrutiny:** `broad_range`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AP00/AP01:2833-2836:related`  related  |  needs_review
@@ -706,7 +704,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AP00/AP10:1600-1629:related`  related  |  needs_review
+#### `AP00/AP10:1600-1629:related`  related  |  reviewed
 
 - **Scope:** subcommittee AP10 (Energy and Water Development and Related Agencies)
 - **SIC range:** 1600-1629
@@ -717,11 +715,12 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 6 securities (1600 Heavy Construction Other Than Bldg Const - Contractors x3, 1623 Water, Sewer, Pipeline, Comm & Power Line Construction x3)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DY, FLR, J, MTZ, PRIM, STRL.
-- **Overlaps other committees:** PW00 1600-1629 (direct); PW00/PW12 1600-1629 (direct); PW00/PW02 1623-1623 (direct)
+- **Overlaps other committees:** PW00 1600-1622 (direct); PW00 1623-1629 (related); PW00/PW12 1600-1622 (direct); PW00/PW12 1623-1629 (related); PW00/PW02 1623-1623 (related)
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AP00/AP10:4911-4939:related`  related  |  needs_review
+#### `AP00/AP10:4911-4939:related`  related  |  reviewed
 
 - **Scope:** subcommittee AP10 (Energy and Water Development and Related Agencies)
 - **SIC range:** 4911-4939
@@ -734,6 +733,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 2 by 1 politician (primary match for 2). Examples: AEE, AEP, ATO, BEP, CEG, CMS, CNP, D.
 - **Overlaps other committees:** IF00 4911-4939 (direct); IF00/IF03 4911-4939 (direct); IF00/IF03 4922-4924 (direct)
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AP00/AP07:2833-2836:related`  related  |  needs_review
@@ -751,7 +751,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AP00/AP07:8000-8099:related`  related  |  needs_review
+#### `AP00/AP07:8000-8099:related`  related  |  reviewed
 
 - **Scope:** subcommittee AP07 (Labor, Health and Human Services, Education, and Related Agencies)
 - **SIC range:** 8000-8099
@@ -762,8 +762,9 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 4 by 1 politician (primary match for 4). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); VR00 8050-8099 (related); VR00/VR03 8050-8099 (direct); WM00/WM02 8000-8099 (direct)
+- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); WM00/WM02 8000-8099 (direct)
 - **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 
@@ -784,7 +785,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AS00:3720-3729:direct`  direct  |  needs_review
+#### `AS00:3720-3729:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 3720-3729
@@ -797,6 +798,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 27 by 1 politician (primary match for 27). Examples: AVAV, BA, DCO, ESLT, HEI.A, HON, HONA, RTX.
 - **Overlaps other committees:** PW00 3720-3729 (related); PW00/PW05 3720-3729 (related); SY00 3720-3729 (related); SY00/SY16 3720-3729 (direct); FA00 3720-3729 (related); AP00/AP02 3720-3729 (direct)
 - **Scrutiny:** `many_matches`; `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07). The SIC range mixes civilian and military aviation; it is approved direct because the matched suppliers are mainly defense-industrial-base firms, but a civil-only aircraft supplier would match too.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AS00:3730-3732:direct`  direct  |  needs_review
@@ -844,7 +846,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AS00/AS35:7373-7373:related`  related  |  needs_review
+#### `AS00/AS35:7373-7373:related`  related  |  reviewed
 
 - **Scope:** subcommittee AS35 (Cyber, Information Technologies, and  Innovation)
 - **SIC range:** 7373-7373
@@ -856,8 +858,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 8 securities (7373 Services-Computer Integrated Systems Design x8)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CACI, GDDY, IONQ, JKHY, KD, LDOS, QNT, SAIC.
 - **Overlaps other committees:** IF00/IF16 7370-7373 (related); JU00/JU03 7370-7373 (related)
-- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`; `false_positive_history`
-- **Review note:** Review history: an earlier draft mapped 7373-7374; 7374 (data processing) was excluded after it matched ADP, a payroll processor.
+- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself. Earlier history: Review history: an earlier draft mapped 7373-7374; 7374 (data processing) was excluded after it matched ADP, a payroll processor.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AS00/AS28:3730-3732:direct`  direct  |  needs_review
@@ -938,7 +940,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 
 ### BA00: Committee on Financial Services
 
-#### `BA00:6000-6099:direct`  direct  |  needs_review
+#### `BA00:6000-6099:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 6000-6099
@@ -950,23 +952,39 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 51 securities (6021 National Commercial Banks x18, 6022 State Commercial Banks x19, 6029 Commercial Banks, NEC x11, 6035 Savings Institution, Federally Chartered x2, 6036 Savings Institutions, Not Federally Chartered x1)
 - **Trades matched:** 47 by 5 politicians (primary match for 46). Examples: ABCB, ALLY, BAC, BBT, BBVA, BCLYF, BCS, BK.
 - **Scrutiny:** `mixed_industries`; `many_matches`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00:6100-6199:direct`  direct  |  needs_review
+#### `BA00:6100-6198:direct`  direct  |  reviewed
 
 - **Scope:** committee level
-- **SIC range:** 6100-6199
-- **Official SIC titles covered:** 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; 6172 Finance Lessors; 6189 Asset-Backed Securities; 6199 Finance Services
-- **Rationale:** Non-depository credit institutions: 'money and credit' (Rule X 1(h)(7)). Official SIC titles in 6100-6199: 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; +3 more.
+- **SIC range:** 6100-6198
+- **Official SIC titles covered:** 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; 6172 Finance Lessors; 6189 Asset-Backed Securities
+- **Rationale:** Non-depository credit institutions: 'money and credit' (Rule X 1(h)(7)). Official SIC titles in 6100-6198: 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; +2 more.
 - **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
-- **In POLTRACKER data:** 7 securities (6159 Miscellaneous Business Credit Institution x1, 6199 Finance Services x6)
-- **Trades matched:** 11 by 4 politicians (primary match for 4). Examples: AXP, COIN, IREN, IX, MSTR, PWP, SYF.
-- **Scrutiny:** `mixed_industries`
+- **In POLTRACKER data:** 1 securities (6159 Miscellaneous Business Credit Institution x1)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: IX.
+- **Review note:** Split from 6100-6199 direct (owner decision 2026-10-07): Credit institutions (6100-6198) stay direct; SIC 6199 'Finance Services' is a catch-all that mixes card issuers with crypto and advisory firms, so it is separated and treated as related. This piece is direct.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00:6200-6299:direct`  direct  |  needs_review
+#### `BA00:6199-6199:related`  related  |  reviewed
+
+- **Scope:** committee level
+- **SIC range:** 6199-6199
+- **Official SIC titles covered:** 6199 Finance Services
+- **Rationale:** Non-depository credit institutions: 'money and credit' (Rule X 1(h)(7)). Official SIC titles in 6199-6199: 6199 Finance Services.
+- **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
+- **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
+- **In POLTRACKER data:** 6 securities (6199 Finance Services x6)
+- **Trades matched:** 11 by 4 politicians (primary match for 4). Examples: AXP, COIN, IREN, MSTR, PWP, SYF.
+- **Scrutiny:** `related_level`
+- **Review note:** Split from 6100-6199 direct (owner decision 2026-10-07): Credit institutions (6100-6198) stay direct; SIC 6199 'Finance Services' is a catch-all that mixes card issuers with crypto and advisory firms, so it is separated and treated as related. This piece is related.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `BA00:6200-6299:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 6200-6299
@@ -979,24 +997,55 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 18 by 4 politicians (primary match for 4). Examples: AMP, APO, ARES, BEN, BITB, BLK, BX, CBOE.
 - **Overlaps other committees:** AG00 6221-6221 (direct); AG00/AG22 6221-6221 (direct)
 - **Scrutiny:** `mixed_industries`; `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00:6300-6499:direct`  direct  |  needs_review
+#### `BA00:6300-6319:direct`  direct  |  reviewed
 
 - **Scope:** committee level
-- **SIC range:** 6300-6499
-- **Official SIC titles covered:** 6311 Life Insurance; 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans; 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; 6399 Insurance Carriers, Nec; 6411 Insurance Agents, Brokers & Service
-- **Rationale:** Insurance carriers, agents and brokers: 'insurance generally' (Rule X 1(h)(4)). Official SIC titles in 6300-6499: 6311 Life Insurance; 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans; 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; +2 more.
+- **SIC range:** 6300-6319
+- **Official SIC titles covered:** 6311 Life Insurance
+- **Rationale:** Insurance carriers, agents and brokers: 'insurance generally' (Rule X 1(h)(4)). Official SIC titles in 6300-6319: 6311 Life Insurance.
 - **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
-- **In POLTRACKER data:** 38 securities (6311 Life Insurance x3, 6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6, 6331 Fire, Marine & Casualty Insurance x16, 6361 Title Insurance x1, 6399 Insurance Carriers, NEC x1, 6411 Insurance Agents, Brokers & Service x8)
-- **Trades matched:** 52 by 4 politicians (primary match for 43). Examples: ACGL, AFG, AFL, AIG, AIZ, AJG, ALL, AON.
-- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (direct)
-- **Scrutiny:** `broad_range`; `mixed_industries`; `many_matches`; `overlaps_other_committee`
+- **In POLTRACKER data:** 3 securities (6311 Life Insurance x3)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: GL, MET, PRU.
+- **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is direct.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00:6500-6599:related`  related  |  needs_review
+#### `BA00:6320-6329:related`  related  |  reviewed
+
+- **Scope:** committee level
+- **SIC range:** 6320-6329
+- **Official SIC titles covered:** 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans
+- **Rationale:** Insurance carriers, agents and brokers: 'insurance generally' (Rule X 1(h)(4)). Official SIC titles in 6320-6329: 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans.
+- **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
+- **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
+- **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
+- **Trades matched:** 19 by 4 politicians (primary match for 16). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
+- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (direct)
+- **Scrutiny:** `related_level`; `overlaps_other_committee`
+- **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is related.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `BA00:6330-6499:direct`  direct  |  reviewed
+
+- **Scope:** committee level
+- **SIC range:** 6330-6499
+- **Official SIC titles covered:** 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; 6399 Insurance Carriers, Nec; 6411 Insurance Agents, Brokers & Service
+- **Rationale:** Insurance carriers, agents and brokers: 'insurance generally' (Rule X 1(h)(4)). Official SIC titles in 6330-6499: 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; 6399 Insurance Carriers, Nec; 6411 Insurance Agents, Brokers & Service.
+- **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
+- **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
+- **In POLTRACKER data:** 26 securities (6331 Fire, Marine & Casualty Insurance x16, 6361 Title Insurance x1, 6399 Insurance Carriers, NEC x1, 6411 Insurance Agents, Brokers & Service x8)
+- **Trades matched:** 33 by 4 politicians (primary match for 27). Examples: ACGL, AFG, AIG, AIZ, AJG, ALL, AON, BRK.B.
+- **Scrutiny:** `broad_range`; `mixed_industries`; `many_matches`
+- **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is direct.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `BA00:6500-6599:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 6500-6599
@@ -1008,9 +1057,10 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 8 securities (6500 Real Estate x4, 6510 Real Estate Operators (No Developers) & Lessors x1, 6531 Real Estate Agents & Managers (For Others) x3)
 - **Trades matched:** 9 by 2 politicians (primary match for 9). Examples: COMP, EFC, FSV, GTY, INVH, JLL, OPEN, UE.
 - **Scrutiny:** `mixed_industries`; `related_level`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00:6700-6793:related`  related  |  needs_review
+#### `BA00:6700-6793:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 6700-6793
@@ -1021,11 +1071,11 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 1 securities (6792 Oil Royalty Traders x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: LB.
-- **Scrutiny:** `related_level`; `false_positive_history`
-- **Review note:** Review history: an earlier draft mapped 6700-6799; 6794 (patent owners and lessors) was excluded after it matched Dolby Laboratories.
+- **Scrutiny:** `related_level`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself. Earlier history: Review history: an earlier draft mapped 6700-6799; 6794 (patent owners and lessors) was excluded after it matched Dolby Laboratories.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00:6795-6799:related`  related  |  needs_review
+#### `BA00:6795-6799:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 6795-6799
@@ -1036,8 +1086,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 41 securities (6795 Mineral Royalty Traders x1, 6798 Real Estate Investment Trusts x40)
 - **Trades matched:** 19 by 2 politicians (primary match for 19). Examples: ADC, ALEX, AMH, AMT, ARE, AVB, BXP, CCI.
-- **Scrutiny:** `related_level`; `false_positive_history`
-- **Review note:** Review history: an earlier draft mapped 6700-6799; 6794 (patent owners and lessors) was excluded after it matched Dolby Laboratories.
+- **Scrutiny:** `related_level`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself. Earlier history: Review history: an earlier draft mapped 6700-6799; 6794 (patent owners and lessors) was excluded after it matched Dolby Laboratories.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `BA00:7320-7320:related`  related  |  needs_review
@@ -1054,7 +1104,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00/BA16:6200-6299:direct`  direct  |  needs_review
+#### `BA00/BA16:6200-6299:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee BA16 (Capital Markets)
 - **SIC range:** 6200-6299
@@ -1067,6 +1117,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 14 by 3 politicians (primary match for 14). Examples: AMP, APO, ARES, BEN, BITB, BLK, BX, CBOE.
 - **Overlaps other committees:** AG00 6221-6221 (direct); AG00/AG22 6221-6221 (direct)
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `BA00/BA16:6770-6770:direct`  direct  |  needs_review
@@ -1083,7 +1134,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00/BA20:6000-6099:direct`  direct  |  needs_review
+#### `BA00/BA20:6000-6099:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee BA20 (Financial Institutions)
 - **SIC range:** 6000-6099
@@ -1095,23 +1146,40 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 51 securities (6021 National Commercial Banks x18, 6022 State Commercial Banks x19, 6029 Commercial Banks, NEC x11, 6035 Savings Institution, Federally Chartered x2, 6036 Savings Institutions, Not Federally Chartered x1)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: ABCB, ALLY, BAC, BBT, BBVA, BCLYF, BCS, BK.
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00/BA20:6100-6199:direct`  direct  |  needs_review
+#### `BA00/BA20:6100-6198:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee BA20 (Financial Institutions)
-- **SIC range:** 6100-6199
-- **Official SIC titles covered:** 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; 6172 Finance Lessors; 6189 Asset-Backed Securities; 6199 Finance Services
-- **Rationale:** Financial institutions: credit institutions. Official SIC titles in 6100-6199: 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; +3 more.
+- **SIC range:** 6100-6198
+- **Official SIC titles covered:** 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; 6172 Finance Lessors; 6189 Asset-Backed Securities
+- **Rationale:** Financial institutions: credit institutions. Official SIC titles in 6100-6198: 6111 Federal & Federally-Sponsored Credit Agencies; 6141 Personal Credit Institutions; 6153 Short-Term Business Credit Institutions; 6159 Miscellaneous Business Credit Institution; 6162 Mortgage Bankers & Loan Correspondents; 6163 Loan Brokers; +2 more.
 - **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)(1),(7); subcommittee name  <https://financialservices.house.gov/subcommittees/>
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
-- **In POLTRACKER data:** 7 securities (6159 Miscellaneous Business Credit Institution x1, 6199 Finance Services x6)
-- **Trades matched:** 7 by 2 politicians (primary match for 7). Examples: AXP, COIN, IREN, IX, MSTR, PWP, SYF.
-- **Scrutiny:** `mixed_industries`; `inferred_from_name`
+- **In POLTRACKER data:** 1 securities (6159 Miscellaneous Business Credit Institution x1)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: IX.
+- **Scrutiny:** `inferred_from_name`
+- **Review note:** Split from 6100-6199 direct (owner decision 2026-10-07): Credit institutions (6100-6198) stay direct; SIC 6199 'Finance Services' is a catch-all that mixes card issuers with crypto and advisory firms, so it is separated and treated as related. This piece is direct.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00/BA04:1520-1531:related`  related  |  needs_review
+#### `BA00/BA20:6199-6199:related`  related  |  reviewed
+
+- **Scope:** subcommittee BA20 (Financial Institutions)
+- **SIC range:** 6199-6199
+- **Official SIC titles covered:** 6199 Finance Services
+- **Rationale:** Financial institutions: credit institutions. Official SIC titles in 6199-6199: 6199 Finance Services.
+- **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)(1),(7); subcommittee name  <https://financialservices.house.gov/subcommittees/>
+- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **In POLTRACKER data:** 6 securities (6199 Finance Services x6)
+- **Trades matched:** 7 by 2 politicians (primary match for 7). Examples: AXP, COIN, IREN, MSTR, PWP, SYF.
+- **Scrutiny:** `inferred_from_name`; `related_level`
+- **Review note:** Split from 6100-6199 direct (owner decision 2026-10-07): Credit institutions (6100-6198) stay direct; SIC 6199 'Finance Services' is a catch-all that mixes card issuers with crypto and advisory firms, so it is separated and treated as related. This piece is related.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `BA00/BA04:1520-1531:related`  related  |  reviewed
 
 - **Scope:** subcommittee BA04 (Housing and Insurance)
 - **SIC range:** 1520-1531
@@ -1123,24 +1191,56 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 7 securities (1520 General Bldg Contractors - Residential Bldgs x2, 1531 Operative Builders x5)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: DHI, IBP, LEN, LGIH, NVR, TMHC, TPH.
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00/BA04:6300-6499:direct`  direct  |  needs_review
+#### `BA00/BA04:6300-6319:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee BA04 (Housing and Insurance)
-- **SIC range:** 6300-6499
-- **Official SIC titles covered:** 6311 Life Insurance; 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans; 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; 6399 Insurance Carriers, Nec; 6411 Insurance Agents, Brokers & Service
-- **Rationale:** Insurance. Official SIC titles in 6300-6499: 6311 Life Insurance; 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans; 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; +2 more.
+- **SIC range:** 6300-6319
+- **Official SIC titles covered:** 6311 Life Insurance
+- **Rationale:** Insurance. Official SIC titles in 6300-6319: 6311 Life Insurance.
 - **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)(4),(8); subcommittee name  <https://financialservices.house.gov/subcommittees/>
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
-- **In POLTRACKER data:** 38 securities (6311 Life Insurance x3, 6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6, 6331 Fire, Marine & Casualty Insurance x16, 6361 Title Insurance x1, 6399 Insurance Carriers, NEC x1, 6411 Insurance Agents, Brokers & Service x8)
-- **Trades matched:** 9 by 1 politician (primary match for 9). Examples: ACGL, AFG, AFL, AIG, AIZ, AJG, ALL, AON.
-- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (direct)
-- **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
+- **In POLTRACKER data:** 3 securities (6311 Life Insurance x3)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: GL, MET, PRU.
+- **Scrutiny:** `inferred_from_name`
+- **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is direct.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `BA00/BA04:6500-6599:direct`  direct  |  needs_review
+#### `BA00/BA04:6320-6329:related`  related  |  reviewed
+
+- **Scope:** subcommittee BA04 (Housing and Insurance)
+- **SIC range:** 6320-6329
+- **Official SIC titles covered:** 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans
+- **Rationale:** Insurance. Official SIC titles in 6320-6329: 6321 Accident & Health Insurance; 6324 Hospital & Medical Service Plans.
+- **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)(4),(8); subcommittee name  <https://financialservices.house.gov/subcommittees/>
+- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
+- **Trades matched:** 3 by 1 politician (primary match for 3). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
+- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); WM00/WM02 6320-6324 (direct)
+- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is related.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `BA00/BA04:6330-6499:direct`  direct  |  reviewed
+
+- **Scope:** subcommittee BA04 (Housing and Insurance)
+- **SIC range:** 6330-6499
+- **Official SIC titles covered:** 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; 6399 Insurance Carriers, Nec; 6411 Insurance Agents, Brokers & Service
+- **Rationale:** Insurance. Official SIC titles in 6330-6499: 6331 Fire, Marine & Casualty Insurance; 6351 Surety Insurance; 6361 Title Insurance; 6399 Insurance Carriers, Nec; 6411 Insurance Agents, Brokers & Service.
+- **Official jurisdiction wording used:** (1) Banks and banking, including deposit insurance and Federal monetary policy. (3) Financial aid to commerce and industry (other than transportation). (4) Insurance generally. (7) Money and credit. (8) Public and private housing. (9) Securities and exchanges. (10) Urban development.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(h)(4),(8); subcommittee name  <https://financialservices.house.gov/subcommittees/>
+- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **In POLTRACKER data:** 26 securities (6331 Fire, Marine & Casualty Insurance x16, 6361 Title Insurance x1, 6399 Insurance Carriers, NEC x1, 6411 Insurance Agents, Brokers & Service x8)
+- **Trades matched:** 6 by 1 politician (primary match for 6). Examples: ACGL, AFG, AIG, AIZ, AJG, ALL, AON, BRK.B.
+- **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`
+- **Review note:** Split from 6300-6499 direct (owner decision 2026-10-07): Ordinary insurance (life, casualty, title, brokers) stays direct; health-plan insurers (6320-6329) are separated and treated as related, so they are not a blanket direct Financial Services match. This piece is direct.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `BA00/BA04:6500-6599:related`  related  |  reviewed
 
 - **Scope:** subcommittee BA04 (Housing and Insurance)
 - **SIC range:** 6500-6599
@@ -1151,7 +1251,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 8 securities (6500 Real Estate x4, 6510 Real Estate Operators (No Developers) & Lessors x1, 6531 Real Estate Agents & Managers (For Others) x3)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: COMP, EFC, FSV, GTY, INVH, JLL, OPEN, UE.
-- **Scrutiny:** `mixed_industries`; `inferred_from_name`
+- **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07): real estate agents and operators relate only indirectly to housing policy; consistent with the committee-level related row.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `BA00/BA04:6798-6798:related`  related  |  needs_review
@@ -1392,7 +1493,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `HM00/HM07:4400-4499:related`  related  |  needs_review
+#### `HM00/HM07:4400-4499:related`  related  |  reviewed
 
 - **Scope:** subcommittee HM07 (Transportation and Maritime Security)
 - **SIC range:** 4400-4499
@@ -1405,6 +1506,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CCL, ICON, NCLH, RCL, SFL, VIK.
 - **Overlaps other committees:** PW00 4400-4499 (direct); PW00/PW07 4400-4499 (direct)
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `HM00/HM07:4500-4599:related`  related  |  needs_review
@@ -1556,7 +1658,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:4700-4729:related`  related  |  needs_review
+#### `IF00:4700-4729:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 4700-4729
@@ -1567,11 +1669,11 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 2 securities (4700 Transportation Services x2)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: BKNG, EXPE.
-- **Scrutiny:** `related_level`; `false_positive_history`
-- **Review note:** Review history: added when 4700-4729 (travel arrangement) was removed from Transportation and Infrastructure after a false positive on Booking Holdings.
+- **Scrutiny:** `related_level`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself. Earlier history: Review history: added when 4700-4729 (travel arrangement) was removed from Transportation and Infrastructure after a false positive on Booking Holdings.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:4800-4899:direct`  direct  |  needs_review
+#### `IF00:4800-4899:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 4800-4899
@@ -1583,9 +1685,10 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 19 securities (4812 Radiotelephone Communications x1, 4813 Telephone Communications (No Radiotelephone) x5, 4832 Radio Broadcasting Stations x2, 4833 Television Broadcasting Stations x5, 4841 Cable & Other Pay Television Services x4, 4899 Communications Services, NEC x2)
 - **Trades matched:** 3 by 2 politicians (primary match for 0). Examples: AMX, CHTR, CMCSA, FOX, FOXA, FWONK, KT, LBRDK.
 - **Scrutiny:** `mixed_industries`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:4911-4939:direct`  direct  |  needs_review
+#### `IF00:4911-4939:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 4911-4939
@@ -1598,6 +1701,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 2 by 2 politicians (primary match for 0). Examples: AEE, AEP, ATO, BEP, CEG, CMS, CNP, D.
 - **Overlaps other committees:** AP00/AP10 4911-4939 (related)
 - **Scrutiny:** `mixed_industries`; `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00:5122-5122:related`  related  |  needs_review
@@ -1639,7 +1743,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
-- **Overlaps other committees:** BA00 6300-6499 (direct); BA00/BA04 6300-6499 (direct); WM00/WM02 6320-6324 (direct)
+- **Overlaps other committees:** BA00 6320-6329 (related); BA00/BA04 6320-6329 (related); WM00/WM02 6320-6324 (direct)
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -1668,7 +1772,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
+- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
 - **Scrutiny:** `broad_range`; `mixed_industries`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -1686,7 +1790,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00/IF16:4800-4899:direct`  direct  |  needs_review
+#### `IF00/IF16:4800-4899:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee IF16 (Communications and Technology)
 - **SIC range:** 4800-4899
@@ -1698,6 +1802,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 19 securities (4812 Radiotelephone Communications x1, 4813 Telephone Communications (No Radiotelephone) x5, 4832 Radio Broadcasting Stations x2, 4833 Television Broadcasting Stations x5, 4841 Cable & Other Pay Television Services x4, 4899 Communications Services, NEC x2)
 - **Trades matched:** 3 by 2 politicians (primary match for 3). Examples: AMX, CHTR, CMCSA, FOX, FOXA, FWONK, KT, LBRDK.
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00/IF16:7370-7373:related`  related  |  needs_review
@@ -1712,8 +1817,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 75 securities (7370 Services-Computer Programming, Data Processing, Etc. x11, 7371 Services-Computer Programming Services x7, 7372 Services-Prepackaged Software x49, 7373 Services-Computer Integrated Systems Design x8)
 - **Trades matched:** 18 by 3 politicians (primary match for 18). Examples: ACIW, ADBE, ADSK, ALKT, APP, APPF, AZPN, BBAI.
 - **Overlaps other committees:** AS00/AS35 7373-7373 (related); JU00/JU03 7370-7373 (related)
-- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`; `false_positive_history`
-- **Review note:** Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP and Toast.
+- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Needs more source review (owner decision 2026-10-07): based only on the word 'Technology' in the subcommittee name; verify the published jurisdiction before relying on it. Earlier history: Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP and Toast.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00/IF03:1200-1299:direct`  direct  |  needs_review
@@ -1790,7 +1895,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00/IF03:4911-4939:direct`  direct  |  needs_review
+#### `IF00/IF03:4911-4939:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee IF03 (Energy)
 - **SIC range:** 4911-4939
@@ -1803,6 +1908,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 2 by 2 politicians (primary match for 0). Examples: AEE, AEP, ATO, BEP, CEG, CMS, CNP, D.
 - **Overlaps other committees:** AP00/AP10 4911-4939 (related)
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00/IF03:4922-4924:direct`  direct  |  needs_review
@@ -1946,7 +2052,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
-- **Overlaps other committees:** BA00 6300-6499 (direct); BA00/BA04 6300-6499 (direct); WM00/WM02 6320-6324 (direct)
+- **Overlaps other committees:** BA00 6320-6329 (related); BA00/BA04 6320-6329 (related); WM00/WM02 6320-6324 (direct)
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -1961,7 +2067,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
+- **Overlaps other committees:** VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
 - **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -2010,7 +2116,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `II00:1000-1099:direct`  direct  |  needs_review
+#### `II00:1000-1099:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 1000-1099
@@ -2022,6 +2128,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 12 securities (1000 Metal Mining x5, 1040 Gold and Silver Ores x6, 1090 Miscellaneous Metal Ores x1)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: ARIS, BHP, CCJ, CLF, FCX, FNV, IAG, NEM.
 - **Scrutiny:** `mixed_industries`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `II00:1200-1299:direct`  direct  |  needs_review
@@ -2067,7 +2174,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: MLM, SQM.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `II00/II06:1000-1099:direct`  direct  |  needs_review
+#### `II00/II06:1000-1099:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee II06 (Energy and Mineral Resources)
 - **SIC range:** 1000-1099
@@ -2079,6 +2186,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 12 securities (1000 Metal Mining x5, 1040 Gold and Silver Ores x6, 1090 Miscellaneous Metal Ores x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: ARIS, BHP, CCJ, CLF, FCX, FNV, IAG, NEM.
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`
+- **Review note:** Approved direct (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `II00/II06:1200-1299:direct`  direct  |  needs_review
@@ -2239,26 +2347,43 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 75 securities (7370 Services-Computer Programming, Data Processing, Etc. x11, 7371 Services-Computer Programming Services x7, 7372 Services-Prepackaged Software x49, 7373 Services-Computer Integrated Systems Design x8)
 - **Trades matched:** 8 by 1 politician (primary match for 8). Examples: ACIW, ADBE, ADSK, ALKT, APP, APPF, AZPN, BBAI.
 - **Overlaps other committees:** AS00/AS35 7373-7373 (related); IF00/IF16 7370-7373 (related)
-- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`; `false_positive_history`
-- **Review note:** Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP.
+- **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Needs more source review (owner decision 2026-10-07): based only on 'Artificial Intelligence, and the Internet' in the subcommittee name; verify the published jurisdiction before relying on it. Earlier history: Review history: an earlier draft mapped 7370-7374; 7374 (data processing) was excluded after it matched ADP.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 
 ### PW00: Committee on Transportation and Infrastructure
 
-#### `PW00:1600-1629:direct`  direct  |  needs_review
+#### `PW00:1600-1622:direct`  direct  |  reviewed
 
 - **Scope:** committee level
-- **SIC range:** 1600-1629
-- **Official SIC titles covered:** 1600 Heavy Construction Other Than Bldg Const - Contractors; 1623 Water, Sewer, Pipeline, Comm & Power Line Construction
-- **Rationale:** Heavy construction (highways, bridges, dams, water and sewer): 'public works ... bridges and dams', 'roads' (Rule X 1(r)(10),(17),(19)). Official SIC titles in 1600-1629: 1600 Heavy Construction Other Than Bldg Const - Contractors; 1623 Water, Sewer, Pipeline, Comm & Power Line Construction.
+- **SIC range:** 1600-1622
+- **Official SIC titles covered:** 1600 Heavy Construction Other Than Bldg Const - Contractors
+- **Rationale:** Heavy construction (highways, bridges, dams, water and sewer): 'public works ... bridges and dams', 'roads' (Rule X 1(r)(10),(17),(19)). Official SIC titles in 1600-1622: 1600 Heavy Construction Other Than Bldg Const - Contractors.
 - **Official jurisdiction wording used:** (1) Coast Guard. (10) Construction or maintenance of roads. (12) Merchant marine. (14) Oil and other pollution of navigable waters. (17) Public works for the benefit of navigation, including bridges and dams. (19) Roads and the safety thereof. (20) Transportation, including civil aviation, railroads, water transportation, transportation safety, transportation infrastructure, transportation labor, and railroad retirement.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(r)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
-- **In POLTRACKER data:** 6 securities (1600 Heavy Construction Other Than Bldg Const - Contractors x3, 1623 Water, Sewer, Pipeline, Comm & Power Line Construction x3)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DY, FLR, J, MTZ, PRIM, STRL.
+- **In POLTRACKER data:** 3 securities (1600 Heavy Construction Other Than Bldg Const - Contractors x3)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: FLR, J, STRL.
 - **Overlaps other committees:** AP00/AP10 1600-1629 (related)
-- **Scrutiny:** `mixed_industries`; `overlaps_other_committee`
+- **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Split from 1600-1629 direct (owner decision 2026-10-07): Highway, bridge and street construction (1600-1622) stays direct; 1623-1629 (water, sewer, pipeline, power and communication-line contractors) mixes utility and telecom contractors and is separated as related. This piece is direct.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `PW00:1623-1629:related`  related  |  reviewed
+
+- **Scope:** committee level
+- **SIC range:** 1623-1629
+- **Official SIC titles covered:** 1623 Water, Sewer, Pipeline, Comm & Power Line Construction
+- **Rationale:** Heavy construction (highways, bridges, dams, water and sewer): 'public works ... bridges and dams', 'roads' (Rule X 1(r)(10),(17),(19)). Official SIC titles in 1623-1629: 1623 Water, Sewer, Pipeline, Comm & Power Line Construction.
+- **Official jurisdiction wording used:** (1) Coast Guard. (10) Construction or maintenance of roads. (12) Merchant marine. (14) Oil and other pollution of navigable waters. (17) Public works for the benefit of navigation, including bridges and dams. (19) Roads and the safety thereof. (20) Transportation, including civil aviation, railroads, water transportation, transportation safety, transportation infrastructure, transportation labor, and railroad retirement.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(r)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
+- **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
+- **In POLTRACKER data:** 3 securities (1623 Water, Sewer, Pipeline, Comm & Power Line Construction x3)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DY, MTZ, PRIM.
+- **Overlaps other committees:** AP00/AP10 1600-1629 (related)
+- **Scrutiny:** `related_level`; `overlaps_other_committee`
+- **Review note:** Split from 1600-1629 direct (owner decision 2026-10-07): Highway, bridge and street construction (1600-1622) stays direct; 1623-1629 (water, sewer, pipeline, power and communication-line contractors) mixes utility and telecom contractors and is separated as related. This piece is related.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `PW00:3720-3729:related`  related  |  needs_review
@@ -2376,7 +2501,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `PW00:4730-4739:direct`  direct  |  needs_review
+#### `PW00:4730-4739:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 4730-4739
@@ -2387,8 +2512,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 3 securities (4731 Arrangement of  Transportation of  Freight & Cargo x3)
 - **Trades matched:** 1 by 1 politician (primary match for 1). Examples: BCO, CHRW, EXPD.
-- **Scrutiny:** `false_positive_history`
-- **Review note:** Review history: an earlier draft mapped 4700-4799 as transportation services; travel agencies (4700-4729) were excluded after it matched Booking Holdings and moved to Energy and Commerce 'travel and tourism' as related.
+- **Scrutiny:** `related_level`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07): freight brokers and forwarders are intermediaries, not the transportation modes or infrastructure the committee's jurisdiction names. Earlier history: Review history: an earlier draft mapped 4700-4799 as transportation services; travel agencies (4700-4729) were excluded after it matched Booking Holdings and moved to Energy and Commerce 'travel and tourism' as related.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `PW00:8711-8711:related`  related  |  needs_review
@@ -2465,19 +2590,36 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `mixed_industries`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `PW00/PW12:1600-1629:direct`  direct  |  needs_review
+#### `PW00/PW12:1600-1622:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee PW12 (Highways and Transit)
-- **SIC range:** 1600-1629
-- **Official SIC titles covered:** 1600 Heavy Construction Other Than Bldg Const - Contractors; 1623 Water, Sewer, Pipeline, Comm & Power Line Construction
-- **Rationale:** Highway and bridge construction. Official SIC titles in 1600-1629: 1600 Heavy Construction Other Than Bldg Const - Contractors; 1623 Water, Sewer, Pipeline, Comm & Power Line Construction.
+- **SIC range:** 1600-1622
+- **Official SIC titles covered:** 1600 Heavy Construction Other Than Bldg Const - Contractors
+- **Rationale:** Highway and bridge construction. Official SIC titles in 1600-1622: 1600 Heavy Construction Other Than Bldg Const - Contractors.
 - **Official jurisdiction wording used:** (1) Coast Guard. (10) Construction or maintenance of roads. (12) Merchant marine. (14) Oil and other pollution of navigable waters. (17) Public works for the benefit of navigation, including bridges and dams. (19) Roads and the safety thereof. (20) Transportation, including civil aviation, railroads, water transportation, transportation safety, transportation infrastructure, transportation labor, and railroad retirement.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(r)(10),(19); Subcommittee jurisdiction published at https://transportation.house.gov/subcommittees  <https://transportation.house.gov/subcommittees>
 - **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
-- **In POLTRACKER data:** 6 securities (1600 Heavy Construction Other Than Bldg Const - Contractors x3, 1623 Water, Sewer, Pipeline, Comm & Power Line Construction x3)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DY, FLR, J, MTZ, PRIM, STRL.
+- **In POLTRACKER data:** 3 securities (1600 Heavy Construction Other Than Bldg Const - Contractors x3)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: FLR, J, STRL.
 - **Overlaps other committees:** AP00/AP10 1600-1629 (related)
-- **Scrutiny:** `mixed_industries`; `overlaps_other_committee`
+- **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Split from 1600-1629 direct (owner decision 2026-10-07): Highway, bridge and street construction (1600-1622) stays direct; 1623-1629 (water, sewer, pipeline, power and communication-line contractors) mixes utility and telecom contractors and is separated as related. This piece is direct.
+- **Decision:** [ ] approve   [ ] change   [ ] remove
+
+#### `PW00/PW12:1623-1629:related`  related  |  reviewed
+
+- **Scope:** subcommittee PW12 (Highways and Transit)
+- **SIC range:** 1623-1629
+- **Official SIC titles covered:** 1623 Water, Sewer, Pipeline, Comm & Power Line Construction
+- **Rationale:** Highway and bridge construction. Official SIC titles in 1623-1629: 1623 Water, Sewer, Pipeline, Comm & Power Line Construction.
+- **Official jurisdiction wording used:** (1) Coast Guard. (10) Construction or maintenance of roads. (12) Merchant marine. (14) Oil and other pollution of navigable waters. (17) Public works for the benefit of navigation, including bridges and dams. (19) Roads and the safety thereof. (20) Transportation, including civil aviation, railroads, water transportation, transportation safety, transportation infrastructure, transportation labor, and railroad retirement.
+- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(r)(10),(19); Subcommittee jurisdiction published at https://transportation.house.gov/subcommittees  <https://transportation.house.gov/subcommittees>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
+- **In POLTRACKER data:** 3 securities (1623 Water, Sewer, Pipeline, Comm & Power Line Construction x3)
+- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DY, MTZ, PRIM.
+- **Overlaps other committees:** AP00/AP10 1600-1629 (related)
+- **Scrutiny:** `related_level`; `overlaps_other_committee`
+- **Review note:** Split from 1600-1629 direct (owner decision 2026-10-07): Highway, bridge and street construction (1600-1622) stays direct; 1623-1629 (water, sewer, pipeline, power and communication-line contractors) mixes utility and telecom contractors and is separated as related. This piece is related.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `PW00/PW12:4100-4199:direct`  direct  |  needs_review
@@ -2566,7 +2708,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `PW00/PW02:1623-1623:direct`  direct  |  needs_review
+#### `PW00/PW02:1623-1623:related`  related  |  reviewed
 
 - **Scope:** subcommittee PW02 (Water Resources and Environment)
 - **SIC range:** 1623-1623
@@ -2578,11 +2720,11 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 3 securities (1623 Water, Sewer, Pipeline, Comm & Power Line Construction x3)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DY, MTZ, PRIM.
 - **Overlaps other committees:** AP00/AP10 1600-1629 (related)
-- **Scrutiny:** `overlaps_other_committee`; `false_positive_history`
-- **Review note:** Review history: an earlier draft also mapped 4950-4959 (sanitary services) here; removed after it matched Republic Services and Waste Connections (waste hauling is not water resources).
+- **Scrutiny:** `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07): SIC 1623 mixes water and sewer construction with pipeline, power and communication-line construction. Earlier history: Review history: an earlier draft also mapped 4950-4959 (sanitary services) here; removed after it matched Republic Services and Waste Connections (waste hauling is not water resources).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `PW00/PW02:4941-4941:direct`  direct  |  needs_review
+#### `PW00/PW02:4941-4941:related`  related  |  reviewed
 
 - **Scope:** subcommittee PW02 (Water Resources and Environment)
 - **SIC range:** 4941-4941
@@ -2593,8 +2735,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 2 securities (4941 Water Supply x2)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: AWK, WTRG.
-- **Scrutiny:** `false_positive_history`
-- **Review note:** Review history: an earlier draft also mapped 4950-4959 (sanitary services) here; removed after it matched Republic Services and Waste Connections.
+- **Scrutiny:** `related_level`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07): drinking-water supply utilities connect only indirectly to water resources and water pollution control (drinking water is mainly Energy and Commerce). Earlier history: Review history: an earlier draft also mapped 4950-4959 (sanitary services) here; removed after it matched Republic Services and Waste Connections.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 
@@ -2686,34 +2828,6 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Review note:** Review history: an earlier draft also mapped 3820-3829 (measuring instruments) for NIST standards; removed after it matched Trimble.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `SY00:8731-8731:direct`  direct  |  needs_review
-
-- **Scope:** committee level
-- **SIC range:** 8731-8731
-- **Official SIC titles covered:** 8731 Services-Commercial Physical & Biological Research
-- **Rationale:** Commercial physical and biological research: 'scientific research, development, and demonstration' (Rule X 1(p)(14)). Official SIC titles in 8731-8731: 8731 Services-Commercial Physical & Biological Research.
-- **Official jurisdiction wording used:** (1) All energy research, development, and demonstration. (2) Astronautical research and development. (3) Civil aviation research and development. (8) National Aeronautics and Space Administration. (12) Outer space, including exploration and control thereof. (14) Scientific research, development, and demonstration.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(p)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
-- **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
-- **In POLTRACKER data:** 3 securities (8731 Services-Commercial Physical & Biological Research x3)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: ICLR, IQV, MEDP.
-- **Decision:** [ ] approve   [ ] change   [ ] remove
-
-#### `SY00/SY15:8731-8731:direct`  direct  |  needs_review
-
-- **Scope:** subcommittee SY15 (Research and Technology)
-- **SIC range:** 8731-8731
-- **Official SIC titles covered:** 8731 Services-Commercial Physical & Biological Research
-- **Rationale:** Research: commercial physical and biological research. Official SIC titles in 8731-8731: 8731 Services-Commercial Physical & Biological Research.
-- **Official jurisdiction wording used:** (1) All energy research, development, and demonstration. (2) Astronautical research and development. (3) Civil aviation research and development. (8) National Aeronautics and Space Administration. (12) Outer space, including exploration and control thereof. (14) Scientific research, development, and demonstration.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(p)(14); subcommittee name  <https://science.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
-- **In POLTRACKER data:** 3 securities (8731 Services-Commercial Physical & Biological Research x3)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: ICLR, IQV, MEDP.
-- **Scrutiny:** `inferred_from_name`; `false_positive_history`
-- **Review note:** Review history: an earlier draft also mapped 3820-3829 (measurement technology); removed after it matched Trimble.
-- **Decision:** [ ] approve   [ ] change   [ ] remove
-
 #### `SY00/SY16:3720-3729:direct`  direct  |  needs_review
 
 - **Scope:** subcommittee SY16 (Space and Aeronautics)
@@ -2747,7 +2861,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 
 ### VR00: Committee on Veterans' Affairs
 
-#### `VR00:8050-8099:related`  related  |  needs_review
+#### `VR00:8050-8099:related`  related  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 8050-8099
@@ -2760,6 +2874,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
 - **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
 - **Scrutiny:** `mixed_industries`; `related_level`; `overlaps_other_committee`
+- **Review note:** Kept as related (owner decision 2026-10-07): supporting context only; never triggers a flag by itself.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `VR00/VR03:2833-2836:related`  related  |  needs_review
@@ -2777,7 +2892,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `VR00/VR03:8050-8099:direct`  direct  |  needs_review
+#### `VR00/VR03:8050-8099:related`  related  |  reviewed
 
 - **Scope:** subcommittee VR03 (Health)
 - **SIC range:** 8050-8099
@@ -2789,7 +2904,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
 - **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); AP00/AP07 8000-8099 (related); WM00/WM02 8000-8099 (direct)
-- **Scrutiny:** `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
+- **Scrutiny:** `mixed_industries`; `inferred_from_name`; `related_level`; `overlaps_other_committee`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07): direct jurisdiction over private health providers is not established; the VA is itself the provider. Consistent with the committee-level related row.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 
@@ -2846,7 +2962,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 9 securities (6321 Accident & Health Insurance x3, 6324 Hospital & Medical Service Plans x6)
 - **Trades matched:** 2 by 1 politician (primary match for 2). Examples: AFL, CI, CNC, ELV, HUM, MOH, PFG, UNH.
-- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); BA00 6300-6499 (direct); BA00/BA04 6300-6499 (direct)
+- **Overlaps other committees:** IF00 6320-6324 (related); IF00/IF14 6320-6324 (related); BA00 6320-6329 (related); BA00/BA04 6320-6329 (related)
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
@@ -2861,8 +2977,9 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 15 securities (8050 Services-Nursing & Personal Care Facilities x1, 8060 Services-Hospitals x1, 8062 Services-General Medical & Surgical Hospitals, NEC x4, 8071 Services-Medical Laboratories x6, 8082 Services-Home Health Care Services x1, 8090 Services-Misc Health & Allied Services, NEC x1, 8093 Services-Specialty Outpatient Facilities, NEC x1)
 - **Trades matched:** 2 by 2 politicians (primary match for 2). Examples: CON, DGX, DVA, EHC, EXAS, GH, HCA, LH.
-- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); VR00 8050-8099 (related); VR00/VR03 8050-8099 (direct); AP00/AP07 8000-8099 (related)
+- **Overlaps other committees:** IF00 8000-8099 (direct); IF00/IF14 8000-8099 (direct); VR00 8050-8099 (related); VR00/VR03 8050-8099 (related); AP00/AP07 8000-8099 (related)
 - **Scrutiny:** `broad_range`; `mixed_industries`; `inferred_from_name`; `overlaps_other_committee`
+- **Review note:** Needs more source review (owner decision 2026-10-07): verify the Health Subcommittee's published jurisdiction (Medicare Parts A and B); Rule X gives Ways and Means only payroll-funded health programs. Do not treat as direct until verified.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 

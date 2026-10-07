@@ -29,10 +29,14 @@ def mrow(code, start, end, level="direct", sub=None, basis="rule_x_text", note=N
 
 # --- the review fields in the mapping format -------------------------------------------------------------------
 
-def test_every_shipped_row_is_needs_review_with_no_review_date_and_a_known_basis():
+def test_shipped_review_status_is_consistent_and_limited_to_the_round_1_decisions():
     rows = load_rows(REAL)
-    assert len(rows) == 184
-    assert all(r["review_status"] == "needs_review" and r["reviewed_at"] is None and r["reviewed_by"] is None for r in rows)  # nothing is falsely marked reviewed
+    assert len(rows) == 191
+    reviewed = [r for r in rows if r["review_status"] == "reviewed"]
+    assert len(reviewed) == 47 and len(rows) - len(reviewed) == 144
+    assert all((r["review_status"] == "reviewed") == (r["reviewed_at"] is not None) for r in rows)
+    assert all(r["reviewed_by"] and r["review_note"] for r in reviewed)  # every reviewed row says who decided and why
+    assert all(r["reviewed_by"] is None for r in rows if r["review_status"] == "needs_review")
     assert {r["jurisdiction_basis"] for r in rows} <= {"rule_x_text", "committee_published_text", "subcommittee_name", "committee_name"}
 
 
@@ -205,7 +209,7 @@ def test_generating_the_packet_does_not_modify_or_review_the_mapping_file(univer
 def test_the_shipped_mappings_produce_a_complete_packet_on_an_empty_database(session_factory):
     review_ = rv.build_review(session_factory, load_rows(REAL), json.loads((ROOT / "data" / "sic_codes.json").read_text())["codes"])
     md = rv.render_markdown(review_)
-    assert md.count("#### `") == 184 and review_.trades_total == 0 and "| Mappings | 184 |" in md
+    assert md.count("#### `") == 191 and review_.trades_total == 0 and "| Mappings | 191 |" in md
 
 
 # --- the priority-row review table ---------------------------------------------------------------------------------
@@ -311,16 +315,68 @@ def test_generating_the_table_leaves_every_mapping_unchanged(universe, tmp_path)
 
 # --- the shipped recommendations ---------------------------------------------------------------------------------
 
-REC_FILE = ROOT / "docs" / "review" / "priority_recommendations_2026.1-draft.json"
+REC_FILE = ROOT / "docs" / "review" / "round1" / "priority_recommendations_2026.1-draft.json"
 
 
-def test_the_shipped_recommendations_are_complete_valid_and_consistent_with_the_mapping_levels():
+def test_the_archived_round_1_recommendations_are_well_formed():
+    # An archive of the pre-decision proposals: some of its rows were since split, downgraded or removed, so only its format is checked.
     recs_ = rv.load_recommendations(REC_FILE)
-    rows = load_rows(REAL)
-    keys = {rv.row_key(m): m for m in rv.to_mappings(rows)}
-    assert len(recs_) == 50 and set(recs_) <= set(keys)
-    for key, rec in recs_.items():
-        level = keys[key].relevance_level
-        assert rec["action"] in rv.ACTIONS and rec["reason"].strip()
-        assert not (rec["action"] in rv.DIRECT_ONLY and level != "direct") and not (rec["action"] == "KEEP RELATED" and level != "related")
-    assert {r["review_status"] for r in rows} == {"needs_review"}  # producing recommendations changed no status
+    assert len(recs_) == 50
+    assert all(rec["action"] in rv.ACTIONS and rec["reason"].strip() for rec in recs_.values())
+
+
+# --- the round 1 review decisions, as applied to the shipped file -------------------------------------------------
+
+def shipped():
+    return {rv.row_key(m): r for m, r in zip(rv.to_mappings(load_rows(REAL)), load_rows(REAL))}
+
+
+def test_round_1_approved_rows_are_reviewed_direct_and_the_aircraft_row_keeps_its_civil_military_note():
+    rows = shipped()
+    for key in ["BA00:6000-6099:direct", "BA00/BA16:6200-6299:direct", "IF00:4800-4899:direct", "IF00/IF03:4911-4939:direct", "II00:1000-1099:direct"]:
+        assert rows[key]["review_status"] == "reviewed" and rows[key]["relevance_level"] == "direct"
+    assert "civilian and military aviation" in rows["AS00:3720-3729:direct"]["review_note"]
+
+
+def test_round_1_splits_separate_the_mixed_pieces_and_cover_the_original_range_exactly():
+    rows = shipped()
+    for committee in ("BA00", "BA00/BA04"):
+        assert rows[f"{committee}:6300-6319:direct"]["review_status"] == "reviewed"
+        assert rows[f"{committee}:6320-6329:related"]["review_status"] == "reviewed"  # health plans are not a blanket direct match
+        assert rows[f"{committee}:6330-6499:direct"]["review_status"] == "reviewed"
+        assert f"{committee}:6300-6499:direct" not in rows
+    assert "BA00:6199-6199:related" in rows and "BA00:6100-6198:direct" in rows
+    assert "PW00:1623-1629:related" in rows and "PW00:1600-1622:direct" in rows
+    assert "AG00/AG16:2060-2069:related" in rows and "AG00/AG16:2070-2079:direct" in rows
+    for r in rows.values():
+        if r["review_note"] and "Split from" in r["review_note"]:
+            assert r["rationale"].rstrip().endswith(".") and f"Official SIC titles in {r['sic_start']}-{r['sic_end']}:" in r["rationale"]
+
+
+def test_round_1_downgrades_and_removals():
+    rows = shipped()
+    for key in ["PW00:4730-4739:related", "AG00/AG03:2000-2079:related", "BA00/BA04:6500-6599:related", "VR00/VR03:8050-8099:related",
+                "PW00/PW02:1623-1623:related", "PW00/PW02:4941-4941:related"]:
+        assert rows[key]["review_status"] == "reviewed", key
+    assert not any(k.startswith(("SY00:8731", "SY00/SY15:8731")) for k in rows)  # clinical-research-contractor mapping removed consistently
+
+
+def test_round_1_rows_needing_more_source_review_stay_needs_review_with_a_note():
+    rows = shipped()
+    for key in ["WM00/WM02:8000-8099:direct", "AG00/AG22:6221-6221:direct", "IF00/IF16:7370-7373:related", "JU00/JU03:7370-7373:related"]:
+        assert rows[key]["review_status"] == "needs_review" and rows[key]["review_note"].startswith("Needs more source review")
+    assert rows["AG00/AG03:2090-2099:direct"]["review_status"] == "needs_review"  # not named in the decisions: left alone
+
+
+def test_review_category_only_credits_reviewed_direct_matches():
+    from types import SimpleNamespace as NS
+
+    from poltracker.committee_industry_report import review_category
+
+    def rel(status, *matches):
+        return NS(status=status, matches=[NS(level=lv, review_status=rs) for lv, rs in matches])
+
+    assert review_category(rel("relevant", ("direct", "reviewed"), ("direct", "needs_review"))) == "reviewed_direct"
+    assert review_category(rel("relevant", ("related", "reviewed"), ("direct", "needs_review"))) == "reviewed_related_only"  # needs_review never lifts it
+    assert review_category(rel("relevant", ("direct", "needs_review"))) == "needs_review_only"
+    assert review_category(rel("not_relevant")) == "no_relevance" and review_category(rel("unknown")) == "unknown"
