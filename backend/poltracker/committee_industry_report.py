@@ -53,6 +53,12 @@ class RelevanceReport:
     relevant_direct: int = 0  # the best match is direct
     relevant_related_only: int = 0
     not_relevant: int = 0
+    # Review-gated view (Phase 3 policy): only reviewed + direct may ever contribute to a flag; needs_review never does.
+    reviewed_direct: int = 0
+    reviewed_related_only: int = 0  # supporting context only
+    needs_review_only: int = 0  # every match is still needs_review (or only needs_review matches would be direct)
+    no_relevance: int = 0  # evaluable, and no committee mapping covers the industry
+    unknown: int = 0
     unknown_no_sic: int = 0
     unknown_no_assignments: int = 0
     unknown_unmapped: int = 0
@@ -70,11 +76,27 @@ class RelevanceReport:
             f"  evaluable (deterministic answer): {n(self.evaluable)}",
             f"    relevant (at least one match): {n(self.relevant)}   of which best match direct: {n(self.relevant_direct)}, related only: {n(self.relevant_related_only)}",
             f"    not relevant: {n(self.not_relevant)}",
+            "Review-gated coverage (only reviewed + direct could ever support a flag):",
+            f"  reviewed direct relevance: {n(self.reviewed_direct)}",
+            f"  reviewed related-only relevance (supporting context): {n(self.reviewed_related_only)}",
+            f"  needs-review relevance only (never affects a flag): {n(self.needs_review_only)}",
+            f"  no relevance: {n(self.no_relevance)}",
+            f"  unknown: {n(self.unknown)}",
             f"  unknown, no SIC data: {n(self.unknown_no_sic)}",
             f"  unknown, politician has no committee assignments: {n(self.unknown_no_assignments)}",
             f"  unknown, a committee is unmapped: {n(self.unknown_unmapped)}",
         ]
         return "\n".join(lines)
+
+
+def review_category(rel) -> str:
+    """reviewed_direct | reviewed_related_only | needs_review_only | no_relevance | unknown, from every match, not just the primary one."""
+    if rel.status == "relevant":
+        reviewed = [m for m in rel.matches if m.review_status == "reviewed"]
+        if any(m.level == "direct" for m in reviewed):
+            return "reviewed_direct"
+        return "reviewed_related_only" if reviewed else "needs_review_only"
+    return "no_relevance" if rel.status == "not_relevant" else "unknown"
 
 
 def evaluate_trades(session_factory: sessionmaker[Session], version: str | None = None, examples_per_group: int = 6) -> RelevanceReport:
@@ -98,6 +120,7 @@ def evaluate_trades(session_factory: sessionmaker[Session], version: str | None 
             if key not in cache:
                 cache[key] = matcher.evaluate(assignments[pid], sic, industry)
             rel = cache[key]
+            setattr(report, review_category(rel), getattr(report, review_category(rel)) + 1)
             if rel.status == "relevant":
                 report.evaluable += 1
                 report.relevant += 1
