@@ -116,11 +116,17 @@ def test_a_duplicate_id_already_owned_by_another_politician_is_rejected(session_
     assert p.bioguide_id is None and "already belongs to politician" in p.enrichment_note
 
 
-@pytest.mark.parametrize("confidence", [0.9, 0.5, None])
-def test_a_confidence_that_does_not_exceed_the_threshold_is_rejected(session_factory, pols, confidence):
+@pytest.mark.parametrize("confidence", [0.8999, 0.5, 0.0, None])
+def test_a_confidence_below_the_threshold_is_rejected(session_factory, pols, confidence):
     run(session_factory, FakeLLM("C001120", confidence=confidence), only_ids={pols["crenshaw"]}, llm_min_confidence=0.9)
     p = pol(session_factory, pols["crenshaw"])
-    assert p.bioguide_id is None and "does not exceed" in p.enrichment_note
+    assert p.bioguide_id is None and "is below the minimum" in p.enrichment_note
+
+
+@pytest.mark.parametrize("confidence", [0.9, 0.9001, 0.95, 1.0])
+def test_a_confidence_equal_to_or_above_the_threshold_is_accepted(session_factory, pols, confidence):
+    run(session_factory, FakeLLM("C001120", confidence=confidence), only_ids={pols["crenshaw"]}, llm_min_confidence=0.9)
+    assert pol(session_factory, pols["crenshaw"]).bioguide_id == "C001120"
 
 
 def test_the_threshold_is_configurable(session_factory, pols):

@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     politician_llm_enabled: bool = False
     politician_llm_model: str = "gpt-4o-mini"
-    politician_llm_min_confidence: float = Field(0.9, ge=0, le=1)  # a suggestion must EXCEED this
+    politician_llm_min_confidence: float = Field(0.9, ge=0, le=1)  # a suggestion must meet or exceed this (inclusive)
     politician_llm_max_calls: int = Field(25, ge=0)  # cap per run
 
     benchmark_ticker: str = "SPY"

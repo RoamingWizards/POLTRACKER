@@ -214,6 +214,6 @@ def validate_suggestion(
         return Validation(None, f"{sel} already belongs to politician #{owner}")
     if any(a != sel and a in {m.bioguide_id for m in valid} for a in suggestion.alternate_candidates):
         return Validation(None, "the model named another valid candidate as plausible; ambiguous")
-    if suggestion.confidence is None or not suggestion.confidence > min_confidence:
-        return Validation(None, f"confidence {suggestion.confidence} does not exceed {min_confidence}")
+    if suggestion.confidence is None or suggestion.confidence < min_confidence:  # inclusive: exactly the threshold passes
+        return Validation(None, f"confidence {suggestion.confidence} is below the minimum {min_confidence}")
     return Validation(member)

@@ -94,8 +94,8 @@ candidate, its name and Bioguide ID. Nothing else: no trade data, no party or ot
 The answer is an untrusted suggestion. It is accepted only if all of these hold, otherwise the politician stays unresolved
 in the review queue with the reason: exactly one candidate is consistent with the recorded chamber/state/district; the selected ID
 exists in the official roster and among the candidates shown; chamber, state and (where known) district match; the ID does not
-belong to another POLTRACKER politician; no other valid candidate was named as plausible; confidence **exceeds**
-`POLITICIAN_LLM_MIN_CONFIDENCE` (default 0.9). The model cannot create a politician or an identifier. When there are zero or
+belong to another POLTRACKER politician; no other valid candidate was named as plausible; confidence is **at least**
+`POLITICIAN_LLM_MIN_CONFIDENCE` (default 0.9, inclusive). The model cannot create a politician or an identifier. When there are zero or
 several valid candidates the model is not called at all.
 
 Stored in `politician_llm_suggestions` (migration 0008): the incoming name, candidate IDs, selected ID, confidence, explanation,
