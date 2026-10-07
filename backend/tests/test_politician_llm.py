@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from poltracker.enrich_politicians import enrich_politicians, review_queue
 from poltracker.models import Politician, PoliticianLlmSuggestion
 from poltracker.politician_llm import (
-    AnthropicIdentityResolver, IdentityRequest, LLMError, LLMSuggestion, build_user_message, parse_suggestion,
+    IdentityRequest, LLMError, LLMSuggestion, OpenAIIdentityResolver, build_resolver, build_user_message, parse_suggestion,
 )
 
 from test_enrich_politicians import NOW, FakeProvider, official
@@ -173,7 +173,7 @@ def test_a_cached_acceptance_is_rechecked_against_current_data(session_factory, 
 
 
 def test_an_llm_outage_leaves_the_politician_unresolved_and_is_not_cached(session_factory, pols):
-    report = run(session_factory, FakeLLM(error=LLMError("Anthropic API: HTTP 529")), only_ids={pols["crenshaw"]})
+    report = run(session_factory, FakeLLM(error=LLMError("OpenAI API: HTTP 529")), only_ids={pols["crenshaw"]})
     assert report.llm_errors and pol(session_factory, pols["crenshaw"]).bioguide_id is None
     with session_factory() as s:
         assert s.scalar(select(func.count(PoliticianLlmSuggestion.id))) == 0
@@ -209,54 +209,73 @@ def test_the_review_queue_lists_unresolved_politicians_with_the_llm_outcome(sess
     assert smith["llm_outcome"] == "rejected" and smith["llm_selected"] == "S000002" and "OH" in smith["llm_reason"]
 
 
-# --- the Anthropic client and the structured-output parser -------------------------------------------------
+def test_the_model_message_contains_only_the_permitted_fields():
+    cand = official("C001120", "Dan", "Crenshaw")
+    req = IdentityRequest("Daniel Crenshaw", "house", "TX", "2", (cand,))
+    payload = json.loads(build_user_message(req).split("\n", 1)[1])
+    assert payload["incoming_politician"] == {"name": "Daniel Crenshaw", "chamber": "house", "state": "TX", "district": "2"}
+    assert payload["official_candidates"] == [{"name": "Dan Crenshaw", "bioguide_id": "C001120"}]  # no party, state, status, trades
+    assert set(payload) == {"incoming_politician", "official_candidates"}
 
-def tool_response(payload):
-    return httpx.Response(200, json={"content": [{"type": "text", "text": "ok"}, {"type": "tool_use", "name": "report_identity", "input": payload}]})
 
-
-def make_client(handler):
-    return AnthropicIdentityResolver("test-key", "m", client=httpx.Client(transport=httpx.MockTransport(handler)))
-
+# --- the OpenAI Responses client -------------------------------------------------------------------------------
 
 REQ = IdentityRequest("Daniel Crenshaw", "house", None, None, (official("C001120", "Dan", "Crenshaw"),))
+GOOD = {"selected_bioguide_id": "c001120", "confidence": 0.96, "explanation": "Dan is short for Daniel.", "alternate_candidates": []}
 
 
-def test_the_client_sends_a_forced_tool_call_and_parses_the_structured_answer():
+def make_client(handler, key="test-key"):
+    return OpenAIIdentityResolver(key, "gpt-test", client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+def responses(payload=None, text=None, **extra):
+    body = {"status": "completed", "usage": {"input_tokens": 600, "output_tokens": 90},
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": text if text is not None else json.dumps(payload)}]}]}
+    return httpx.Response(200, json={**body, **extra})
+
+
+def test_a_successful_structured_response_is_parsed_and_tokens_counted():
     seen = []
-
-    def handler(req):
-        seen.append(req)
-        return tool_response({"selected_bioguide_id": "c001120", "confidence": 0.95, "explanation": "same", "alternate_candidates": []})
-
-    s = make_client(handler).resolve(REQ)
-    assert (s.selected_bioguide_id, s.confidence, s.explanation) == ("C001120", 0.95, "same")
+    client = make_client(lambda r: seen.append(r) or responses(GOOD))
+    s = client.resolve(REQ)
+    assert (s.selected_bioguide_id, s.confidence, s.explanation, s.model) == ("C001120", 0.96, "Dan is short for Daniel.", "gpt-test")
+    assert (client.tokens_in, client.tokens_out, client.requests_made) == (600, 90, 1)
     sent = json.loads(seen[0].content)
-    assert sent["tool_choice"] == {"type": "tool", "name": "report_identity"} and sent["temperature"] == 0
-    assert seen[0].headers["x-api-key"] == "test-key" and "C001120" in sent["messages"][0]["content"]
+    assert str(seen[0].url) == "https://api.openai.com/v1/responses"
+    assert sent["text"]["format"]["type"] == "json_schema" and sent["text"]["format"]["strict"] is True
+    assert sent["store"] is False and sent["temperature"] == 0 and "tools" not in sent  # nothing stored, no web search or tools
+    assert seen[0].headers["authorization"] == "Bearer test-key"
+    assert "C001120" in sent["input"] and set(sent["text"]["format"]["schema"]["required"]) == {
+        "selected_bioguide_id", "confidence", "explanation", "alternate_candidates"}
 
 
-@pytest.mark.parametrize("payload", [
-    "text", {"selected_bioguide_id": 5, "confidence": 0.9, "explanation": "", "alternate_candidates": []},
-    {"selected_bioguide_id": None, "confidence": 1.5, "explanation": "", "alternate_candidates": []},
-    {"selected_bioguide_id": None, "confidence": "high", "explanation": "", "alternate_candidates": []},
-    {"selected_bioguide_id": None, "confidence": 0.9, "explanation": "", "alternate_candidates": "x"},
+@pytest.mark.parametrize("response", [
+    responses(text="not json"),
+    responses(text=""),
+    responses(payload=["a list"]),
+    responses({"selected_bioguide_id": 5, "confidence": 0.9, "explanation": "", "alternate_candidates": []}),
+    responses({"selected_bioguide_id": None, "confidence": 1.5, "explanation": "", "alternate_candidates": []}),
+    responses({"selected_bioguide_id": None, "confidence": "high", "explanation": "", "alternate_candidates": []}),
+    responses({"selected_bioguide_id": None, "confidence": 0.9, "explanation": "", "alternate_candidates": "x"}),
+    httpx.Response(200, json={"status": "completed", "output": []}),
+    httpx.Response(200, json={"status": "incomplete", "output": []}),
+    httpx.Response(200, json={"status": "completed", "error": {"message": "x"}, "output": []}),
+    httpx.Response(200, json={"status": "completed", "output": [{"type": "message", "content": [{"type": "refusal", "refusal": "no"}]}]}),
+    httpx.Response(200, content=b"<html>"),
 ])
-def test_malformed_structured_output_is_an_error_not_a_guess(payload):
+def test_malformed_or_unusable_responses_are_llm_errors_not_guesses(response):
     with pytest.raises(LLMError):
-        parse_suggestion(payload, "m")
-
-
-@pytest.mark.parametrize("response", [httpx.Response(500), httpx.Response(401, json={"error": "bad key test-key"}),
-                                       httpx.Response(200, json={"content": [{"type": "text", "text": "no tool"}]}),
-                                       httpx.Response(200, content=b"<html>")])
-def test_api_failures_become_llm_errors_without_leaking_the_key(response):
-    with pytest.raises(LLMError) as exc:
         make_client(lambda r: response).resolve(REQ)
-    assert "test-key" not in str(exc.value)
 
 
-def test_a_network_error_becomes_an_llm_error():
+@pytest.mark.parametrize("status", [401, 429, 500, 503])
+def test_api_failures_are_llm_errors_and_never_leak_the_key(status):
+    with pytest.raises(LLMError) as exc:
+        make_client(lambda r: httpx.Response(status, json={"error": {"message": "Incorrect API key: test-key"}})).resolve(REQ)
+    assert "test-key" not in str(exc.value) and str(status) in str(exc.value)
+
+
+def test_a_network_error_is_an_llm_error():
     def boom(req):
         raise httpx.ConnectError("down", request=req)
 
@@ -264,53 +283,45 @@ def test_a_network_error_becomes_an_llm_error():
         make_client(boom).resolve(REQ)
 
 
-# --- the OpenAI client (same contract as the Anthropic one) ---------------------------------------------------
-
-from poltracker.politician_llm import OpenAIIdentityResolver
-
-
-def openai_client(handler):
-    return OpenAIIdentityResolver("test-key", "gpt-test", client=httpx.Client(transport=httpx.MockTransport(handler)))
-
-
-def chat_response(content, **message):
-    return httpx.Response(200, json={"choices": [{"message": {"content": content, **message}}], "usage": {"prompt_tokens": 600, "completion_tokens": 90}})
+@pytest.mark.parametrize("key", [None, "", "   "])
+def test_a_missing_openai_api_key_means_no_resolver_and_the_run_continues_without_it(session_factory, pols, key):
+    assert build_resolver(key, "gpt-test") is None
+    with pytest.raises(LLMError, match="OPENAI_API_KEY"):
+        OpenAIIdentityResolver(key or "", "gpt-test")
+    report = run(session_factory, None, only_ids={pols["crenshaw"]})  # exactly what the CLI does when no resolver exists
+    p = pol(session_factory, pols["crenshaw"])
+    assert p.enrichment_status == "unmatched" and report.llm_calls == 0 and "LLM" not in (p.enrichment_note or "")
 
 
-def test_the_openai_client_sends_a_strict_schema_and_parses_the_answer_and_counts_tokens():
-    seen = []
-
-    def handler(req):
-        seen.append(req)
-        return chat_response(json.dumps({"selected_bioguide_id": "c001120", "confidence": 0.96, "explanation": "same", "alternate_candidates": []}))
-
-    client = openai_client(handler)
-    s = client.resolve(REQ)
-    assert (s.selected_bioguide_id, s.confidence, s.model) == ("C001120", 0.96, "gpt-test")
-    sent = json.loads(seen[0].content)
-    assert sent["response_format"]["json_schema"]["strict"] is True and sent["temperature"] == 0
-    assert seen[0].headers["authorization"] == "Bearer test-key" and "C001120" in sent["messages"][1]["content"]
-    assert (client.tokens_in, client.tokens_out) == (600, 90)
+def test_a_configured_key_builds_the_resolver_with_the_configured_model():
+    r = build_resolver(" sk-test ", "gpt-test")
+    assert isinstance(r, OpenAIIdentityResolver) and r.model == "gpt-test"
 
 
-@pytest.mark.parametrize("response", [
-    httpx.Response(429), httpx.Response(401, json={"error": {"message": "bad key test-key"}}),
-    httpx.Response(200, json={"choices": []}), httpx.Response(200, content=b"<html>"),
-    chat_response("not json"), chat_response(None, refusal="I can't help with that"),
-    chat_response(json.dumps({"selected_bioguide_id": None, "confidence": 3, "explanation": "", "alternate_candidates": []})),
-])
-def test_openai_failures_and_malformed_answers_become_llm_errors_without_the_key(response):
-    with pytest.raises(LLMError) as exc:
-        openai_client(lambda r: response).resolve(REQ)
-    assert "test-key" not in str(exc.value)
+def test_an_api_failure_through_the_service_leaves_the_politician_for_review_and_is_not_cached(session_factory, pols):
+    client = make_client(lambda r: httpx.Response(503))
+    report = enrich_politicians(session_factory, FakeProvider(ROSTER), now=NOW, llm=client, only_ids={pols["crenshaw"]})
+    assert len(report.llm_errors) == 1 and "503" in report.llm_errors[0]
+    assert pol(session_factory, pols["crenshaw"]).bioguide_id is None
+    with session_factory() as s:
+        assert s.scalar(select(func.count(PoliticianLlmSuggestion.id))) == 0
 
 
-def test_an_openai_network_error_becomes_an_llm_error():
-    def boom(req):
-        raise httpx.ConnectError("down", request=req)
+def test_the_whole_path_works_through_the_real_client_with_a_mocked_transport(session_factory, pols):
+    client = make_client(lambda r: responses({**GOOD, "selected_bioguide_id": "C001120"}))
+    report = enrich_politicians(session_factory, FakeProvider(ROSTER), now=NOW, llm=client, only_ids={pols["crenshaw"]})
+    p = pol(session_factory, pols["crenshaw"])
+    assert (p.bioguide_id, p.enrichment_method) == ("C001120", "llm") and report.llm_calls == 1
+    with session_factory() as s:
+        row = s.scalar(select(PoliticianLlmSuggestion))
+    assert (row.model, row.selected_bioguide_id, row.confidence, row.outcome) == ("gpt-test", "C001120", 0.96, "accepted")
 
-    with pytest.raises(LLMError, match="network error"):
-        openai_client(boom).resolve(REQ)
+
+def test_a_hallucinated_id_from_the_real_client_is_still_rejected(session_factory, pols):
+    client = make_client(lambda r: responses({**GOOD, "selected_bioguide_id": "Z999999"}))
+    enrich_politicians(session_factory, FakeProvider(ROSTER), now=NOW, llm=client, only_ids={pols["crenshaw"]})
+    p = pol(session_factory, pols["crenshaw"])
+    assert p.bioguide_id is None and "invented identifier" in p.enrichment_note
 
 
 def test_the_trace_records_what_the_model_said_even_when_it_is_rejected(session_factory, pols):
@@ -318,3 +329,12 @@ def test_the_trace_records_what_the_model_said_even_when_it_is_rejected(session_
     (t,) = report.llm_trace
     assert (t["selected"], t["confidence"], t["explanation"], t["accepted"], t["cached"]) == ("Z999999", 0.99, "made it up", False, False)
     assert "invented identifier" in t["reason"] and t["candidates"] == [("Dan Crenshaw", "C001120", "TX")]
+
+
+def test_validation_itself_refuses_when_more_than_one_candidate_is_valid():
+    from poltracker.politician_llm import validate_suggestion
+
+    a, b = official("S000001", "Pat", "Smith", state="TX"), official("S000002", "Pat", "Smith", state="TX")
+    req = IdentityRequest("Patrick Smith", "house", None, None, (a, b))
+    verdict = validate_suggestion(LLMSuggestion("S000001", 0.99, "x", (), "m"), req, {m.bioguide_id: m for m in (a, b)}, {}, 1, 0.9)
+    assert verdict.member is None and "2 valid candidates" in verdict.reason  # defence in depth, independent of the caller
