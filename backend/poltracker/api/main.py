@@ -150,6 +150,8 @@ def get_security(ticker: str, session: Session = Depends(get_session)) -> Securi
         id=sec.id, ticker=sec.ticker, name=sec.name, price_status=sec.price_status,
         price_from=sec.price_from, price_to=sec.price_to,
         trade_count=count, latest_trade_date=latest, recent_trades=recent,
+        company_name=sec.company_name, cik=sec.cik, sic_code=sec.sic_code, industry=sec.industry, sector=sec.sector,
+        exchange=sec.exchange, profile_status=sec.profile_status, profile_source_url=sec.profile_source_url,
     )
 
 

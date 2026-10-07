@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     # override). Turn on only to let validated suggestions apply directly.
     politician_llm_auto_accept: bool = False
 
+    # Company profiles (python -m poltracker.enrich_securities) come from SEC EDGAR, whose fair-access policy asks every client to
+    # identify itself. Set SEC_USER_AGENT to something like "Your Name your@email.com" (never committed).
+    sec_user_agent: str = "POLTRACKER research project (set SEC_USER_AGENT with your contact details)"
+    sec_request_interval: float = Field(0.15, ge=0.1)  # seconds between SEC requests (the SEC limit is 10 per second)
+    security_profile_stale_days: int = Field(90, ge=1)  # re-check a verified profile after this long
+    security_profile_retry_days: int = Field(30, ge=1)  # re-try an unresolved ticker after this long
+
     benchmark_ticker: str = "SPY"
     price_batch_size: int = 40
     price_retry_days: int = 7  # how long before re-checking a ticker the provider had no data for

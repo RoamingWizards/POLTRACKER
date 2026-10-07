@@ -97,6 +97,15 @@ export interface Security {
   trade_count: number;
   latest_trade_date: string | null;
   recent_trades: Trade[];
+  // Official company profile (SEC EDGAR); null until enriched or when the source does not list the ticker.
+  company_name?: string | null;
+  cik?: string | null;
+  sic_code?: string | null;
+  industry?: string | null;
+  sector?: string | null;
+  exchange?: string | null;
+  profile_status?: 'ok' | 'partial' | 'unresolved' | null;
+  profile_source_url?: string | null;
 }
 
 export interface PriceBar {
