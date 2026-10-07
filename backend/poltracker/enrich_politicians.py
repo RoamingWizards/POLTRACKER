@@ -50,7 +50,8 @@ class EnrichmentReport:
     warnings: list[str] = field(default_factory=list)
     llm_calls: int = 0
     llm_cached: int = 0
-    llm_resolved: list[tuple[int, str, str]] = field(default_factory=list)  # (id, name, bioguide)
+    llm_resolved: list[tuple[int, str, str]] = field(default_factory=list)  # (id, name, bioguide): applied (auto-accept only)
+    llm_pending_review: list[tuple[int, str, str]] = field(default_factory=list)  # validated, held for a person to approve
     llm_errors: list[str] = field(default_factory=list)
     llm_trace: list[dict] = field(default_factory=list)  # one entry per politician the model was asked about (or served from cache)
     requests: int = 0
@@ -103,6 +104,7 @@ def enrich_politicians(
     llm: IdentityResolver | None = None,
     llm_min_confidence: float = 0.9,
     llm_max_calls: int = 25,
+    llm_auto_accept: bool = False,
 ) -> EnrichmentReport:
     now = now or _now()
     report = EnrichmentReport(dry_run=dry_run)
@@ -149,11 +151,14 @@ def enrich_politicians(
                 )
             if member is None and status == "unmatched" and llm is not None:
                 # Last automated step, after the matcher and any reviewed override. Never for resolved politicians.
-                member, llm_note = _llm_stage(
-                    session, pol, result.candidates, roster_by_id, taken, llm, llm_min_confidence, llm_max_calls, report, now, dry_run
+                member, llm_note, held = _llm_stage(
+                    session, pol, result.candidates, roster_by_id, taken, llm, llm_min_confidence, llm_max_calls, llm_auto_accept,
+                    report, now, dry_run,
                 )
                 by_llm = member is not None
                 method = "llm" if by_llm else None
+                if held:  # validated, but a person must approve it: nothing is assigned
+                    status = "review"
                 if member is None and llm_note:
                     note = f"{note or ''} | {llm_note}"[:500]
                 elif by_llm:
@@ -205,14 +210,18 @@ def enrich_politicians(
     return report
 
 
-def _llm_stage(session, pol, candidates, roster_by_id, taken, llm, min_confidence, max_calls, report, now, dry_run):
-    """Ask the model about one unresolved politician. Returns (member or None, note). Every suggestion is validated."""
+def _llm_stage(session, pol, candidates, roster_by_id, taken, llm, min_confidence, max_calls, auto_accept, report, now, dry_run):
+    """Ask the model about one unresolved politician. Returns (member or None, note, held_for_review).
+
+    Every suggestion is validated deterministically. Unless auto_accept is on, even a validated suggestion is only
+    recorded and held for a person to approve; nothing is assigned to the politician.
+    """
     request = IdentityRequest(pol.name, pol.chamber, pol.state, pol.district, tuple(candidates))
     if not request.candidates:
-        return None, "LLM not consulted: no same-surname official in the chamber"
+        return None, "LLM not consulted: no same-surname official in the chamber", False
     valid = valid_candidates(request)
     if len(valid) != 1:  # nothing to choose between, or too many to choose safely: no call, straight to review
-        return None, f"LLM not consulted: {len(valid)} valid candidates"
+        return None, f"LLM not consulted: {len(valid)} valid candidates", False
     key = cache_key(request, llm.model)
     row = session.scalar(select(PoliticianLlmSuggestion).where(PoliticianLlmSuggestion.cache_key == key))
     from_cache = row is not None
@@ -224,12 +233,12 @@ def _llm_stage(session, pol, candidates, roster_by_id, taken, llm, min_confidenc
         )
     else:
         if report.llm_calls >= max_calls:
-            return None, "LLM not consulted: per-run call limit reached"
+            return None, "LLM not consulted: per-run call limit reached", False
         try:
             suggestion = llm.resolve(request)
         except LLMError as exc:
             report.llm_errors.append(f"#{pol.id} {pol.name}: {exc}")
-            return None, "LLM unavailable"  # not cached, so it is retried later
+            return None, "LLM unavailable", False  # not cached, so it is retried later
         report.llm_calls += 1
         if not dry_run:
             row = PoliticianLlmSuggestion(
@@ -240,22 +249,30 @@ def _llm_stage(session, pol, candidates, roster_by_id, taken, llm, min_confidenc
             )
             session.add(row)
     verdict = validate_suggestion(suggestion, request, roster_by_id, taken, pol.id, min_confidence)
+    held = verdict.member is not None and not auto_accept
     if row is not None and not dry_run:
         row.politician_id = pol.id
-        row.outcome = "accepted" if verdict.member else "rejected"
+        row.outcome = "rejected" if verdict.member is None else ("review" if held else "accepted")
         row.reason = None if verdict.member else (verdict.reason or "")[:300]
         row.decided_at = now
     report.llm_trace.append({
         "id": pol.id, "name": pol.name, "chamber": pol.chamber, "candidates": [(m.full_name, m.bioguide_id, m.state) for m in request.candidates],
         "selected": suggestion.selected_bioguide_id, "confidence": suggestion.confidence, "explanation": suggestion.explanation,
-        "alternates": list(suggestion.alternate_candidates), "accepted": verdict.member is not None, "reason": verdict.reason,
-        "cached": from_cache,
+        "alternates": list(suggestion.alternate_candidates), "accepted": verdict.member is not None, "held_for_review": held,
+        "reason": verdict.reason, "cached": from_cache,
     })
     if verdict.member is None:
-        return None, f"LLM suggestion rejected: {verdict.reason}"
+        return None, f"LLM suggestion rejected: {verdict.reason}", False
+    if held:
+        report.llm_pending_review.append((pol.id, pol.name, verdict.member.bioguide_id))
+        # The explanation is model output, not evidence; it is recorded in the audit table, not in this note.
+        return None, (
+            f"LLM suggests {verdict.member.bioguide_id} ({verdict.member.full_name}), confidence {suggestion.confidence:.2f}; "
+            "validated, awaiting review. Approve it as a reviewed override to apply it"
+        ), True
     return verdict.member, (
         f"LLM-assisted ({suggestion.model or llm.model}, confidence {suggestion.confidence:.2f}): {suggestion.explanation}"
-    )
+    ), False
 
 
 def review_queue(session_factory: sessionmaker[Session]) -> list[dict]:
@@ -377,6 +394,7 @@ def main(argv: list[str] | None = None) -> int:
         stale_days=settings.politician_enrich_stale_days, retry_days=settings.politician_retry_days,
         force=args.force, only_ids=set(args.ids) if args.ids else None, limit=args.limit, dry_run=args.dry_run,
         llm=llm, llm_min_confidence=settings.politician_llm_min_confidence, llm_max_calls=settings.politician_llm_max_calls,
+        llm_auto_accept=settings.politician_llm_auto_accept,
     )
     print(report.summary())
     for pid, name, bioguide in report.matched:
@@ -385,6 +403,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {u.status:<10} #{u.politician_id:<4} {u.name:<28} {u.note}")
     for pid, name, bioguide in report.overrides_applied:
         print(f"  override   #{pid:<4} {name:<28} {bioguide} (reviewed override)")
+    for pid, name, bioguide in report.llm_pending_review:
+        print(f"  review     #{pid:<4} {name:<28} {bioguide} (LLM suggestion, validated; awaiting approval)")
     for pid, name, bioguide in report.llm_resolved:
         print(f"  llm        #{pid:<4} {name:<28} {bioguide} (LLM-assisted, validated)")
     if llm is not None:

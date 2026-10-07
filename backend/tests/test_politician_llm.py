@@ -53,6 +53,7 @@ def pols(session_factory):
 
 
 def run(sf, llm, roster=ROSTER, **kw):
+    kw.setdefault("llm_auto_accept", True)  # most tests exercise the apply path; the review-hold default has its own tests
     return enrich_politicians(sf, FakeProvider(roster), now=kw.pop("now", NOW), llm=llm, **kw)
 
 
@@ -315,7 +316,7 @@ def test_an_api_failure_through_the_service_leaves_the_politician_for_review_and
 
 def test_the_whole_path_works_through_the_real_client_with_a_mocked_transport(session_factory, pols):
     client = make_client(lambda r: responses({**GOOD, "selected_bioguide_id": "C001120"}))
-    report = enrich_politicians(session_factory, FakeProvider(ROSTER), now=NOW, llm=client, only_ids={pols["crenshaw"]})
+    report = enrich_politicians(session_factory, FakeProvider(ROSTER), now=NOW, llm=client, only_ids={pols["crenshaw"]}, llm_auto_accept=True)
     p = pol(session_factory, pols["crenshaw"])
     assert (p.bioguide_id, p.enrichment_method) == ("C001120", "llm") and report.llm_calls == 1
     with session_factory() as s:
@@ -344,3 +345,62 @@ def test_validation_itself_refuses_when_more_than_one_candidate_is_valid():
     req = IdentityRequest("Patrick Smith", "house", None, None, (a, b))
     verdict = validate_suggestion(LLMSuggestion("S000001", 0.99, "x", (), "m"), req, {m.bioguide_id: m for m in (a, b)}, {}, 1, 0.9)
     assert verdict.member is None and "2 valid candidates" in verdict.reason  # defence in depth, independent of the caller
+
+
+# --- review queue instead of silent auto-accept (the default) --------------------------------------------------
+
+def held(sf, llm=None, **kw):
+    return enrich_politicians(sf, FakeProvider(ROSTER), now=NOW, llm=llm or FakeLLM("C001120"), **kw)  # library default: no auto-accept
+
+
+def test_by_default_a_validated_suggestion_is_held_for_review_and_nothing_is_assigned(session_factory, pols):
+    report = held(session_factory, only_ids={pols["crenshaw"]})
+    p = pol(session_factory, pols["crenshaw"])
+    assert p.bioguide_id is None and p.party is None and p.enrichment_method is None and p.enrichment_status == "review"
+    assert "LLM suggests C001120" in p.enrichment_note and "awaiting review" in p.enrichment_note
+    assert "short form" not in p.enrichment_note  # the model's explanation is not stored as evidence on the politician
+    assert report.llm_pending_review == [(pols["crenshaw"], "Daniel Crenshaw", "C001120")] and report.llm_resolved == []
+    with session_factory() as s:
+        row = s.scalar(select(PoliticianLlmSuggestion))
+    assert (row.outcome, row.selected_bioguide_id, row.confidence, row.reason) == ("review", "C001120", 0.97, None)
+    assert report.llm_trace[0]["accepted"] is True and report.llm_trace[0]["held_for_review"] is True
+
+
+def test_held_suggestions_appear_in_the_review_queue(session_factory, pols):
+    held(session_factory, only_ids={pols["crenshaw"]})
+    (item,) = [r for r in review_queue(session_factory) if r["id"] == pols["crenshaw"]]
+    assert item["status"] == "review" and item["llm_outcome"] == "review" and item["llm_selected"] == "C001120"
+
+
+def test_a_held_suggestion_is_not_resent_and_is_applied_only_through_a_reviewed_override(session_factory, pols):
+    llm = FakeLLM("C001120")
+    held(session_factory, llm, only_ids={pols["crenshaw"]})
+    held(session_factory, llm, only_ids={pols["crenshaw"]}, force=True)
+    assert len(llm.requests) == 1  # cached, still held
+    assert pol(session_factory, pols["crenshaw"]).bioguide_id is None
+    from poltracker.politician_overrides import add_override
+
+    with session_factory() as s:
+        add_override(s, pols["crenshaw"], "C001120", "Dan is a short form of Daniel", "owner review", NOW)
+        s.commit()
+    held(session_factory, llm, only_ids={pols["crenshaw"]})
+    p = pol(session_factory, pols["crenshaw"])
+    assert (p.bioguide_id, p.enrichment_status, p.enrichment_method) == ("C001120", "matched", "override")
+    assert len(llm.requests) == 1 and "LLM" not in p.enrichment_note
+
+
+def test_a_rejected_suggestion_is_still_just_unresolved_not_held(session_factory, pols):
+    report = held(session_factory, FakeLLM("Z999999"), only_ids={pols["crenshaw"]})
+    p = pol(session_factory, pols["crenshaw"])
+    assert p.enrichment_status == "unmatched" and report.llm_pending_review == []
+
+
+def test_auto_accept_remains_available_as_an_explicit_opt_in(session_factory, pols):
+    report = held(session_factory, only_ids={pols["crenshaw"]}, llm_auto_accept=True)
+    assert pol(session_factory, pols["crenshaw"]).enrichment_method == "llm" and report.llm_pending_review == []
+
+
+def test_auto_accept_is_off_by_default_in_configuration():
+    from poltracker.config import Settings
+
+    assert Settings(_env_file=None).politician_llm_auto_accept is False

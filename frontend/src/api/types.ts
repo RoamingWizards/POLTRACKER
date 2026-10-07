@@ -66,7 +66,7 @@ export interface Politician {
   term_end_year: number | null;
   enriched_at: string | null;
   enrichment_source: string | null;
-  enrichment_status: 'matched' | 'unmatched' | 'ambiguous' | 'conflict' | null;
+  enrichment_status: 'matched' | 'unmatched' | 'ambiguous' | 'conflict' | 'review' | null;
 }
 
 export interface CommitteeSeat {

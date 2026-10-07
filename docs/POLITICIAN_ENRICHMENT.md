@@ -57,8 +57,11 @@ and politician ids are never changed.
 The matcher never guesses nicknames. For a name variant a person has checked, record an explicit link:
 
 ```
-.venv/bin/python -m poltracker.enrich_politicians --overrides reviewed_overrides.json
+.venv/bin/python -m poltracker.enrich_politicians --overrides data/reviewed_politician_overrides.json
 ```
+
+`data/reviewed_politician_overrides.json` is the committed record of every reviewed override (14 entries, approved 2026-10-07). Load it
+into any fresh database, including the macOS app's, to resolve the same politicians. Reloading it is safe.
 
 ```json
 [{"politician_id": 45, "bioguide_id": "C001120", "reason": "Dan is a short form of Daniel; sole Crenshaw in the House",
@@ -97,6 +100,11 @@ exists in the official roster and among the candidates shown; chamber, state and
 belong to another POLTRACKER politician; no other valid candidate was named as plausible; confidence is **at least**
 `POLITICIAN_LLM_MIN_CONFIDENCE` (default 0.9, inclusive). The model cannot create a politician or an identifier. When there are zero or
 several valid candidates the model is not called at all.
+
+**Not auto-accepted by default.** A suggestion that passes every check is held in the review queue
+(`enrichment_status = review`); nothing is assigned. A person approves it by adding it to `data/reviewed_politician_overrides.json`
+(the permanent record) and running the enrichment again. `POLITICIAN_LLM_AUTO_ACCEPT=true` lets validated suggestions apply directly;
+leave it off. The model's explanation is stored only in the audit table as a model statement, never as evidence on the politician.
 
 Stored in `politician_llm_suggestions` (migration 0008): the incoming name, candidate IDs, selected ID, confidence, explanation,
 alternates, model, timestamp, outcome and rejection reason; the politician row gets `enrichment_method = llm` and the

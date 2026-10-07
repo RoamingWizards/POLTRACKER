@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     politician_llm_model: str = "gpt-4o-mini"
     politician_llm_min_confidence: float = Field(0.9, ge=0, le=1)  # a suggestion must meet or exceed this (inclusive)
     politician_llm_max_calls: int = Field(25, ge=0)  # cap per run
+    # Off by default: a validated LLM suggestion is held in the review queue and a person approves it (as a reviewed
+    # override). Turn on only to let validated suggestions apply directly.
+    politician_llm_auto_accept: bool = False
 
     benchmark_ticker: str = "SPY"
     price_batch_size: int = 40
