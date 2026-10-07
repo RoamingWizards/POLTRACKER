@@ -9,3 +9,5 @@ node_modules/
 *.egg-info/
 dist/
 *.tsbuildinfo
+build/
+release/

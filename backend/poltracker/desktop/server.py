@@ -13,6 +13,10 @@ log = logging.getLogger(__name__)
 HOST = "127.0.0.1"
 
 
+# Never route the app's own loopback check through a configured HTTP proxy.
+_DIRECT = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
 def find_free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind((HOST, 0))
@@ -42,7 +46,7 @@ class LocalServer:
             if not self._thread.is_alive():
                 raise RuntimeError("The local server stopped while starting. See the log for details.")
             try:
-                with urllib.request.urlopen(f"{self.url}/health", timeout=1) as response:
+                with _DIRECT.open(f"{self.url}/health", timeout=1) as response:
                     if response.status == 200:
                         return time.monotonic() - started
             except (urllib.error.URLError, OSError):

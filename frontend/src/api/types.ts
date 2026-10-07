@@ -163,3 +163,26 @@ export interface Status {
   benchmark_to: string | null;
   benchmark_status: string | null;
 }
+
+// Desktop app only: the background refresh service (absent from the web API, which answers 404).
+export interface RefreshStatus {
+  enabled: boolean;
+  running: boolean;
+  phase: 'idle' | 'ingesting' | 'prices';
+  trigger: 'startup' | 'scheduled' | 'manual' | null;
+  label: string | null;
+  progress: { done: number; total: number | null } | null;
+  started_at: string | null;
+  finished_at: string | null;
+  last_attempt_ok: boolean | null;
+  last_error: string | null;
+  last_success_at: string | null;
+  next_run_at: string | null;
+  interval_hours: number;
+  database_empty: boolean;
+}
+
+export interface TriggerResult {
+  accepted: boolean;
+  reason: string;
+}

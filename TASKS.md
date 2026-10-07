@@ -207,81 +207,17 @@ Reminders before any deployment is approved:
 
 # Current task
 
-## [ ] Phase 7 — Production compatibility
+## [~] Phase 8 — Standalone macOS application (`macos-app` branch)
 
-Goal:
-Prepare POLTRACKER for the already-approved zero-cost architecture **without deploying it**.
+Direction change: cloud deployment (Render / Neon / Cloudflare) is stopped. The PostgreSQL and deployment work stays in
+the repository as optional future web support. The target is `release/POLTRACKER.app`; see `docs/MACOS_APP.md`.
 
-Approved architecture:
-- Cloudflare Pages — frontend
-- Render Free — FastAPI backend
-- Neon Free PostgreSQL — production database
-- GitHub Actions — ingestion every 6 hours
-
-Scope:
-
-1. PostgreSQL compatibility
-   - fix the known NULL sort-order difference between SQLite and PostgreSQL
-   - fix the collation-dependent `max(asset_name)` behaviour
-   - preserve identical API behaviour across SQLite and PostgreSQL where practical
-   - keep SQLite fully supported for local development
-   - do not migrate the real local database
-2. Database configuration
-   - support a production `DATABASE_URL`; keep the SQLite default for local development
-   - use SQLAlchemy in a database-neutral way
-   - add psycopg 3 only if needed
-   - no production credentials
-3. CORS
-   - configurable CORS support in FastAPI; local development keeps working
-   - production origins come from configuration/environment variables
-   - do not hardcode a real Cloudflare Pages URL
-4. Frontend production API configuration
-   - a Vite environment variable (`VITE_API_BASE_URL`); local development keeps using the proxy
-   - production can point to the Render API; no real production URL yet
-5. Stale ingestion warning
-   - backend and frontend support so Data Status visibly warns when the most recent successful
-     ingestion is older than approximately 24 hours
-   - not an error when data is fresh
-6. GitHub Actions workflow
-   - ingestion + enrichment every 6 hours against PostgreSQL, plus manual `workflow_dispatch`
-   - repository secrets/variables only; no real secrets; do not run it against production
-7. Render readiness
-   - only the minimal configuration/documentation needed to start the FastAPI backend on Render
-   - do not create a Render account or service
-8. Cloudflare Pages readiness
-   - the production build consumes `VITE_API_BASE_URL`
-   - document the build command and output directory; do not create a Cloudflare project
-
-Testing:
-- full backend test suite on SQLite
-- PostgreSQL compatibility tests locally if PostgreSQL is available
-- migrations 0001–0004 verified on a clean PostgreSQL database (any new migration is verified
-  too)
-- frontend TypeScript check and production build
-- verify local development behaviour still works
-
-Acceptance criteria:
-- SQLite local development still works
-- PostgreSQL tests pass
-- API behaviour is consistent across SQLite/PostgreSQL for the known parity cases
-- CORS is configurable
-- frontend API base URL is configurable
-- stale-ingestion warning works
-- GitHub Actions workflow is syntactically valid and contains no secrets
-- no external resources are created
-- no deployment happens
-- no real production database migration happens
-
-Still NOT approved (unchanged):
-- deployment, creating Render / Neon / Cloudflare accounts or projects, adding repository or
-  production secrets, changing GitHub repository settings, migrating the real local database
-
-When complete: summarize files changed, show test/build results, and list remaining blockers
-before deployment. Do not push or open a PR until the work has been reviewed.
+Built and tested: desktop launcher, local server, SQLite bootstrap/import, background refresh and UI, PyInstaller spec,
+`scripts/build-macos.sh`, packaged-app tests. Awaiting review; nothing merged.
 
 ### STOP FOR REVIEW
 
-Stop after Phase 7 is complete and summarize. Do not begin deployment.
+Do not push further, merge to main, sign, or notarize until reviewed.
 
 ---
 

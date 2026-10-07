@@ -177,3 +177,7 @@ proxy that forwards `/api` to the backend, or set `VITE_API_BASE_URL` at build t
 ## License and data
 
 No license has been chosen yet. Trade data belongs to its sources and is subject to their terms.
+
+## macOS app
+
+A standalone `POLTRACKER.app` (local SQLite, automatic refresh, no Terminal) can be built with `./scripts/build-macos.sh`. See [docs/MACOS_APP.md](docs/MACOS_APP.md).

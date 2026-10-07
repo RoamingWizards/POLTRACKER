@@ -1,4 +1,4 @@
-"""`POLTRACKER --selftest`: drives the real window through every page and writes a JSON report, then quits."""
+"""`POLTRACKER --selftest`: drives the real window to every page, checks page-specific content, writes a JSON report, quits."""
 
 import json
 import os
@@ -7,10 +7,10 @@ from pathlib import Path
 
 from . import paths
 
-PAGES = ["/", "/trades", "/politicians", "/status"]
+MAIN = "(document.querySelector('main')||{}).innerText||''"
 
 
-def _wait(window, expression: str, timeout: float = 20.0):
+def _wait(window, expression: str, timeout: float = 25.0):
     end = time.monotonic() + timeout
     while time.monotonic() < end:
         try:
@@ -19,31 +19,42 @@ def _wait(window, expression: str, timeout: float = 20.0):
             value = None
         if value:
             return value
-        time.sleep(0.25)
+        time.sleep(0.4)
     return None
+
+
+def _visit(window, base: str, path: str, expect: str, charts: bool = False) -> dict:
+    window.load_url(base + path)
+    time.sleep(0.5)
+    ok = _wait(window, f"location.pathname === {json.dumps(path)} && ({MAIN}).includes({json.dumps(expect)}) ? 'y' : ''")
+    out = {"rendered": bool(ok)}
+    if charts:
+        out["svg_charts"] = _wait(window, "document.querySelectorAll('main svg.MuiChartsSurface-root, main svg[class*=Charts]').length || ''") or 0
+        out["rendered"] = out["rendered"] and bool(out["svg_charts"])
+    return out
 
 
 def run(window, base_url: str) -> None:
     report: dict = {"url": base_url, "pages": {}}
+    pages = report["pages"]
     try:
-        for page in PAGES:
-            window.evaluate_js(f"window.history.pushState({{}}, '', '{page}'); window.dispatchEvent(new PopStateEvent('popstate'))")
-            text = _wait(window, "document.querySelector('main') && document.querySelector('main').innerText.length > 20 ? document.querySelector('main').innerText.slice(0, 300) : ''")
-            report["pages"][page] = {"rendered": bool(text), "text": (text or "")[:120]}
-        report["title"] = window.evaluate_js("document.title")
-        report["size"] = [window.width, window.height]
-        # Detail pages: follow the first link on the list pages.
-        for list_page, prefix in (("/politicians", "/politicians/"), ("/trades", "/securities/")):
-            window.evaluate_js(f"window.history.pushState({{}}, '', '{list_page}'); window.dispatchEvent(new PopStateEvent('popstate'))")
-            href = _wait(window, f"(document.querySelector('a[href^=\"{prefix}\"]') || {{}}).getAttribute && document.querySelector('a[href^=\"{prefix}\"]').getAttribute('href')")
-            if href:
-                window.evaluate_js(f"window.history.pushState({{}}, '', '{href}'); window.dispatchEvent(new PopStateEvent('popstate'))")
-                text = _wait(window, "document.querySelector('main') && document.querySelector('main').innerText.length > 20 ? 'ok' : ''")
-                report["pages"][href] = {"rendered": bool(text)}
-        report["ok"] = all(p["rendered"] for p in report["pages"].values())
+        pages["/"] = _visit(window, base_url, "/", "Trades stored", charts=True)
+        pages["/trades"] = _visit(window, base_url, "/trades", "Trades")
+        pages["/politicians"] = _visit(window, base_url, "/politicians", "Politicians")
+        pages["/status"] = _visit(window, base_url, "/status", "Background refresh")
+        # Detail pages: real ids from the app's own API (synchronous XHR so evaluate_js returns the value).
+        ids = window.evaluate_js(
+            "(function(){var x=new XMLHttpRequest();x.open('GET','/api/trades?limit=1',false);x.send();"
+            "var t=JSON.parse(x.responseText).items[0];return t.politician_id+'|'+t.ticker;})()"
+        )
+        pol, ticker = ids.split("|")
+        pages[f"/politicians/{pol}"] = _visit(window, base_url, f"/politicians/{pol}", "Trades", charts=False)
+        pages[f"/securities/{ticker}"] = _visit(window, base_url, f"/securities/{ticker}", ticker, charts=True)
     except Exception as exc:  # noqa: BLE001
-        report["ok"] = False
         report["error"] = f"{type(exc).__name__}: {exc}"
+    report["title"] = window.evaluate_js("document.title")
+    report["size"] = [window.width, window.height]
+    report["ok"] = "error" not in report and all(p["rendered"] for p in pages.values())
     out = Path(os.environ.get("POLTRACKER_SELFTEST_OUT") or paths.support_dir() / "selftest.json")
     out.write_text(json.dumps(report, indent=2))
     window.destroy()
