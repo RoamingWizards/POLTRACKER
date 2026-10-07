@@ -33,7 +33,7 @@ def test_shipped_review_status_is_consistent_and_limited_to_the_recorded_decisio
     rows = load_rows(REAL)
     assert len(rows) == 191
     reviewed = [r for r in rows if r["review_status"] == "reviewed"]
-    assert len(reviewed) == 60 and len(rows) - len(reviewed) == 131
+    assert len(reviewed) == 64 and len(rows) - len(reviewed) == 127
     assert all((r["review_status"] == "reviewed") == (r["reviewed_at"] is not None) for r in rows)
     assert all(r["reviewed_by"] and r["review_note"] for r in reviewed)  # every reviewed row says who decided and why
     assert all(r["reviewed_by"] is None for r in rows if r["review_status"] == "needs_review")
@@ -45,7 +45,7 @@ def test_the_shipped_basis_matches_what_was_actually_read():
     subs = [r for r in rows if r["subcommittee_code"]]
     # Transportation publishes its subcommittee text; four others were re-sourced to official published text in round 2 (Health, Comms and Tech, Courts/IP/AI, Space).
     resourced = {(r["committee_code"], r["subcommittee_code"]) for r in subs if r["committee_code"] != "PW00" and r["jurisdiction_basis"] == "committee_published_text"}
-    assert resourced == {("IF00", "IF14"), ("IF00", "IF16"), ("JU00", "JU03"), ("SY00", "SY16")}
+    assert resourced == {("IF00", "IF14"), ("IF00", "IF16"), ("JU00", "JU03"), ("SY00", "SY16")}  # same four subcommittees, now with more rows each
     assert {r["jurisdiction_basis"] for r in subs if r["committee_code"] != "PW00" and (r["committee_code"], r["subcommittee_code"]) not in resourced} == {"subcommittee_name"}
     assert {r["jurisdiction_basis"] for r in subs if r["committee_code"] == "PW00"} == {"committee_published_text"}
     committee_level = {r["committee_code"]: r["jurisdiction_basis"] for r in rows if not r["subcommittee_code"]}
@@ -436,6 +436,24 @@ def test_round_2_resourced_rows_cite_the_official_subcommittee_text_not_the_name
 
 def test_round_2_leaves_the_other_proposals_unapplied():
     rows = shipped()
-    for key in ["IF00:2833-2836:direct", "IF00/IF14:2833-2836:direct", "SY00:3760-3769:direct", "AG00:0100-0299:direct", "AG00:2010-2029:direct", "PW00:4400-4499:direct",
-                "WM00/WM02:2833-2836:related", "WM00/WM02:3841-3845:related", "AS00:3730-3732:direct", "IF00:1311-1311:direct"]:
+    for key in ["IF00:2833-2836:direct", "SY00:3760-3769:direct", "AG00:0100-0299:direct", "AG00:2010-2029:direct", "PW00:4400-4499:direct",
+                "WM00/WM02:2833-2836:related", "WM00/WM02:3841-3845:related", "AS00:3730-3732:direct", "IF00:1311-1311:direct", "IF00:3841-3845:direct"]:
         assert rows[key]["review_status"] == "needs_review", key
+
+
+# --- final round 2 decisions -------------------------------------------------------------------------------------
+
+def test_final_round_2_approvals_are_reviewed_direct_and_cite_the_published_text():
+    rows = shipped()
+    for key in ["IF00/IF14:2833-2836:direct", "IF00/IF14:3841-3845:direct", "SY00/SY16:3720-3729:direct"]:
+        r = rows[key]
+        assert r["review_status"] == "reviewed" and r["jurisdiction_basis"] == "committee_published_text", key
+        assert r["source_url"].startswith("https://") and "subcommittee" in r["source_url"]
+    assert rows["IF00/IF14:2833-2836:direct"]["jurisdiction_text"].startswith("The health sector broadly")
+    assert "civil aviation" in rows["SY00/SY16:3720-3729:direct"]["jurisdiction_text"] and "civilian and defense" in rows["SY00/SY16:3720-3729:direct"]["review_note"]
+
+
+def test_the_agriculture_grain_mill_subcommittee_row_matches_its_parent_as_reviewed_related():
+    rows = shipped()
+    assert "AG00/AG16:2040-2049:related" in rows and "AG00/AG16:2040-2049:direct" not in rows
+    assert rows["AG00/AG16:2040-2049:related"]["review_status"] == "reviewed" and rows["AG00:2040-2049:related"]["review_status"] == "reviewed"

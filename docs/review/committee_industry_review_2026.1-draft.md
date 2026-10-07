@@ -9,14 +9,14 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 | Measure | Count |
 |---|---|
 | Mappings | 191 |
-| direct | 90 |
-| related | 86 |
+| direct | 89 |
+| related | 87 |
 | none (reviewed as not industry-specific) | 15 |
 | committee-level / subcommittee-level | 89 / 102 |
-| Explicit-jurisdiction mappings (official wording read) | 95 |
-| Inferred from a subcommittee name | 84 |
+| Explicit-jurisdiction mappings (official wording read) | 98 |
+| Inferred from a subcommittee name | 81 |
 | Inferred from a committee name only | 12 |
-| Rows needing review / already reviewed | 131 / 60 |
+| Rows needing review / already reviewed | 127 / 64 |
 | Trades in the data that have a security | 5380 |
 | Trades with at least one match | 357 |
 | Trades affected by a direct mapping | 175 |
@@ -414,7 +414,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `AG00/AG16:2040-2049:direct`  direct  |  needs_review
+#### `AG00/AG16:2040-2049:related`  related  |  reviewed
 
 - **Scope:** subcommittee AG16 (General Farm Commodities, Risk Management, and Credit)
 - **SIC range:** 2040-2049
@@ -425,7 +425,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
 - **In POLTRACKER data:** 3 securities (2040 Grain Mill Products x3)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: GIS, INGR, K.
-- **Scrutiny:** `inferred_from_name`
+- **Scrutiny:** `inferred_from_name`; `related_level`
+- **Review note:** Downgraded from direct to related (owner decision 2026-10-07, final round 2), consistent with the parent Agriculture row: grain commodities are directly within jurisdiction, but downstream grain-milling companies are treated as related.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG16:2060-2069:related`  related  |  reviewed
@@ -1977,34 +1978,36 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00/IF14:2833-2836:direct`  direct  |  needs_review
+#### `IF00/IF14:2833-2836:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee IF14 (Health)
 - **SIC range:** 2833-2836
 - **Official SIC titles covered:** 2833 Medicinal Chemicals & Botanical Products; 2834 Pharmaceutical Preparations; 2835 In Vitro & In Vivo Diagnostic Substances; 2836 Biological Products, (No Diagnostic Substances)
 - **Rationale:** Drugs and biologicals. Official SIC titles in 2833-2836: 2833 Medicinal Chemicals & Botanical Products; 2834 Pharmaceutical Preparations; 2835 In Vitro & In Vivo Diagnostic Substances; 2836 Biological Products, (No Diagnostic Substances).
-- **Official jurisdiction wording used:** (1) Biomedical research and development. (3) Health and health facilities. (6) Exploration, production, storage, supply, marketing, pricing, and regulation of energy resources, including all fossil fuels, solar energy, and other unconventional or renewable energy resources. (9) The generation and marketing of power; reliability and interstate transmission of, and ratemaking for, all power. (10) ... all functions of the Federal Energy Regulatory Commission. (13) Regulation of the domestic nuclear energy industry. (14) Regulation of interstate and foreign communications. (15) Travel and tourism.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(1),(3),(12); subcommittee name  <https://energycommerce.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **Official jurisdiction wording used:** The health sector broadly, including private and public health insurance (Patient Protection and Affordable Care Act, Medicare, Medicaid, CHIP); biomedical research and development; hospital construction; mental health; health information technology, privacy, and cybersecurity; medical malpractice and medical malpractice insurance; the 340B drug discount program; the regulation of food, drugs, and cosmetics; drug abuse; the Department of Health and Human Services; the National Institutes of Health; the Centers for Disease Control; Indian Health Service; and all aspects of the above-referenced jurisdiction related to the Department of Homeland Security.
+- **Citation / source:** House Committee on Energy and Commerce, Health Subcommittee jurisdiction page (read 2026-10-07); Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(1),(3)  <https://energycommerce.house.gov/committees/subcommittee/health>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 48 securities (2833 Medicinal Chemicals & Botanical Products x1, 2834 Pharmaceutical Preparations x35, 2835 In Vitro & In Vivo Diagnostic Substances x1, 2836 Biological Products, (No Diagnostic Substances) x11)
 - **Trades matched:** 12 by 3 politicians (primary match for 12). Examples: ABBV, ABT, AGIO, ALKS, ALNY, AMGN, ARGX, ARQT.
 - **Overlaps other committees:** VR00/VR03 2833-2836 (related); AP00/AP01 2833-2836 (related); AP00/AP07 2833-2836 (related); WM00/WM02 2833-2836 (related)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
+- **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07, final round 2). Re-sourced to the Health Subcommittee's published jurisdiction ('the health sector broadly'; biomedical research and development; 'the regulation of food, drugs, and cosmetics'). Covers drug makers (pharmaceutical preparations, biological products, diagnostics substances).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00/IF14:3841-3845:direct`  direct  |  needs_review
+#### `IF00/IF14:3841-3845:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee IF14 (Health)
 - **SIC range:** 3841-3845
 - **Official SIC titles covered:** 3841 Surgical & Medical Instruments & Apparatus; 3842 Orthopedic, Prosthetic & Surgical Appliances & Supplies; 3843 Dental Equipment & Supplies; 3844 X-Ray Apparatus & Tubes & Related Irradiation Apparatus; 3845 Electromedical & Electrotherapeutic Apparatus
 - **Rationale:** Medical devices. Official SIC titles in 3841-3845: 3841 Surgical & Medical Instruments & Apparatus; 3842 Orthopedic, Prosthetic & Surgical Appliances & Supplies; 3843 Dental Equipment & Supplies; 3844 X-Ray Apparatus & Tubes & Related Irradiation Apparatus; 3845 Electromedical & Electrotherapeutic Apparatus.
-- **Official jurisdiction wording used:** (1) Biomedical research and development. (3) Health and health facilities. (6) Exploration, production, storage, supply, marketing, pricing, and regulation of energy resources, including all fossil fuels, solar energy, and other unconventional or renewable energy resources. (9) The generation and marketing of power; reliability and interstate transmission of, and ratemaking for, all power. (10) ... all functions of the Federal Energy Regulatory Commission. (13) Regulation of the domestic nuclear energy industry. (14) Regulation of interstate and foreign communications. (15) Travel and tourism.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(1),(3),(12); subcommittee name  <https://energycommerce.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **Official jurisdiction wording used:** The health sector broadly, including private and public health insurance (Patient Protection and Affordable Care Act, Medicare, Medicaid, CHIP); biomedical research and development; hospital construction; mental health; health information technology, privacy, and cybersecurity; medical malpractice and medical malpractice insurance; the 340B drug discount program; the regulation of food, drugs, and cosmetics; drug abuse; the Department of Health and Human Services; the National Institutes of Health; the Centers for Disease Control; Indian Health Service; and all aspects of the above-referenced jurisdiction related to the Department of Homeland Security.
+- **Citation / source:** House Committee on Energy and Commerce, Health Subcommittee jurisdiction page (read 2026-10-07); Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(1),(3)  <https://energycommerce.house.gov/committees/subcommittee/health>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 24 securities (3841 Surgical & Medical Instruments & Apparatus x13, 3842 Orthopedic, Prosthetic & Surgical Appliances & Supplies x7, 3844 X-Ray Apparatus & Tubes & Related Irradiation Apparatus x2, 3845 Electromedical & Electrotherapeutic Apparatus x2)
 - **Trades matched:** 6 by 1 politician (primary match for 6). Examples: ALGN, AORT, ATRC, BAX, BDX, BSX, CDRE, DXCM.
 - **Overlaps other committees:** HM00 3844-3844 (related); WM00/WM02 3841-3845 (related)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
+- **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07, final round 2). Re-sourced to the Health Subcommittee's published jurisdiction ('the health sector broadly'; biomedical research and development; 'the regulation of food, drugs, and cosmetics'). Covers medical-device makers. Medical devices are not named in the published text; they fall under 'the health sector broadly'.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00/IF14:3851-3851:direct`  direct  |  needs_review
@@ -2837,19 +2840,20 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Review note:** Review history: an earlier draft also mapped 3820-3829 (measuring instruments) for NIST standards; removed after it matched Trimble.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `SY00/SY16:3720-3729:direct`  direct  |  needs_review
+#### `SY00/SY16:3720-3729:direct`  direct  |  reviewed
 
 - **Scope:** subcommittee SY16 (Space and Aeronautics)
 - **SIC range:** 3720-3729
 - **Official SIC titles covered:** 3720 Aircraft & Parts; 3721 Aircraft; 3724 Aircraft Engines & Engine Parts; 3728 Aircraft Parts & Auxiliary Equipment, Nec
 - **Rationale:** Aeronautics: aircraft and parts. Official SIC titles in 3720-3729: 3720 Aircraft & Parts; 3721 Aircraft; 3724 Aircraft Engines & Engine Parts; 3728 Aircraft Parts & Auxiliary Equipment, Nec.
-- **Official jurisdiction wording used:** (1) All energy research, development, and demonstration. (2) Astronautical research and development. (3) Civil aviation research and development. (8) National Aeronautics and Space Administration. (12) Outer space, including exploration and control thereof. (14) Scientific research, development, and demonstration.
-- **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(p)(2),(3),(12); subcommittee name  <https://science.house.gov/subcommittees>
-- **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
+- **Official jurisdiction wording used:** Shall have jurisdiction over the following subject matters: all matters relating to astronautical and aeronautical research and development; national space policy, including access to space; sub-orbital access and applications; National Aeronautics and Space Administration and its contractor and government-operated labs; space commercialization, including commercial space activities relating to the Department of Transportation and the Department of Commerce; exploration and use of outer space; international space cooperation; the National Space Council; space applications, space communications and related matters; Earth remote sensing policy; civil aviation including unmanned aerial systems, research, development, and demonstration; research, development, and demonstration programs of the Federal Aviation Administration; space law; other appropriate matters as referred by the Chair; and relevant oversight.
+- **Citation / source:** House Committee on Science, Space, and Technology, Subcommittee on Space and Aeronautics jurisdiction page (read 2026-10-07); Rules of the House of Representatives, 119th Congress, Rule X, clause 1(p)(2),(8),(12)  <https://science.house.gov/subcommittee-space-aeronautics>
+- **Jurisdiction basis:** `committee_published_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 11 securities (3720 Aircraft & Parts x1, 3721 Aircraft x2, 3724 Aircraft Engines & Engine Parts x5, 3728 Aircraft Parts & Auxiliary Equipment, NEC x3)
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: AVAV, BA, DCO, ESLT, HEI.A, HON, HONA, RTX.
 - **Overlaps other committees:** AS00 3720-3729 (direct); AS00/AS25 3720-3729 (direct); PW00 3720-3729 (related); PW00/PW05 3720-3729 (related); FA00 3720-3729 (related); AP00/AP02 3720-3729 (direct)
-- **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
+- **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-07, final round 2). Re-sourced to the Space and Aeronautics Subcommittee's published jurisdiction (aeronautical research and development; civil aviation; FAA research, development and demonstration programs). SIC 3720-3729 can contain both civilian and defense-oriented aircraft businesses; the matches include both kinds.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `SY00/SY16:3760-3769:direct`  direct  |  reviewed
