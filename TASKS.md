@@ -245,6 +245,9 @@ contextual flags, scoring, AI explanation or personalized filters. Later phases:
 Deterministic, explainable mapping from committee/subcommittee jurisdiction (House Rule X) to SIC ranges, a matcher that returns
 relevant / not relevant / unknown with provenance, migration 0010, and a read-only measurement over existing trades. See
 `docs/COMMITTEE_INDUSTRY_MAPPING.md`. The 184 mappings are a **draft authored from the official text and not yet reviewed by a person**.
+Review pass: every row now has `review_status` / `reviewed_by` / `jurisdiction_basis` (migration 0011, all rows `needs_review`), and
+`python -m poltracker.committee_industry_review` generates the human-review packet (`docs/review/`). The intended Phase 3 flagging policy is
+documented, not implemented.
 No trade is flagged or scored, no market data or AI is used, and no per-trade result is stored. Later phases: 3 contextual signals and review
 flags, 4 AI explanation of structured signals, 5 personalized filters. Awaiting review.
 

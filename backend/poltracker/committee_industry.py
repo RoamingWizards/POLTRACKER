@@ -24,6 +24,9 @@ from sqlalchemy.orm import Session
 from .models import CommitteeAssignment, CommitteeIndustryMapping, _now
 
 LEVELS = ("direct", "related", "none")
+REVIEW_STATUSES = ("needs_review", "reviewed")
+BASES = ("rule_x_text", "committee_published_text", "subcommittee_name", "committee_name")
+EXPLICIT_BASES = ("rule_x_text", "committee_published_text")  # the official wording was actually read; the others are inferred from names
 STATUSES = ("relevant", "not_relevant", "unknown")
 
 
@@ -49,6 +52,14 @@ class Mapping:
     source_url: str
     reviewed_at: datetime | None
     mapping_version: str
+    review_status: str = "needs_review"
+    reviewed_by: str | None = None
+    review_note: str | None = None
+    jurisdiction_basis: str | None = None
+
+    @property
+    def explicitly_verified(self) -> bool:
+        return self.jurisdiction_basis in EXPLICIT_BASES
 
     @property
     def scope(self) -> str:
@@ -86,6 +97,8 @@ class Match:
     jurisdiction_text: str | None
     mapping_version: str
     reviewed: bool
+    review_status: str = "needs_review"
+    jurisdiction_basis: str | None = None
 
 
 @dataclass
@@ -137,6 +150,23 @@ class CommitteeIndustryMatcher:
         pattern = self._patterns.get(m.id)
         return pattern is None or bool(industry and pattern.search(industry))
 
+    def applicable_rows(self, assignments: Iterable[Assignment], sic_code: object, industry: str | None = None) -> list[Mapping]:
+        """Every mapping row that applies to these seats and this security, best first (the order `evaluate` reports them)."""
+        sic = parse_sic(sic_code)
+        seats = list(assignments)
+        if sic is None or not seats:
+            return []
+        committees = {a.committee_code for a in seats}
+        subs = {(a.committee_code, a.subcommittee_code) for a in seats if a.subcommittee_code}
+        found: list[Mapping] = []
+        for code in committees:
+            for m in self._by_committee.get(code, []):
+                if m.subcommittee_code and (code, m.subcommittee_code) not in subs:
+                    continue  # a subcommittee mapping only applies to a member who sits on that subcommittee
+                if self._applies(m, sic, industry):
+                    found.append(m)
+        return sorted(found, key=_rank)
+
     def evaluate(self, assignments: Iterable[Assignment], sic_code: object, industry: str | None = None) -> Relevance:
         sic = parse_sic(sic_code)
         if sic is None:
@@ -145,21 +175,10 @@ class CommitteeIndustryMatcher:
         if not seats:
             return Relevance("unknown", "no_committee_assignments", self.version)
         committees = {a.committee_code: a.committee_name or a.committee_code for a in seats}
-        subs = {(a.committee_code, a.subcommittee_code) for a in seats if a.subcommittee_code}
         unmapped = sorted(name for code, name in committees.items() if code not in self._by_committee)
-
-        found: list[Mapping] = []
-        for code in committees:
-            for m in self._by_committee.get(code, []):
-                if m.subcommittee_code and (code, m.subcommittee_code) not in subs:
-                    continue  # a subcommittee mapping only applies to a member who sits on that subcommittee
-                if self._applies(m, sic, industry):
-                    found.append(m)
+        found = self.applicable_rows(seats, sic_code, industry)  # the raw value: a parsed int such as 100 would not re-parse
         if found:
-            found.sort(key=_rank)
             return Relevance("relevant", "match", self.version, [_to_match(m) for m in found], unmapped)
-        if len(unmapped) == len(committees):
-            return Relevance("unknown", "unmapped_committees", self.version, [], unmapped)
         if unmapped:  # something unmapped could still be relevant, so "not relevant" cannot be asserted
             return Relevance("unknown", "unmapped_committees", self.version, [], unmapped)
         return Relevance("not_relevant", "no_match", self.version)
@@ -167,12 +186,13 @@ class CommitteeIndustryMatcher:
 
 def _to_match(m: Mapping) -> Match:
     return Match(m.id, m.scope, m.committee_code, m.committee_name, m.subcommittee_code, m.subcommittee_name, m.relevance_level, m.sic_range or "",
-                 m.rationale, m.source_citation, m.source_url, m.jurisdiction_text, m.mapping_version, m.reviewed_at is not None)
+                 m.rationale, m.source_citation, m.source_url, m.jurisdiction_text, m.mapping_version, m.review_status == "reviewed" and m.reviewed_at is not None,
+                 m.review_status, m.jurisdiction_basis)
 
 
 # --- loading -------------------------------------------------------------------------------------------------
 
-REQUIRED = ("chamber", "committee_code", "committee_name", "relevance_level", "rationale", "source_url", "mapping_version")
+REQUIRED = ("chamber", "committee_code", "committee_name", "relevance_level", "rationale", "source_url", "mapping_version", "review_status", "jurisdiction_basis")
 
 
 def validate_rows(rows: list[dict]) -> None:
@@ -189,6 +209,12 @@ def validate_rows(rows: list[dict]) -> None:
             raise MappingError(f"row {i}: missing {', '.join(missing)}")
         if r["relevance_level"] not in LEVELS:
             raise MappingError(f"row {i}: relevance_level must be one of {LEVELS}")
+        if r["review_status"] not in REVIEW_STATUSES:
+            raise MappingError(f"row {i}: review_status must be one of {REVIEW_STATUSES}")
+        if r["jurisdiction_basis"] not in BASES:
+            raise MappingError(f"row {i}: jurisdiction_basis must be one of {BASES}")
+        if (r["review_status"] == "reviewed") != bool(r.get("reviewed_at")):
+            raise MappingError(f"row {i}: reviewed_at must be set exactly when review_status is 'reviewed' (a needs_review row is never dated)")
         start, end = r.get("sic_start"), r.get("sic_end")
         if r["relevance_level"] == "none":
             if start is not None or end is not None:
@@ -228,7 +254,8 @@ def sync_mappings(session: Session, path: Path, now: datetime | None = None) -> 
             sic_start=parse_sic(r.get("sic_start")), sic_end=parse_sic(r.get("sic_end")), industry_pattern=r.get("industry_pattern") or None,
             relevance_level=r["relevance_level"], rationale=r["rationale"], jurisdiction_text=r.get("jurisdiction_text"),
             source_citation=r.get("source_citation"), source_url=r["source_url"], reviewed_at=reviewed, mapping_version=version,
-            created_at=now or _now(),
+            review_status=r["review_status"], reviewed_by=r.get("reviewed_by") or None, review_note=r.get("review_note") or None,
+            jurisdiction_basis=r["jurisdiction_basis"], created_at=now or _now(),
         ))
     session.flush()
     return version, len(rows)
@@ -240,7 +267,7 @@ def load_mappings(session: Session, version: str | None = None) -> list[Mapping]
         stmt = stmt.where(CommitteeIndustryMapping.mapping_version == version)
     return [Mapping(r.id, r.chamber, r.committee_code, r.subcommittee_code, r.committee_name, r.subcommittee_name, r.sic_start, r.sic_end,
                     r.industry_pattern, r.relevance_level, r.rationale, r.jurisdiction_text, r.source_citation, r.source_url, r.reviewed_at,
-                    r.mapping_version) for r in session.scalars(stmt)]
+                    r.mapping_version, r.review_status, r.reviewed_by, r.review_note, r.jurisdiction_basis) for r in session.scalars(stmt)]
 
 
 def load_assignments(session: Session, politician_id: int) -> list[Assignment]:

@@ -44,11 +44,49 @@ rows use the subcommittee's official name as published on the committee's websit
 publishes explicit subcommittee jurisdiction text on that page, so for the others the committee's own written subcommittee jurisdiction was not
 independently checked (each rationale says so).
 
-## Status: a draft awaiting human review
+## Human review status
 
-The mappings were written from the official text by an AI assistant and have not been reviewed by a person: `reviewed_at` is empty and the
-version is `2026.1-draft`. They contain judgement calls (for example which SIC codes count as `related`). They should be reviewed before any
-later phase relies on them. Use is deterministic and explainable, but correctness of the table is a human decision.
+Every row carries explicit review fields. The loader rejects any inconsistent combination.
+
+| Field | Meaning |
+|---|---|
+| `review_status` | `needs_review` or `reviewed` |
+| `reviewed_at` | empty unless `reviewed`; set only when a person approves the row |
+| `reviewed_by` | who approved it |
+| `review_note` | reviewer comments, or the history of an earlier correction |
+| `jurisdiction_basis` | `rule_x_text` (the Rule X wording was read), `committee_published_text` (the committee's own subcommittee text was read), `subcommittee_name` (inferred from the subcommittee's name), or `committee_name` (inferred from the committee's name only) |
+
+All 184 rows are `needs_review`. They were written from the official text by an AI assistant and no person has reviewed them; they contain
+judgement calls (for example which SIC codes count as `related`). To approve a row, edit `data/committee_industry_mappings.json` (set
+`review_status`, `reviewed_at` and `reviewed_by` together), then run `--sync`. Only the Transportation and Infrastructure Committee publishes
+explicit subcommittee jurisdiction text; 85 subcommittee rows and 12 committee rows are inferred from names and say so.
+
+## Review packet
+
+```bash
+python -m poltracker.committee_industry_review --out docs/review/committee_industry_review_2026.1-draft.md
+```
+
+Generates, read-only, a packet grouped by committee and subcommittee. For every row: SIC range, the official SIC titles it covers, level, rationale,
+the official wording relied on, source, whether the jurisdiction was read or inferred from a name, how many current securities and trades it
+matches, and a decision checkbox. Rows are flagged for extra scrutiny when they are broad (100+ codes or 10+ official titles), capture more than
+one SIC industry group among current securities, are inferred from a name, are `related`, match 25+ trades, overlap another committee's mapping, or
+were adjusted after an earlier false positive. A "priority" tier lists rows with a substantive concern (broad, mixed, many matches, earlier false
+positive). The packet never edits a mapping, never marks anything reviewed, and shows counts and tickers only, no politician names.
+
+## Intended Phase 3 flagging policy (documented only; nothing is implemented)
+
+| Result | How Phase 3 is intended to use it |
+|---|---|
+| `direct` mapping match | may contribute to a **contextual-review flag** |
+| `related` mapping match | shown as contextual evidence; **never independently triggers a flag** |
+| `none` | the committee was reviewed as not industry-specific; it adds nothing, and the politician's other committees are still evaluated |
+| `unknown` | insufficient data (no SIC, no committee seats, an unmapped committee); never a flag; presented as "cannot assess" |
+
+A flag means "worth a contextual look", not a finding: it must be worded neutrally, never as insider trading, and never implies non-public
+information. It would combine with other Phase 3 signals (trade-size anomaly, disclosure delay, performance versus SPY), not stand alone. It is
+recommended that only rows with `review_status = reviewed` contribute to a flag; `needs_review` rows would be shown as draft evidence. That gating
+is a proposal for Phase 3, not behavior that exists today.
 
 ## Usage
 
