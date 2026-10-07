@@ -17,7 +17,7 @@ from test_migration_0003 import load_migration, seed_legacy
 from poltracker.config import get_settings
 
 ROOT = Path(__file__).resolve().parents[2]
-TABLES = {"alembic_version", "committee_assignments", "ingest_state", "politician_alias_overrides", "politicians", "price_bars", "securities", "trades"}
+TABLES = {"alembic_version", "committee_assignments", "ingest_state", "politician_alias_overrides", "politician_llm_suggestions", "politicians", "price_bars", "securities", "trades"}
 
 
 @pytest.fixture
@@ -46,14 +46,14 @@ def version(engine):
 def test_all_migrations_apply_to_a_clean_database(clean_pg):
     engine, cfg = clean_pg
     command.upgrade(cfg, "head")
-    assert version(engine) == "0007"
+    assert version(engine) == "0008"
     assert set(sa.inspect(engine).get_table_names()) == TABLES
     assert "last_success_at" in [c["name"] for c in sa.inspect(engine).get_columns("ingest_state")]
 
 
 def test_each_revision_applies_in_order(clean_pg):
     engine, cfg = clean_pg
-    for rev in ("0001", "0002", "0003", "0004", "0005", "0006", "0007"):
+    for rev in ("0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"):
         command.upgrade(cfg, rev)
         assert version(engine) == rev
 
@@ -64,7 +64,7 @@ def test_0005_downgrades_and_upgrades_again(clean_pg):
     command.downgrade(cfg, "0004")
     assert "last_success_at" not in [c["name"] for c in sa.inspect(engine).get_columns("ingest_state")]
     command.upgrade(cfg, "head")
-    assert version(engine) == "0007"
+    assert version(engine) == "0008"
 
 
 def test_0003_data_migration_works_on_postgresql(clean_pg):

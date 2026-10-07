@@ -16,7 +16,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from .config import get_settings
 from .db import make_session_factory
-from .models import CommitteeAssignment, Politician, PoliticianAliasOverride, _now
+from .models import CommitteeAssignment, Politician, PoliticianAliasOverride, PoliticianLlmSuggestion, _now
+from .politician_llm import IdentityRequest, IdentityResolver, LLMError, LLMSuggestion, cache_key, valid_candidates, validate_suggestion
 from .politician_match import match_politician
 from .providers.base import ProviderError
 from .providers.politicians import CommitteeProvider, NotConfigured, PoliticianProvider
@@ -46,6 +47,10 @@ class EnrichmentReport:
     committee_message: str = ""
     overrides_applied: list[tuple[int, str, str]] = field(default_factory=list)  # (id, name, bioguide)
     warnings: list[str] = field(default_factory=list)
+    llm_calls: int = 0
+    llm_cached: int = 0
+    llm_resolved: list[tuple[int, str, str]] = field(default_factory=list)  # (id, name, bioguide)
+    llm_errors: list[str] = field(default_factory=list)
     requests: int = 0
     dry_run: bool = False
 
@@ -58,7 +63,7 @@ class EnrichmentReport:
         )
 
 
-def _select(session: Session, now, stale_days, retry_days, force, only_ids, limit, report, overrides) -> list[Politician]:
+def _select(session: Session, now, stale_days, retry_days, force, only_ids, limit, report, overrides, llm_pending=frozenset()) -> list[Politician]:
     stmt = select(Politician).order_by(Politician.id)
     if only_ids:
         stmt = stmt.where(Politician.id.in_(only_ids))
@@ -66,6 +71,9 @@ def _select(session: Session, now, stale_days, retry_days, force, only_ids, limi
     for pol in session.scalars(stmt):
         if pol.id in overrides and pol.enrichment_status != "matched":
             due.append(pol)  # a reviewed override is applied on the next run, not after the retry window
+            continue
+        if pol.id in llm_pending and pol.enrichment_status == "unmatched":
+            due.append(pol)  # an explicit LLM run reaches unmatched politicians the model has not seen yet
             continue
         if not force:
             if pol.enrichment_status == "matched" and pol.enriched_at and now - pol.enriched_at < timedelta(days=stale_days):
@@ -90,12 +98,19 @@ def enrich_politicians(
     only_ids: set[int] | None = None,
     limit: int | None = None,
     dry_run: bool = False,
+    llm: IdentityResolver | None = None,
+    llm_min_confidence: float = 0.9,
+    llm_max_calls: int = 25,
 ) -> EnrichmentReport:
     now = now or _now()
     report = EnrichmentReport(dry_run=dry_run)
     with session_factory() as session:
         overrides = {o.politician_id: o for o in session.scalars(select(PoliticianAliasOverride))}
-        due = _select(session, now, stale_days, retry_days, force, only_ids, limit, report, overrides)
+        llm_pending = frozenset()
+        if llm is not None:
+            seen = set(session.scalars(select(PoliticianLlmSuggestion.politician_id).where(PoliticianLlmSuggestion.politician_id.is_not(None))))
+            llm_pending = frozenset(set(session.scalars(select(Politician.id))) - seen)
+        due = _select(session, now, stale_days, retry_days, force, only_ids, limit, report, overrides, llm_pending)
         report.considered = len(due)
         if not due:
             report.status, report.message = "nothing_to_do", "every politician is current or was tried recently"
@@ -121,7 +136,7 @@ def enrich_politicians(
             result = match_politician(pol.name, pol.chamber, pol.state, roster)  # the deterministic matcher always runs first
             status, note, member, method = result.status, result.note, result.member, result.rule
             override = overrides.get(pol.id)
-            by_override = False
+            by_override = by_llm = False
             if override is not None and status == "unmatched":  # only for records the matcher could not resolve
                 status, note, member = _resolve_override(pol, override, roster_by_id)
                 by_override = member is not None
@@ -130,14 +145,25 @@ def enrich_politicians(
                 report.warnings.append(
                     f"#{pol.id} {pol.name}: override {override.bioguide_id} ignored; the automatic match {member.bioguide_id} was kept"
                 )
+            if member is None and status == "unmatched" and llm is not None:
+                # Last automated step, after the matcher and any reviewed override. Never for resolved politicians.
+                member, llm_note = _llm_stage(
+                    session, pol, result.candidates, roster_by_id, taken, llm, llm_min_confidence, llm_max_calls, report, now, dry_run
+                )
+                by_llm = member is not None
+                method = "llm" if by_llm else None
+                if member is None and llm_note:
+                    note = f"{note or ''} | {llm_note}"[:500]
+                elif by_llm:
+                    status, note = "matched", llm_note
             if member is not None:
                 owner = taken.get(member.bioguide_id)
                 if owner is not None and owner != pol.id:
                     status, note, member = "conflict", f"{member.bioguide_id} ({member.full_name}) is already linked to politician #{owner}; not merged", None
-                    by_override = False
+                    by_override = by_llm = False
                 elif pol.bioguide_id and pol.bioguide_id != member.bioguide_id:
                     status, note, member = "conflict", f"already linked to {pol.bioguide_id}; the official match is {member.bioguide_id}; left unchanged", None
-                    by_override = False
+                    by_override = by_llm = False
             if member is None:
                 report.unresolved.append(Unresolved(pol.id, pol.name, pol.chamber, status, note))
                 if not dry_run:
@@ -148,6 +174,8 @@ def enrich_politicians(
             report.matched.append((pol.id, pol.name, member.bioguide_id))
             if by_override:
                 report.overrides_applied.append((pol.id, pol.name, member.bioguide_id))
+            if by_llm:
+                report.llm_resolved.append((pol.id, pol.name, member.bioguide_id))
             taken[member.bioguide_id] = pol.id
             matched_ids[pol.id] = member.bioguide_id
             if not dry_run:
@@ -163,7 +191,7 @@ def enrich_politicians(
                 pol.enrichment_status, pol.enrichment_method = "matched", method
                 pol.enrichment_note = (
                     f"Reviewed override: {override.reason} (source: {override.source}; reviewed {override.reviewed_at:%Y-%m-%d})"[:500]
-                    if by_override else None
+                    if by_override else (note if by_llm else None)
                 )
 
         if committees is not None and matched_ids:
@@ -173,6 +201,68 @@ def enrich_politicians(
         else:
             session.rollback()
     return report
+
+
+def _llm_stage(session, pol, candidates, roster_by_id, taken, llm, min_confidence, max_calls, report, now, dry_run):
+    """Ask the model about one unresolved politician. Returns (member or None, note). Every suggestion is validated."""
+    request = IdentityRequest(pol.name, pol.chamber, pol.state, pol.district, tuple(candidates))
+    if not request.candidates:
+        return None, "LLM not consulted: no same-surname official in the chamber"
+    valid = valid_candidates(request)
+    if len(valid) != 1:  # nothing to choose between, or too many to choose safely: no call, straight to review
+        return None, f"LLM not consulted: {len(valid)} valid candidates"
+    key = cache_key(request, llm.model)
+    row = session.scalar(select(PoliticianLlmSuggestion).where(PoliticianLlmSuggestion.cache_key == key))
+    if row is not None:  # the same unresolved name is never sent twice
+        report.llm_cached += 1
+        suggestion = LLMSuggestion(
+            row.selected_bioguide_id, row.confidence, row.explanation or "",
+            tuple(a for a in (row.alternates or "").split(",") if a), row.model,
+        )
+    else:
+        if report.llm_calls >= max_calls:
+            return None, "LLM not consulted: per-run call limit reached"
+        try:
+            suggestion = llm.resolve(request)
+        except LLMError as exc:
+            report.llm_errors.append(f"#{pol.id} {pol.name}: {exc}")
+            return None, "LLM unavailable"  # not cached, so it is retried later
+        report.llm_calls += 1
+        if not dry_run:
+            row = PoliticianLlmSuggestion(
+                cache_key=key, incoming_name=pol.name, chamber=pol.chamber, model=suggestion.model or llm.model,
+                candidate_ids=",".join(sorted(m.bioguide_id for m in request.candidates))[:2000],
+                selected_bioguide_id=suggestion.selected_bioguide_id, confidence=suggestion.confidence,
+                explanation=suggestion.explanation, alternates=",".join(suggestion.alternate_candidates)[:500], created_at=now,
+            )
+            session.add(row)
+    verdict = validate_suggestion(suggestion, request, roster_by_id, taken, pol.id, min_confidence)
+    if row is not None and not dry_run:
+        row.politician_id = pol.id
+        row.outcome = "accepted" if verdict.member else "rejected"
+        row.reason = None if verdict.member else (verdict.reason or "")[:300]
+        row.decided_at = now
+    if verdict.member is None:
+        return None, f"LLM suggestion rejected: {verdict.reason}"
+    return verdict.member, (
+        f"LLM-assisted ({suggestion.model or llm.model}, confidence {suggestion.confidence:.2f}): {suggestion.explanation}"
+    )
+
+
+def review_queue(session_factory: sessionmaker[Session]) -> list[dict]:
+    """Politicians still unresolved, with the latest LLM outcome if one was recorded."""
+    with session_factory() as session:
+        out = []
+        for pol in session.scalars(select(Politician).where(Politician.enrichment_status.is_not(None), Politician.enrichment_status != "matched").order_by(Politician.id)):
+            llm = session.scalar(
+                select(PoliticianLlmSuggestion).where(PoliticianLlmSuggestion.politician_id == pol.id).order_by(PoliticianLlmSuggestion.id.desc())
+            )
+            out.append({
+                "id": pol.id, "name": pol.name, "chamber": pol.chamber, "status": pol.enrichment_status, "note": pol.enrichment_note,
+                "llm_selected": llm.selected_bioguide_id if llm else None, "llm_confidence": llm.confidence if llm else None,
+                "llm_outcome": llm.outcome if llm else None, "llm_reason": llm.reason if llm else None,
+            })
+        return out
 
 
 def _resolve_override(pol: Politician, override: PoliticianAliasOverride, roster_by_id: dict) -> tuple[str, str | None, object]:
@@ -233,6 +323,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="ignore the recency rules")
     parser.add_argument("--dry-run", action="store_true", help="match and report, write nothing")
     parser.add_argument("--no-committees", action="store_true")
+    parser.add_argument("--llm", action="store_true", help="after the deterministic steps, ask the LLM about unmatched politicians (needs ANTHROPIC_API_KEY)")
+    parser.add_argument("--review-queue", action="store_true", help="list unresolved politicians and any LLM outcome, then exit")
     parser.add_argument("--overrides", type=Path, help="JSON file of reviewed politician -> Bioguide ID overrides to record first")
     args = parser.parse_args(argv)
 
@@ -247,6 +339,19 @@ def main(argv: list[str] | None = None) -> int:
         min_interval=settings.politician_request_interval,
     )
     factory = make_session_factory()
+    if args.review_queue:
+        for r in review_queue(factory):
+            llm = f" | LLM {r['llm_outcome']}: {r['llm_selected']} ({r['llm_confidence']}) {r['llm_reason'] or ''}" if r["llm_outcome"] else ""
+            print(f"  #{r['id']:<4} {r['name']:<28} {r['chamber']:<6} {r['status']:<10}{llm}")
+        return 0
+    llm = None
+    if args.llm or settings.politician_llm_enabled:
+        from .politician_llm import AnthropicIdentityResolver
+
+        if not settings.anthropic_api_key:
+            print("LLM resolution requested but ANTHROPIC_API_KEY is not set; continuing without it.")
+        else:
+            llm = AnthropicIdentityResolver(settings.anthropic_api_key, settings.politician_llm_model)
     if args.overrides:
         from .politician_overrides import OverrideError, load_overrides_file
 
@@ -263,6 +368,7 @@ def main(argv: list[str] | None = None) -> int:
         factory, provider, None if args.no_committees else clerk,
         stale_days=settings.politician_enrich_stale_days, retry_days=settings.politician_retry_days,
         force=args.force, only_ids=set(args.ids) if args.ids else None, limit=args.limit, dry_run=args.dry_run,
+        llm=llm, llm_min_confidence=settings.politician_llm_min_confidence, llm_max_calls=settings.politician_llm_max_calls,
     )
     print(report.summary())
     for pid, name, bioguide in report.matched:
@@ -271,6 +377,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {u.status:<10} #{u.politician_id:<4} {u.name:<28} {u.note}")
     for pid, name, bioguide in report.overrides_applied:
         print(f"  override   #{pid:<4} {name:<28} {bioguide} (reviewed override)")
+    for pid, name, bioguide in report.llm_resolved:
+        print(f"  llm        #{pid:<4} {name:<28} {bioguide} (LLM-assisted, validated)")
+    if llm is not None:
+        print(f"  llm calls: {report.llm_calls}, cached: {report.llm_cached}, errors: {len(report.llm_errors)}")
+    for e in report.llm_errors:
+        print(f"  llm error  {e}")
     for w in report.warnings:
         print(f"  warning    {w}")
     if report.committee_message:

@@ -47,6 +47,14 @@ class Settings(BaseSettings):
     politician_retry_days: int = Field(7, ge=1)  # re-try unmatched/ambiguous politicians after this long
     politician_request_interval: float = Field(0.5, ge=0)  # seconds between official-API requests
 
+    # Optional LLM-assisted identity resolution for politicians the deterministic matcher could not resolve. Off by
+    # default; it never runs for resolved politicians and its suggestions are always validated deterministically.
+    anthropic_api_key: str | None = None
+    politician_llm_enabled: bool = False
+    politician_llm_model: str = "claude-haiku-4-5-20251001"
+    politician_llm_min_confidence: float = Field(0.9, ge=0, le=1)  # a suggestion must EXCEED this
+    politician_llm_max_calls: int = Field(25, ge=0)  # cap per run
+
     benchmark_ticker: str = "SPY"
     price_batch_size: int = 40
     price_retry_days: int = 7  # how long before re-checking a ticker the provider had no data for

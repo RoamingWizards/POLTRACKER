@@ -72,6 +72,36 @@ against the live roster: unknown ID, wrong chamber or wrong state is refused as 
 source and review date stay in `politician_alias_overrides` and in `politicians.enrichment_note`, and
 `enrichment_method` is `override`. Politicians matched before migration 0007 have no `enrichment_method` until `--force` re-enriches them.
 
+## LLM-assisted resolution (opt-in, migration 0008)
+
+Resolution order, strictly: (1) stable identifier already stored, (2) exact/normalized deterministic match,
+(3) safe deterministic rules, (4) a reviewed override, (5) **LLM-assisted candidate resolution**, (6) manual review.
+The model is consulted only for a politician all earlier steps left `unmatched`; never for a resolved one.
+
+```
+ANTHROPIC_API_KEY=...            # in the environment or .env, never committed
+.venv/bin/python -m poltracker.enrich_politicians --llm --dry-run   # try it, write nothing
+.venv/bin/python -m poltracker.enrich_politicians --llm
+.venv/bin/python -m poltracker.enrich_politicians --review-queue    # what is still unresolved, and why
+```
+
+What is sent to the Anthropic API: the incoming politician's name, chamber, state and district (if known), and the official
+same-chamber, same-surname candidates (Bioguide ID, name, state, district, party). Nothing else, and no trade data. The model
+returns structured JSON (`selected_bioguide_id`, `confidence`, `explanation`, `alternate_candidates`).
+
+The answer is an untrusted suggestion. It is accepted only if all of these hold, otherwise the politician stays unresolved
+in the review queue with the reason: exactly one candidate is consistent with the recorded chamber/state/district; the selected ID
+exists in the official roster and among the candidates shown; chamber, state and (where known) district match; the ID does not
+belong to another POLTRACKER politician; no other valid candidate was named as plausible; confidence **exceeds**
+`POLITICIAN_LLM_MIN_CONFIDENCE` (default 0.9). The model cannot create a politician or an identifier. When there are zero or
+several valid candidates the model is not called at all.
+
+Stored in `politician_llm_suggestions` (migration 0008): the incoming name, candidate IDs, selected ID, confidence, explanation,
+alternates, model, timestamp, outcome and rejection reason; the politician row gets `enrichment_method = llm` and the
+explanation in `enrichment_note`. The raw suggestion is cached by (prompt version, model, name, chamber, state, district,
+candidates), so the same unresolved name is never sent twice, but every use is re-validated against current data. API errors
+are not cached. `POLITICIAN_LLM_MAX_CALLS` (25) caps calls per run.
+
 ## Data model (migration 0006, additive)
 
 `politicians`: `bioguide_id` (unique), `district`, `official_url`, `active`, `term_start_year`, `term_end_year`,
