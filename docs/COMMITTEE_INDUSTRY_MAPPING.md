@@ -56,7 +56,7 @@ Every row carries explicit review fields. The loader rejects any inconsistent co
 | `review_note` | reviewer comments, or the history of an earlier correction |
 | `jurisdiction_basis` | `rule_x_text` (the Rule X wording was read), `committee_published_text` (the committee's own subcommittee text was read), `subcommittee_name` (inferred from the subcommittee's name), or `committee_name` (inferred from the committee's name only) |
 
-Round 1 of human review is applied (`docs/review/review_decisions_2026.1-draft.md`): 60 of 191 rows are `reviewed` (round 1: 47; round 2: 13), 131 remain `needs_review`. The
+Round 1 of human review is applied (`docs/review/review_decisions_2026.1-draft.md`): 64 of 191 rows are `reviewed` (round 1: 47; round 2: 17), 127 remain `needs_review`. The
 rows were written from the official text by an AI assistant; the remaining ones contain
 judgement calls (for example which SIC codes count as `related`). To approve a row, edit `data/committee_industry_mappings.json` (set
 `review_status`, `reviewed_at` and `reviewed_by` together), then run `--sync`. Only the Transportation and Infrastructure Committee publishes
@@ -108,7 +108,7 @@ python -m poltracker.committee_industry_report --report                 # evalua
 
 ## Measured result (scratch copy of the real database, mapping 2026.1-draft, 2026-10-07)
 
-Before round 1 of review there were 184 mappings (86 committee-level, 98 subcommittee-level; 103 direct, 66 related, 15 none); after rounds 1 and 2 there are 191 (90 direct, 86 related, 15 none; 60 reviewed). The figures in this paragraph are the pre-review measurement; the review-gated coverage is in `docs/review/review_decisions_2026.1-draft.md` and `--report` covering all 27 committees POLTRACKER tracks; 14 have
+Before round 1 of review there were 184 mappings (86 committee-level, 98 subcommittee-level; 103 direct, 66 related, 15 none); after rounds 1 and 2 there are 191 (89 direct, 87 related, 15 none; 64 reviewed). The figures in this paragraph are the pre-review measurement; the review-gated coverage is in `docs/review/review_decisions_2026.1-draft.md` and `--report` covering all 27 committees POLTRACKER tracks; 14 have
 industry mappings and 15 were reviewed as having none. Across 5,381 trades: 4,099 are evaluable; 357 have at least one relevance match (212
 with a direct match, 145 related only) involving 36 politicians and 134 tickers; 3,742 are evaluable with no match; 300 are unknown for missing
 SIC data; 982 are unknown because the politician has no committee seats (all 23 senators and 3 representatives); none are unknown for an

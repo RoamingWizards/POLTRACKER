@@ -140,3 +140,14 @@ Only these decisions were applied; the other round 2 proposals are in `docs/revi
 Official text read on 2026-10-07: E&C Health, E&C Communications & Technology and Science Space and Aeronautics subcommittee pages, and the Judiciary Committee Rules of Procedure, 119th Congress (adopted January 15, 2025), section VI. Their wording is stored in each row's `jurisdiction_text`.
 
 Notes on the sources: the E&C Health text says "the health sector broadly" but does not contain the phrase "health delivery systems"; the Judiciary subcommittee web page says "information technology" and omits "emerging technologies", which the Rules of Procedure PDF contains.
+
+## Round 2, final decisions (applied 2026-10-07)
+
+| Decision | Row before | Row after |
+|---|---|---|
+| Approve direct, re-sourced to the published E&C Health text | `IF00/IF14:2833-2836:direct` | same, reviewed, `committee_published_text` |
+| Approve direct, re-sourced to the published E&C Health text | `IF00/IF14:3841-3845:direct` | same, reviewed, `committee_published_text` |
+| Approve direct, re-sourced to the published Space and Aeronautics text | `SY00/SY16:3720-3729:direct` | same, reviewed; note that the range mixes civilian and defense aircraft businesses |
+| Downgrade, consistent with the parent row | `AG00/AG16:2040-2049:direct` | `AG00/AG16:2040-2049:related`, reviewed |
+
+Medical devices are not named in the published Health text; they fall under "the health sector broadly". No other pending round 2 proposal was applied.
