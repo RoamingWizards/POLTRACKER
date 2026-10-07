@@ -30,6 +30,8 @@ def provider(routes, **kw):
         for suffix, r in routes.items():
             if str(req.url).endswith(suffix):
                 r = r(req) if callable(r) else r
+                if isinstance(r, str):
+                    return httpx.Response(200, text=r)  # the plain-text ticker list
                 return r if isinstance(r, httpx.Response) else httpx.Response(200, json=r)
         return httpx.Response(404)
 
@@ -43,8 +45,13 @@ def provider(routes, **kw):
 TICKERS = "company_tickers_exchange.json"
 
 
+def txt():
+    return (FX / "ticker.txt").read_text()
+
+
 def routes(**extra):
-    return {TICKERS: fx("company_tickers_exchange.json"), "CIK0000320193.json": fx("submissions_aapl.json"),
+    return {"ticker.txt": txt(), "CIK0000915912.json": submissions("6798", "Real Estate Investment Trusts", "AVALONBAY COMMUNITIES INC", ("NYSE",)),
+            TICKERS: fx("company_tickers_exchange.json"), "CIK0000320193.json": fx("submissions_aapl.json"),
             "CIK0000936468.json": submissions(), "CIK0001067983.json": submissions("6331", "Fire, Marine & Casualty Insurance", "BERKSHIRE HATHAWAY INC"),
             "CIK0001000003.json": submissions("", "", "NO SIC TRUST"), **extra}
 
@@ -89,9 +96,9 @@ def test_requests_are_one_ticker_list_plus_one_submission_per_security_with_the_
     p = provider(routes())
     p.prepare(["AAPL", "LMT"])
     p.get_profile("AAPL"), p.get_profile("LMT")
-    assert p.requests_made == 3 and len(p.seen) == 3
+    assert p.requests_made == 4 and len(p.seen) == 4  # both ticker lists, then one submission per security
     assert all(r.headers["user-agent"] == UA for r in p.seen)
-    assert str(p.seen[1].url) == "https://data.sec.gov/submissions/CIK0000320193.json"
+    assert str(p.seen[2].url) == "https://data.sec.gov/submissions/CIK0000320193.json"
 
 
 def test_class_shares_resolve_through_the_deterministic_dot_to_hyphen_rule():
@@ -105,7 +112,7 @@ def test_an_unlisted_ticker_is_none_and_no_fuzzy_name_matching_is_attempted():
     p = provider(routes())
     p.prepare([])
     assert p.get_profile("SPY") is None and p.get_profile("APPLE") is None and p.get_profile("AAP") is None
-    assert p.requests_made == 1  # only the ticker list; nothing was looked up for non-matches
+    assert p.requests_made == 2  # only the two ticker lists; nothing was looked up for non-matches
 
 
 def test_a_ticker_listed_under_two_ciks_is_never_resolved():
@@ -177,3 +184,49 @@ def test_a_network_error_is_a_provider_error_without_the_url_query():
 
     with pytest.raises(ProviderError, match="network error"):
         provider({TICKERS: boom}, max_retries=0).prepare([])
+
+
+# --- the fallback ticker.txt list --------------------------------------------------------------------------------
+
+def test_a_ticker_missing_from_the_primary_list_resolves_through_the_older_official_list_by_exact_ticker():
+    p = provider(routes())
+    p.prepare([])
+    prof = p.get_profile("AVB")
+    assert (prof.cik, prof.company_name, prof.sic_code, prof.industry, prof.sector, prof.exchange) == (
+        "0000915912", "AVALONBAY COMMUNITIES INC", "6798", "Real Estate Investment Trusts", "Finance, Insurance, and Real Estate", "NYSE")
+
+
+def test_the_primary_list_wins_when_a_ticker_is_in_both():
+    p = provider(routes())
+    p.prepare([])
+    assert p.get_profile("AAPL").exchange == "Nasdaq"  # the primary list carries the exchange; the txt list would not
+
+
+def test_the_fallback_list_never_resolves_an_ambiguous_malformed_or_unknown_ticker():
+    p = provider(routes())
+    p.prepare([])
+    assert p.get_profile("AMBIG") is None and p.get_profile("NOCIK") is None and p.get_profile("NOSUCH") is None
+
+
+def test_the_fallback_uses_the_same_deterministic_class_share_rule():
+    p = provider(routes(**{"ticker.txt": "brk-b\t1067983\n"}))
+    p.prepare([])
+    assert p.get_profile("BRK.B") is not None
+
+
+def test_requests_count_both_ticker_lists_plus_one_submission_per_resolved_security():
+    p = provider(routes())
+    p.prepare([])
+    p.get_profile("AVB"), p.get_profile("SPY")
+    assert p.requests_made == 3  # primary list, txt list, one submission (SPY resolved nothing)
+
+
+def test_an_unavailable_fallback_list_reduces_coverage_but_does_not_break_the_run():
+    p = provider(routes(**{"ticker.txt": httpx.Response(500)}), max_retries=0)
+    p.prepare([])
+    assert p.get_profile("AAPL") is not None and p.get_profile("AVB") is None
+
+
+def test_a_rate_limited_fallback_list_still_stops_the_run():
+    with pytest.raises(ProviderRateLimited):
+        provider(routes(**{"ticker.txt": httpx.Response(403)}), max_retries=0).prepare([])
