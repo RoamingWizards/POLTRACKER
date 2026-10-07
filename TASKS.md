@@ -230,6 +230,15 @@ Politician Detail profile. See `docs/POLITICIAN_ENRICHMENT.md`. Reviewed alias o
 
 These tasks are intentionally not authorized yet.
 
+## [~] Phase 10A — Legislative data layer (`feature/legislative-data` branch)
+
+Stores bounded official Congress.gov legislative data (bills, subjects, committees, sponsor/cosponsor links, in-window actions,
+hearings) behind migration 0009 and `python -m poltracker.ingest_legislation`. See `docs/LEGISLATIVE_DATA.md`. Data only: no trade
+context, scoring, flags, company or sector matching, AI analysis, or UI. No backfill has been run; the packaged-app and real databases
+are not migrated by this phase. Awaiting review.
+
+---
+
 ## [ ] Phase 7 — SEC EDGAR enrichment
 
 Status:
