@@ -26,7 +26,7 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 | Industry rows matching no current security | 14 |
 | Industry rows matching no current trade | 105 |
 
-`related` mappings are context only. Only `direct` mappings are intended to contribute to a contextual-review flag in Phase 3 (see the docs).
+**Phase 3 policy:** only mappings that are both `reviewed` and `direct` may contribute to a contextual-review flag. `reviewed` + `related` is supporting context only. `needs_review` mappings never affect a flag. A trade has one committee-relevance signal with possibly several evidence records (see the docs).
 
 ## Top 20 mappings by number of affected trades
 
