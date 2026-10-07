@@ -262,3 +262,59 @@ def test_a_network_error_becomes_an_llm_error():
 
     with pytest.raises(LLMError, match="network error"):
         make_client(boom).resolve(REQ)
+
+
+# --- the OpenAI client (same contract as the Anthropic one) ---------------------------------------------------
+
+from poltracker.politician_llm import OpenAIIdentityResolver
+
+
+def openai_client(handler):
+    return OpenAIIdentityResolver("test-key", "gpt-test", client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+def chat_response(content, **message):
+    return httpx.Response(200, json={"choices": [{"message": {"content": content, **message}}], "usage": {"prompt_tokens": 600, "completion_tokens": 90}})
+
+
+def test_the_openai_client_sends_a_strict_schema_and_parses_the_answer_and_counts_tokens():
+    seen = []
+
+    def handler(req):
+        seen.append(req)
+        return chat_response(json.dumps({"selected_bioguide_id": "c001120", "confidence": 0.96, "explanation": "same", "alternate_candidates": []}))
+
+    client = openai_client(handler)
+    s = client.resolve(REQ)
+    assert (s.selected_bioguide_id, s.confidence, s.model) == ("C001120", 0.96, "gpt-test")
+    sent = json.loads(seen[0].content)
+    assert sent["response_format"]["json_schema"]["strict"] is True and sent["temperature"] == 0
+    assert seen[0].headers["authorization"] == "Bearer test-key" and "C001120" in sent["messages"][1]["content"]
+    assert (client.tokens_in, client.tokens_out) == (600, 90)
+
+
+@pytest.mark.parametrize("response", [
+    httpx.Response(429), httpx.Response(401, json={"error": {"message": "bad key test-key"}}),
+    httpx.Response(200, json={"choices": []}), httpx.Response(200, content=b"<html>"),
+    chat_response("not json"), chat_response(None, refusal="I can't help with that"),
+    chat_response(json.dumps({"selected_bioguide_id": None, "confidence": 3, "explanation": "", "alternate_candidates": []})),
+])
+def test_openai_failures_and_malformed_answers_become_llm_errors_without_the_key(response):
+    with pytest.raises(LLMError) as exc:
+        openai_client(lambda r: response).resolve(REQ)
+    assert "test-key" not in str(exc.value)
+
+
+def test_an_openai_network_error_becomes_an_llm_error():
+    def boom(req):
+        raise httpx.ConnectError("down", request=req)
+
+    with pytest.raises(LLMError, match="network error"):
+        openai_client(boom).resolve(REQ)
+
+
+def test_the_trace_records_what_the_model_said_even_when_it_is_rejected(session_factory, pols):
+    report = run(session_factory, FakeLLM("Z999999", 0.99, "made it up"), only_ids={pols["crenshaw"]})
+    (t,) = report.llm_trace
+    assert (t["selected"], t["confidence"], t["explanation"], t["accepted"], t["cached"]) == ("Z999999", 0.99, "made it up", False, False)
+    assert "invented identifier" in t["reason"] and t["candidates"] == [("Dan Crenshaw", "C001120", "TX")]

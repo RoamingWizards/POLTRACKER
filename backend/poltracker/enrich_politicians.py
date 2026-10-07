@@ -7,6 +7,7 @@ recorded with a reason. A missing API key or a provider outage is reported and c
 
 import argparse
 import logging
+import os
 from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -51,6 +52,7 @@ class EnrichmentReport:
     llm_cached: int = 0
     llm_resolved: list[tuple[int, str, str]] = field(default_factory=list)  # (id, name, bioguide)
     llm_errors: list[str] = field(default_factory=list)
+    llm_trace: list[dict] = field(default_factory=list)  # one entry per politician the model was asked about (or served from cache)
     requests: int = 0
     dry_run: bool = False
 
@@ -213,6 +215,7 @@ def _llm_stage(session, pol, candidates, roster_by_id, taken, llm, min_confidenc
         return None, f"LLM not consulted: {len(valid)} valid candidates"
     key = cache_key(request, llm.model)
     row = session.scalar(select(PoliticianLlmSuggestion).where(PoliticianLlmSuggestion.cache_key == key))
+    from_cache = row is not None
     if row is not None:  # the same unresolved name is never sent twice
         report.llm_cached += 1
         suggestion = LLMSuggestion(
@@ -242,6 +245,12 @@ def _llm_stage(session, pol, candidates, roster_by_id, taken, llm, min_confidenc
         row.outcome = "accepted" if verdict.member else "rejected"
         row.reason = None if verdict.member else (verdict.reason or "")[:300]
         row.decided_at = now
+    report.llm_trace.append({
+        "id": pol.id, "name": pol.name, "chamber": pol.chamber, "candidates": [(m.full_name, m.bioguide_id, m.state) for m in request.candidates],
+        "selected": suggestion.selected_bioguide_id, "confidence": suggestion.confidence, "explanation": suggestion.explanation,
+        "alternates": list(suggestion.alternate_candidates), "accepted": verdict.member is not None, "reason": verdict.reason,
+        "cached": from_cache,
+    })
     if verdict.member is None:
         return None, f"LLM suggestion rejected: {verdict.reason}"
     return verdict.member, (
@@ -346,12 +355,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     llm = None
     if args.llm or settings.politician_llm_enabled:
-        from .politician_llm import AnthropicIdentityResolver
+        from .politician_llm import AnthropicIdentityResolver, OpenAIIdentityResolver
 
-        if not settings.anthropic_api_key:
-            print("LLM resolution requested but ANTHROPIC_API_KEY is not set; continuing without it.")
+        openai = settings.politician_llm_provider == "openai"
+        key = settings.openai_api_key if openai else settings.anthropic_api_key
+        if not key:
+            print(f"LLM resolution requested but {'OPENAI' if openai else 'ANTHROPIC'}_API_KEY is not set; continuing without it.")
         else:
-            llm = AnthropicIdentityResolver(settings.anthropic_api_key, settings.politician_llm_model)
+            llm = (OpenAIIdentityResolver if openai else AnthropicIdentityResolver)(key, settings.politician_llm_model)
     if args.overrides:
         from .politician_overrides import OverrideError, load_overrides_file
 
@@ -380,7 +391,12 @@ def main(argv: list[str] | None = None) -> int:
     for pid, name, bioguide in report.llm_resolved:
         print(f"  llm        #{pid:<4} {name:<28} {bioguide} (LLM-assisted, validated)")
     if llm is not None:
-        print(f"  llm calls: {report.llm_calls}, cached: {report.llm_cached}, errors: {len(report.llm_errors)}")
+        print(f"  llm calls: {report.llm_calls}, cached: {report.llm_cached}, errors: {len(report.llm_errors)}, "
+              f"tokens in/out: {getattr(llm, 'tokens_in', 0)}/{getattr(llm, 'tokens_out', 0)}")
+        if os.environ.get("POLTRACKER_LLM_TRACE"):
+            import json as _json
+
+            print("LLM_TRACE_JSON " + _json.dumps(report.llm_trace))
     for e in report.llm_errors:
         print(f"  llm error  {e}")
     for w in report.warnings:
