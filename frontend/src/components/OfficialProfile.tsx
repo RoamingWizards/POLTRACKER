@@ -74,7 +74,7 @@ export default function OfficialProfile({ p }: { p: PoliticianDetail }) {
                   <Row label="Status">
                     {p.active === null ? NA : <Chip size="small" color={p.active ? 'success' : 'default'} label={p.active ? 'Currently in office' : 'Not currently in office'} />}
                   </Row>
-                  <Row label="Current term">{termText(p) ?? NA}</Row>
+                  <Row label="Serving in chamber">{termText(p) ?? NA}</Row>
                   <Row label="Bioguide ID">{p.bioguide_id}</Row>
                   <Row label="Official page">
                     {p.official_url ? (

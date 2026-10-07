@@ -47,10 +47,6 @@ def parse_members(root: ET.Element) -> list[OfficialMember]:
         if info is None or not (bioguide and first and last):  # vacant seats have no Bioguide ID
             continue
         state = info.find("state")
-        sworn = info.find("sworn-date")
-        year = None
-        if sworn is not None and re.match(r"\d{4}", sworn.get("date", "")):
-            year = int(sworn.get("date")[:4])
         party = _text(info, "party")
         middle, suffix = _text(info, "middlename"), _text(info, "suffix")
         members.append(
@@ -67,7 +63,8 @@ def parse_members(root: ET.Element) -> list[OfficialMember]:
                 district=_district(_text(info, "district")),
                 active=True,  # the Clerk lists sitting members only
                 official_url=member_url(bioguide, first, last),
-                term_start_year=year,
+                # No term_start_year: the Clerk's sworn-in date is the current term, which would not match
+                # Congress.gov's start of continuous service in the chamber. Left empty rather than mixed.
                 source=SOURCE,
             )
         )
@@ -105,7 +102,8 @@ def parse_committees(root: ET.Element, source_url: str = URL) -> dict[str, list[
                     bioguide, names[parent], parent, "house", sub_name, sub_code, role, source=SOURCE, source_url=source_url
                 )
             else:
-                log.warning("Unknown committee entry %s for %s", entry.attrib, bioguide)
+                if entry.get("comcode") or entry.get("subcomcode"):  # a coded entry we cannot name; blank ones are noise
+                    log.warning("Unknown committee entry %s for %s", entry.attrib, bioguide)
                 continue
             seats.setdefault(bioguide, []).append(seat)
     return seats

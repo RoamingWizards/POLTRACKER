@@ -171,7 +171,7 @@ def test_clerk_members_are_normalized(clerk_root):
     begich = by_id["B001323"]
     assert (begich.first_name, begich.last_name, begich.suffix, begich.state, begich.district, begich.party) == (
         "Nicholas", "Begich", "III", "AK", "At Large", "R")
-    assert begich.term_start_year == 2025 and begich.active is True and begich.source == "house.clerk"
+    assert begich.term_start_year is None and begich.active is True and begich.source == "house.clerk"
     assert by_id["M001205"].middle_name == "D."  # kept for matching; initials are ignored there
 
 
