@@ -110,7 +110,7 @@ class CommitteeAssignment(Base):
     """One committee or subcommittee seat. A subcommittee row also carries its parent committee's name/code."""
 
     __tablename__ = "committee_assignments"
-    __table_args__ = (UniqueConstraint("politician_id", "committee_code", "subcommittee_code", "source"),)
+    __table_args__ = (UniqueConstraint("politician_id", "committee_code", "subcommittee_code", "source", "start_date"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     politician_id: Mapped[int] = mapped_column(ForeignKey("politicians.id"), index=True)
@@ -125,6 +125,16 @@ class CommitteeAssignment(Base):
     source: Mapped[str] = mapped_column(String(40))
     source_url: Mapped[str | None] = mapped_column(String(300))
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    # Temporal provenance: when this seat is established to have been held. A row from the House Clerk snapshot (`current_snapshot`) only shows the seat
+    # existed on the snapshot's publish date. A row built from adopted House resolutions (`exact_date`) has real start/end dates. `congress` precision means an
+    # official source establishes service for that whole Congress without dates. Dates are never invented from Congress boundaries.
+    congress_number: Mapped[int | None] = mapped_column()
+    temporal_precision: Mapped[str | None] = mapped_column(String(20))  # exact_date | congress | current_snapshot
+    source_type: Mapped[str | None] = mapped_column(String(40))  # house_clerk_member_data | house_resolution
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)  # when this temporal evidence was established and stored
+    verified_through: Mapped[date | None] = mapped_column(Date)  # for a seat with no end date: the latest date an official source confirms it was still held
+    history_complete: Mapped[bool | None] = mapped_column(Boolean)  # the scan of official records for this member and committee found nothing it could not place
 
     politician: Mapped[Politician] = relationship(back_populates="committees")
 

@@ -32,7 +32,7 @@ three secondary signals without committee relevance do not; performance alone ne
 `--min-secondary` changes the number needed. When the rule is met but seat timing is unverified, the row has `meets_flag_rule = true`, is not flagged, and the API
 sets `flag_pending_temporal_verification`.
 
-## Methodology (engine version `2026.2`)
+## Methodology (engine version `2026.3`)
 
 - **Trade size.** Disclosures give a range. The representative value is the midpoint of a closed range, the lower bound of an open-ended range
   ("Over $50,000,000", which can only understate), and the figure itself when min equals max. It is never an exact transaction value. The percentile is the
@@ -45,28 +45,26 @@ sets `flag_pending_temporal_verification`.
   gives every trade a comparable horizon, stops older trades accumulating years of performance, and keeps the age of a trade from driving the signal. A trade younger
   than the horizon, or whose prices stop sooner, is unknown. The absolute raw excess return drives the signal. The direction-adjusted figure for sells is stored
   separately. The 20-point threshold is configurable (`--excess-return`).
-- **Committee seats and time.** The House Clerk publishes a point-in-time snapshot (`MemberData.xml`: a publish date, the Congress number and, per seat, only a
-  committee code, rank and leadership role). It has **no seat start or end dates**, so a seat is known to exist now, not on the day of an older trade. Each piece of
-  committee evidence carries a temporal status:
+- **Committee seats and time.** The House Clerk's snapshot (`MemberData.xml`) lists seats held **now** and has no dates. Dated history comes from adopted House
+  resolutions (see [COMMITTEE_HISTORY.md](COMMITTEE_HISTORY.md)): exact start and end dates at committee level. Each piece of committee evidence carries a status:
 
   | Status | Meaning |
   |---|---|
-  | `temporally_verified` | the seat has a recorded start date on or before the transaction date and no end date before it |
-  | `current_assignment_only` | the seat is known only from a current snapshot; whether it applied on the transaction date is not established |
+  | `temporally_verified` | official records establish the committee seat on the transaction date (committee-level mappings only) |
+  | `current_assignment_only` | the seat is known only from the current snapshot (always true of a subcommittee seat, whose history is not recorded) |
   | `unavailable` | no committee data for the member (the Senate, or an unmatched politician) |
+  | `contradicted` | a current seat would match, but official records show the member did not hold it on the transaction date; the trade is not committee-relevant and the rejected match is kept as evidence |
 
-  The committee/industry match is kept as context in every case, but only `temporally_verified` evidence can flag a trade. A seat that has dates and does not cover
-  the transaction date is ignored. Dates are never invented, and no third-party committee history is used. Every House seat is `current_assignment_only` today,
-  so no trade can be flagged until a future data phase supplies dated committee history (for example from official Congress committee-membership records).
-  `--ignore-temporal-status` exists only for what-if comparisons and writes under a custom version label.
+  The committee/industry match is kept as context in every case, but only `temporally_verified` evidence can flag a trade. A verified committee seat never promotes a
+  subcommittee-only match. Dates are never invented, and no third-party committee history is used. `--ignore-temporal-status` exists only for what-if comparisons.
 - **Duplicate-looking rows.** Rows are never merged or deleted. The API adds `group_key` (politician + security + transaction date + type) and `group_size` so a
   UI can show that rows belong together. Owner codes (self, spouse, joint, dependent) can mark separate reportable transactions.
 
 ## Versioning
 
-`context_version` is `2026.2`. It changes when the flag rule, the size methodology or the default thresholds change; `2026.1` used a 30-day delay, a 10-point
+`context_version` is `2026.3`. It changes when the flag rule, the size methodology or the default thresholds change; `2026.2` added the 45-day delay, 20-point excess return, two secondary signals and a temporal gate on snapshot seats; `2026.3` uses dated seat history. `2026.1` used a 30-day delay, a 10-point
 excess return over a variable horizon, one secondary signal and no temporal gate. A non-default option on the command line gets its own label
-(`2026.2+custom-xxxxxx`) so it never overwrites default rows. Rows are keyed by trade, context version and mapping version, so a new mapping version or engine
+(`2026.3+custom-xxxxxx`) so it never overwrites default rows. Rows are keyed by trade, context version and mapping version, so a new mapping version or engine
 version adds rows and keeps the old ones. A changed input (new prices, a corrected disclosure) updates that trade's row in place and sets `analyzed_at`.
 
 ## API

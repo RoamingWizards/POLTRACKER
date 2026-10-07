@@ -36,7 +36,7 @@ export interface Trade {
 
 export interface ContextEvidence {
   signal_type: string;
-  evidence_type: 'reviewed_direct_mapping' | 'reviewed_related_mapping' | 'metric';
+  evidence_type: 'reviewed_direct_mapping' | 'reviewed_related_mapping' | 'rejected_current_assignment' | 'metric';
   committee_code: string | null;
   subcommittee_code: string | null;
   source_url: string | null;
@@ -67,7 +67,7 @@ export interface TradeContext {
   signals: Record<string, boolean | null>;
   signal_count: number;
   secondary_signal_count: number | null;
-  committee_temporal_status: 'temporally_verified' | 'current_assignment_only' | 'unavailable' | null;
+  committee_temporal_status: 'temporally_verified' | 'current_assignment_only' | 'unavailable' | 'contradicted' | null;
   meets_flag_rule: boolean | null;
   flag_pending_temporal_verification: boolean;
   flagged_for_contextual_review: boolean;

@@ -64,7 +64,7 @@ backend/poltracker/
   enrich.py         fetch prices + report coverage CLI
   api/              FastAPI app and schemas
   models.py         SQLAlchemy models
-migrations/         Alembic migrations (0001 schema, 0002 price coverage, 0003 name merge, 0004 ingest state, 0005 last ingest success, 0006 official politician data and committees, 0007 reviewed alias overrides, 0008 LLM suggestion cache, 0009 company profiles, 0010 committee/industry mappings, 0011 mapping review fields, 0012 trade context signals, 0013 temporal status)
+migrations/         Alembic migrations (0001 schema, 0002 price coverage, 0003 name merge, 0004 ingest state, 0005 last ingest success, 0006 official politician data and committees, 0007 reviewed alias overrides, 0008 LLM suggestion cache, 0009 company profiles, 0010 committee/industry mappings, 0011 mapping review fields, 0012 trade context signals, 0013 temporal status, 0014 committee assignment history)
 frontend/src/       Vite + React + TypeScript (pages/, components/, api/, shared-theme/)
 legacy/             the original Telegram script, deprecated, kept for reference
 ```
@@ -184,4 +184,4 @@ A standalone `POLTRACKER.app` (local SQLite, automatic refresh, no Terminal) can
 
 Official politician metadata and House committees: see [docs/POLITICIAN_ENRICHMENT.md](docs/POLITICIAN_ENRICHMENT.md).
 
-Committee/industry context signals and the contextual-review flag: see [docs/TRADE_CONTEXT.md](docs/TRADE_CONTEXT.md).
+Committee/industry context signals and the contextual-review flag: see [docs/TRADE_CONTEXT.md](docs/TRADE_CONTEXT.md) and [docs/COMMITTEE_HISTORY.md](docs/COMMITTEE_HISTORY.md).

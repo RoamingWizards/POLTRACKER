@@ -50,6 +50,11 @@ class CommitteeSeat:
     end_date: date | None = None
     source: str = ""
     source_url: str | None = None
+    # Temporal provenance (see CommitteeAssignment): a snapshot seat is only known to exist on the snapshot's publish date.
+    congress_number: int | None = None
+    temporal_precision: str | None = None
+    source_type: str | None = None
+    verified_through: date | None = None
 
 
 class PoliticianProvider(ABC):

@@ -22,6 +22,7 @@ const TIMING: Record<string, string> = {
   temporally_verified: 'Seat timing verified for the trade date',
   current_assignment_only: 'Current committee assignment only: whether the seat applied on the trade date is not established',
   unavailable: 'No committee data for this member',
+  contradicted: 'Official House records show the member did not hold this committee on the trade date',
 };
 
 function ordinal(n: number): string {
@@ -53,6 +54,7 @@ export default function TradeContextDialog({ trade, onClose }: { trade: Trade | 
   const c: TradeContext | null | undefined = trade?.context;
   const direct = c?.evidence.filter((e) => e.evidence_type === 'reviewed_direct_mapping') ?? [];
   const related = c?.evidence.filter((e) => e.evidence_type === 'reviewed_related_mapping') ?? [];
+  const rejected = c?.evidence.filter((e) => e.evidence_type === 'rejected_current_assignment') ?? [];
   return (
     <Dialog open={!!trade} onClose={onClose} fullWidth maxWidth="sm" aria-labelledby="trade-context-title">
       <DialogTitle id="trade-context-title">
@@ -91,7 +93,14 @@ export default function TradeContextDialog({ trade, onClose }: { trade: Trade | 
                   )}
                 </Stack>
               ) : c.committee_relevance === false ? (
-                <Typography variant="body2">No reviewed direct mapping applies</Typography>
+                <Stack spacing={0.5}>
+                  <Typography variant="body2">No reviewed direct mapping applies</Typography>
+                  {rejected.map((e, i) => (
+                    <Typography key={i} variant="caption" color="text.secondary">
+                      Current seat not counted: {where(e)}. {c.committee_temporal_status ? TIMING[c.committee_temporal_status] : ''}.
+                    </Typography>
+                  ))}
+                </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   Unknown: {UNKNOWN_REASON[c.committee_relevance_reason ?? ''] ?? 'insufficient data'}

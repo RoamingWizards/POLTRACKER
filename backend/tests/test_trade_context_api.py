@@ -37,7 +37,7 @@ def test_context_fields_evidence_and_notice_after_analysis(session_factory, clie
     assert ctx["secondary_signal_count"] == 2 and ctx["committee_temporal_status"] == "temporally_verified" and ctx["meets_flag_rule"] is True and ctx["flag_pending_temporal_verification"] is False
     assert ctx["signals"] == {"committee_relevance": True, "trade_size_anomaly": True, "disclosure_delay_signal": True, "excess_return_signal": None}
     assert ctx["trade_size_percentile"] == 100 and ctx["trade_size_sample_size"] == 12 and ctx["disclosure_delay_days"] == 59 and ctx["excess_return"] is None
-    assert ctx["context_version"] == "2026.2" and ctx["mapping_version"] == "v1" and "do not establish" in ctx["notice"]
+    assert ctx["context_version"] == "2026.3" and ctx["mapping_version"] == "v1" and "do not establish" in ctx["notice"]
     kinds = {(e["signal_type"], e["evidence_type"]) for e in ctx["evidence"]}
     assert ("committee_relevance", "reviewed_direct_mapping") in kinds and ("disclosure_delay_signal", "metric") in kinds
     direct = next(e for e in ctx["evidence"] if e["evidence_type"] == "reviewed_direct_mapping")

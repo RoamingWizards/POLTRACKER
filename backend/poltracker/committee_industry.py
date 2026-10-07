@@ -79,6 +79,10 @@ class Assignment:
     chamber: str = "house"
     start_date: date | None = None  # when the seat began; None when the source does not say (the House Clerk snapshot never does)
     end_date: date | None = None
+    congress_number: int | None = None
+    temporal_precision: str | None = None  # exact_date | congress | current_snapshot (None: unknown, treated as a snapshot)
+    verified_through: date | None = None  # for a seat with no end date: the latest date an official source confirms it was held
+    history_complete: bool | None = None  # official records for this member and committee were scanned and nothing could not be placed
 
 
 @dataclass(frozen=True)
@@ -274,4 +278,4 @@ def load_mappings(session: Session, version: str | None = None) -> list[Mapping]
 
 def load_assignments(session: Session, politician_id: int) -> list[Assignment]:
     rows = session.scalars(select(CommitteeAssignment).where(CommitteeAssignment.politician_id == politician_id))
-    return [Assignment(r.committee_code, r.committee_name, r.subcommittee_code or None, r.subcommittee_name, r.chamber, r.start_date, r.end_date) for r in rows]
+    return [Assignment(r.committee_code, r.committee_name, r.subcommittee_code or None, r.subcommittee_name, r.chamber, r.start_date, r.end_date, r.congress_number, r.temporal_precision, r.verified_through, r.history_complete) for r in rows]

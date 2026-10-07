@@ -257,7 +257,7 @@ flags, 4 AI explanation of structured signals, 5 personalized filters. Awaiting 
 ## [~] Phase 11C — Deterministic trade context signals (`feature/trade-context-signals` branch, stacked on 11B)
 
 Committee relevance (reviewed + direct mappings only), trade-size percentile, disclosure delay and excess return, combined into a selective
-`flagged_for_contextual_review` (committee relevance mandatory, two secondary signals, and temporally verified committee seats). Migrations 0012-0013, `python -m poltracker.analyze_trade_context`, additive API fields and a minimal
+`flagged_for_contextual_review` (committee relevance mandatory, two secondary signals, and temporally verified committee seats). Migrations 0012-0014 (0014: dated committee seat history from adopted House resolutions, `docs/COMMITTEE_HISTORY.md`), `python -m poltracker.analyze_trade_context`, additive API fields and a minimal
 Trades-page panel. See `docs/TRADE_CONTEXT.md`. No AI explanation, personalization, scoring, or real-database changes. Awaiting review.
 
 ---

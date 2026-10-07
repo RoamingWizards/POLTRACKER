@@ -26,13 +26,16 @@ Methodology (version `ENGINE_VERSION`)
   benchmark's. A fixed window keeps trades comparable and stops the age of a trade from driving the signal: measured to the latest bar, a year-old trade
   accumulates months of extra performance and needs far less luck to exceed a threshold than a recent one. A trade younger than the horizon, or whose prices
   stop sooner, is unknown. The signal uses the absolute raw value (default 20 percentage points); the direction-adjusted figure is stored separately.
-* Committee seats and time. Relevance is evaluated against stored seats. The House Clerk publishes a point-in-time snapshot with no seat start or end
-  dates, so a seat can only be shown to exist NOW, not on the day of a historical trade. Each piece of committee evidence therefore carries a temporal status:
-    temporally_verified     the seat has a recorded start date on or before the transaction date and no end date before it
-    current_assignment_only the seat is known only from a current snapshot; whether it applied on the transaction date is not established
+* Committee seats and time. The House Clerk's snapshot (MemberData.xml) lists seats held NOW and has no dates, so on its own it can only show a seat exists
+  today. Dated history comes from adopted House resolutions (committee_history.py: exact start and end dates, committee level only). Each piece of committee
+  evidence carries a temporal status:
+    temporally_verified     official records establish the seat on the transaction date (for a committee-level mapping)
+    current_assignment_only the seat is known only from the current snapshot (always the case for a subcommittee seat, whose history is not recorded)
     unavailable             no committee data for the member (for example the Senate)
-  The underlying match is kept as contextual information either way, but only temporally_verified committee evidence can produce a flag. Seats that have
-  dates and do not cover the transaction date are ignored. Dates are never invented.
+    contradicted            a current seat would match, but the official record shows the member did not hold it on the transaction date; the trade is not
+                            committee-relevant and the rejected match is kept as evidence
+  The underlying match is kept as contextual information, but only temporally_verified committee evidence can produce a flag. A verified committee seat never
+  promotes a subcommittee-only match. Dates are never invented, and no third-party committee history is used.
 """
 
 import hashlib
@@ -42,9 +45,10 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from .committee_industry import Assignment, CommitteeIndustryMatcher, Match
+from .committee_history import PRECISION_CONGRESS, PRECISION_EXACT, congress_of
 from .performance import PriceSeries, TradePerformance, compute_performance, transaction_date_problem
 
-ENGINE_VERSION = "2026.2"  # 2026.2: 45-day delay, 20-point excess return, two secondary signals, temporal gating of committee evidence
+ENGINE_VERSION = "2026.3"  # 2026.3: committee evidence uses dated seat history (verified / contradicted); 2026.2: 45-day delay, 20-point excess, two secondaries, temporal gate
 
 SIGNALS = ("committee_relevance", "trade_size_anomaly", "disclosure_delay_signal", "excess_return_signal")
 SECONDARY = ("trade_size_anomaly", "disclosure_delay_signal", "excess_return_signal")
@@ -54,6 +58,7 @@ NOTICE = ("Context indicators are derived from public data and do not establish 
 TEMPORALLY_VERIFIED = "temporally_verified"
 CURRENT_ASSIGNMENT_ONLY = "current_assignment_only"
 UNAVAILABLE = "unavailable"
+CONTRADICTED = "contradicted"  # a current seat would match, but official House records show the member did not hold it on the transaction date
 
 
 @dataclass(frozen=True)
@@ -147,13 +152,60 @@ def excess_signal(perf: TradePerformance, cfg: ContextConfig) -> bool | None:
 
 # --- committee relevance ------------------------------------------------------------------------------------------
 
-def seat_status(seat: Assignment, transaction_date: date) -> str | None:
-    """None when the seat provably did not apply on the transaction date; otherwise how well its timing is established."""
-    if seat.start_date is not None and transaction_date < seat.start_date:
-        return None
-    if seat.end_date is not None and transaction_date > seat.end_date:
-        return None
-    return TEMPORALLY_VERIFIED if seat.start_date is not None else CURRENT_ASSIGNMENT_ONLY
+def _covers(seat: Assignment, d: date) -> bool:
+    """Is the seat established on a date? An open-ended exact-date seat is only confirmed up to `verified_through`."""
+    if seat.temporal_precision == PRECISION_CONGRESS:
+        return seat.congress_number == congress_of(d)
+    if seat.temporal_precision != PRECISION_EXACT or seat.start_date is None or d < seat.start_date:
+        return False
+    if seat.end_date is not None:
+        return d <= seat.end_date
+    return seat.verified_through is not None and d <= seat.verified_through
+
+
+def committee_history_status(rows: list[Assignment], d: date, scanned: bool = False, snapshot_congress: int | None = None) -> str:
+    """verified | contradicted | unknown for ONE committee's full-committee seats on a date, from dated (official-record) rows only.
+
+    `scanned`: the official resolutions of that date's Congress were read for this member (they have complete dated seats there). Then the absence of this committee
+    from them is evidence the member did not hold it, but only for a Congress other than the snapshot's own, where the snapshot would be the conflicting record."""
+    n = congress_of(d)
+    dated = [a for a in rows if a.temporal_precision in (PRECISION_EXACT, PRECISION_CONGRESS) and a.congress_number == n and not a.subcommittee_code]
+    if not dated:
+        return "contradicted" if scanned and snapshot_congress is not None and n != snapshot_congress else "unknown"
+    exact = [a for a in dated if a.temporal_precision == PRECISION_EXACT and a.start_date]
+    if any(_covers(a, d) for a in exact):
+        return "verified"
+    # Absence is only claimed from a complete scan: not yet elected, between two stints, or after a removal. A seat still open past its confirmation is unknown, not absent.
+    absent = all(d < a.start_date or (a.end_date is not None and d > a.end_date) for a in exact)
+    if exact and absent and all(a.history_complete for a in exact):
+        return "contradicted"  # contradictory exact information outweighs a whole-Congress claim
+    return "verified" if any(_covers(a, d) for a in dated if a.temporal_precision == PRECISION_CONGRESS) else "unknown"
+
+
+def effective_seats(assignments: list[Assignment], d: date) -> list[tuple[Assignment, str]]:
+    """The seats that can apply on a date, each with how well that is established. A seat the official record shows was not held is dropped, along with
+    the subcommittee seats under it. Subcommittee seats have no dated history, so they are never better than current_assignment_only."""
+    by_committee: dict[str, list[Assignment]] = {}
+    for a in assignments:
+        by_committee.setdefault(a.committee_code, []).append(a)
+    n = congress_of(d)
+    scanned = any(a.temporal_precision == PRECISION_EXACT and a.history_complete and a.congress_number == n for a in assignments)
+    snapshot_congress = max((a.congress_number for a in assignments if a.temporal_precision == "current_snapshot" and a.congress_number), default=None)
+    out: list[tuple[Assignment, str]] = []
+    for code, rows in by_committee.items():
+        status = committee_history_status(rows, d, scanned, snapshot_congress)
+        if status == "contradicted":
+            continue
+        for a in rows:
+            dated = a.temporal_precision in (PRECISION_EXACT, PRECISION_CONGRESS)
+            if dated:
+                if _covers(a, d):
+                    out.append((a, TEMPORALLY_VERIFIED))
+            elif a.subcommittee_code:
+                out.append((a, CURRENT_ASSIGNMENT_ONLY))
+            else:
+                out.append((a, TEMPORALLY_VERIFIED if status == "verified" else CURRENT_ASSIGNMENT_ONLY))
+    return out
 
 
 @dataclass
@@ -165,25 +217,25 @@ class CommitteeResult:
     pending_review: int = 0  # needs_review matches that were deliberately ignored
     temporal_status: str = UNAVAILABLE
     evidence_status: dict[int, str] = field(default_factory=dict)  # mapping_id -> temporal status of the seat behind it
+    contradicted: bool = False
+    rejected: list[Match] = field(default_factory=list)  # direct matches a CURRENT seat would give that the official record shows did not apply
 
 
 def _mapping_status(m: Match, seats: list[tuple[Assignment, str]]) -> str:
-    """The best temporal status among the seats that make a mapping apply (a committee mapping is satisfied by any seat on the committee)."""
+    """The best temporal status among the seats that make a mapping apply. A committee-level mapping is satisfied by a seat on the committee; a
+    subcommittee mapping only by a seat on that subcommittee, so a verified committee seat never promotes a subcommittee match."""
     found = [st for a, st in seats if a.committee_code == m.committee_code and (m.subcommittee_code is None or a.subcommittee_code == m.subcommittee_code)]
     return TEMPORALLY_VERIFIED if TEMPORALLY_VERIFIED in found else CURRENT_ASSIGNMENT_ONLY
 
 
 def committee_signal(matcher: CommitteeIndustryMatcher, assignments: list[Assignment], sic_code: object, industry: str | None,
                      transaction_date: date | None = None) -> CommitteeResult:
-    dated = [(a, seat_status(a, transaction_date) if transaction_date else (TEMPORALLY_VERIFIED if a.start_date else CURRENT_ASSIGNMENT_ONLY)) for a in assignments]
-    seats = [(a, st) for a, st in dated if st is not None]  # a seat that provably did not apply on that date is not a seat
+    seats = effective_seats(assignments, transaction_date) if transaction_date else [(a, CURRENT_ASSIGNMENT_ONLY) for a in assignments]
     rel = matcher.evaluate([a for a, _ in seats], sic_code, industry)
     if rel.reason == "no_sic":
         return CommitteeResult(None, "no_sic", temporal_status=UNAVAILABLE if not assignments else _overall(seats))
     if not assignments:
         return CommitteeResult(None, "no_committee_assignments", temporal_status=UNAVAILABLE)
-    if not seats:  # every seat has dates and none covers the transaction date
-        return CommitteeResult(False, "no_seat_on_transaction_date", temporal_status=TEMPORALLY_VERIFIED)
     reviewed = [m for m in rel.matches if m.reviewed and m.review_status == "reviewed"]
     direct = [m for m in reviewed if m.level == "direct"]
     related = [m for m in reviewed if m.level == "related"]
@@ -192,6 +244,16 @@ def committee_signal(matcher: CommitteeIndustryMatcher, assignments: list[Assign
     if direct:
         verified = any(status[m.mapping_id] == TEMPORALLY_VERIFIED for m in direct)
         return CommitteeResult(True, "direct_match", direct, related, pending, TEMPORALLY_VERIFIED if verified else CURRENT_ASSIGNMENT_ONLY, status)
+    # No direct match on the seats that applied that day. Would the member's CURRENT seats have given one? Then the official record rejected it.
+    rejected: list[Match] = []
+    if transaction_date is not None and len(seats) < len(assignments):
+        current_seats = [a for a in assignments if a.temporal_precision in (None, "current_snapshot")]  # what a snapshot-only reading would have used
+        current = matcher.evaluate(current_seats, sic_code, industry)
+        rejected = [m for m in current.matches if m.reviewed and m.review_status == "reviewed" and m.level == "direct"]
+    if rejected:
+        return CommitteeResult(False, "seat_not_held_on_transaction_date", [], related, pending, CONTRADICTED, status, True, rejected)
+    if not seats:  # every seat was shown not to apply on the transaction date
+        return CommitteeResult(False, "no_seat_on_transaction_date", [], [], 0, TEMPORALLY_VERIFIED)
     if rel.unmapped_committees:  # a committee with no mapping could still be relevant, so "no" cannot be asserted
         return CommitteeResult(None, "unmapped_committees", [], related, pending, _overall(seats), status)
     return CommitteeResult(False, "no_reviewed_direct_match", [], related, pending, _overall(seats), status)
@@ -296,7 +358,7 @@ class ContextResult:
         """Stable hash of everything stored for the trade, so an unchanged result is recognised on rerun."""
         leg = self.perf.transaction
         payload = {
-            "v": version, "m": self.mapping_version, "c": [self.committee.value, self.committee.reason, self.committee.temporal_status],
+            "v": version, "m": self.mapping_version, "c": [self.committee.value, self.committee.reason, self.committee.temporal_status, self.committee.contradicted],
             "flag": [self.meets_rule, self.flagged, self.secondary],
             "size": [self.size.anomaly, self.size.value, self.size.basis, self.size.percentile, self.size.sample_size, self.size.median],
             "delay": [self.delay_days, self.delay],
@@ -314,10 +376,11 @@ def _money(v: float | None) -> str:
 
 def _mapping_evidence(m: Match, kind: str, trade: TradeInput, temporal: str) -> EvidenceItem:
     where = m.committee_name + (f" / {m.subcommittee_name}" if m.subcommittee_name else "")
-    label = "Direct" if kind == "reviewed_direct_mapping" else "Related (supporting context only)"
+    label = {"reviewed_direct_mapping": "Direct", "reviewed_related_mapping": "Related (supporting context only)",
+             "rejected_current_assignment": "Rejected: a current seat would match, but official House records show it was not held on the transaction date"}[kind]
     return EvidenceItem(
         "committee_relevance", kind, f"mapping:{m.mapping_id}",
-        f"{label}: {where}, SIC {m.sic_range}. {m.rationale} Seat timing: {temporal.replace('_', ' ')}.",
+        f"{label}: {where}, SIC {m.sic_range}. {m.rationale}" + ("" if temporal == CONTRADICTED else f" Seat timing: {temporal.replace('_', ' ')}."),
         m.committee_code, m.subcommittee_code, m.mapping_id, m.source_url,
         {"committee_name": m.committee_name, "subcommittee_name": m.subcommittee_name, "scope": m.scope, "sic_range": m.sic_range, "level": m.level,
          "review_status": m.review_status, "jurisdiction_basis": m.jurisdiction_basis, "mapping_version": m.mapping_version,
@@ -348,6 +411,8 @@ def analyze_trade(
 
     evidence = [_mapping_evidence(m, "reviewed_direct_mapping", trade, committee.evidence_status[m.mapping_id]) for m in committee.direct]
     evidence += [_mapping_evidence(m, "reviewed_related_mapping", trade, committee.evidence_status[m.mapping_id]) for m in committee.related]
+    for m in committee.rejected:
+        evidence.append(_mapping_evidence(m, "rejected_current_assignment", trade, CONTRADICTED))
     if size.value is not None:
         text = f"Representative value {_money(size.value)} ({size.basis.replace('_', ' ')}) from the disclosed range {_money(trade.amount_min)}-{_money(trade.amount_max) if trade.amount_max is not None else 'open-ended'}."
         if size.percentile is not None:

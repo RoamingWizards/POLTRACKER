@@ -22,8 +22,8 @@ from poltracker.models import (
 )
 from poltracker.performance import PriceSeries, compute_performance
 from poltracker.trade_context import (
-    CURRENT_ASSIGNMENT_ONLY, ENGINE_VERSION, TEMPORALLY_VERIFIED, UNAVAILABLE, ContextConfig, TradeInput, analyze_trade, committee_signal, delay_signal,
-    excess_signal, is_flagged, meets_flag_rule, percentile_rank, seat_status, secondary_count, size_signal, trade_group_key, trade_size_value,
+    CONTRADICTED, CURRENT_ASSIGNMENT_ONLY, ENGINE_VERSION, TEMPORALLY_VERIFIED, UNAVAILABLE, ContextConfig, TradeInput, analyze_trade, committee_signal, delay_signal,
+    excess_signal, is_flagged, meets_flag_rule, percentile_rank, committee_history_status, effective_seats, secondary_count, size_signal, trade_group_key, trade_size_value,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -40,8 +40,14 @@ def M(i, committee="AS00", sub=None, start=3720, end=3729, level="direct", statu
                    jurisdiction_basis="rule_x_text")
 
 
-def A(committee="AS00", sub=None, start=None, end=None):
-    return Assignment(committee, f"Committee {committee}", sub, f"Sub {sub}" if sub else None, "house", start, end)
+SNAPSHOT = date(2026, 10, 1)  # the Clerk snapshot's publish date in these tests
+
+
+def A(committee="AS00", sub=None, start=None, end=None, congress=119, through=SNAPSHOT, complete=True, precision="exact_date"):
+    """A seat. With `start` it is a dated seat from the official resolutions; without, a bare Clerk-snapshot seat."""
+    if start is None:
+        return Assignment(committee, f"Committee {committee}", sub, f"Sub {sub}" if sub else None, "house", temporal_precision="current_snapshot", congress_number=119, verified_through=SNAPSHOT)
+    return Assignment(committee, f"Committee {committee}", sub, f"Sub {sub}" if sub else None, "house", start, end, congress, precision, None if end else through, complete)
 
 
 SEAT_START = date(2025, 1, 3)  # a seat with a recorded start date is temporally verifiable
@@ -262,13 +268,33 @@ def test_a_related_or_needs_review_mapping_plus_two_secondary_signals_does_not_f
 
 # --- temporal status of committee evidence ------------------------------------------------------------------------
 
-def test_seat_status_distinguishes_verified_current_only_and_inapplicable_seats():
+def test_committee_history_status_verifies_contradicts_or_stays_unknown():
     tx = date(2026, 3, 1)
-    assert seat_status(A(start=date(2025, 1, 3)), tx) == TEMPORALLY_VERIFIED
-    assert seat_status(A(start=date(2025, 1, 3), end=date(2026, 6, 1)), tx) == TEMPORALLY_VERIFIED
-    assert seat_status(A(), tx) == CURRENT_ASSIGNMENT_ONLY  # no recorded start date: only known from a current snapshot
-    assert seat_status(A(start=date(2026, 5, 1)), tx) is None  # the seat began after the trade
-    assert seat_status(A(start=date(2025, 1, 3), end=date(2026, 2, 1)), tx) is None  # the seat ended before the trade
+    open_seat = [A(start=date(2025, 1, 14))]
+    assert committee_history_status(open_seat, tx) == "verified"
+    assert committee_history_status([A(start=date(2025, 1, 14), end=date(2026, 6, 1))], tx) == "verified"
+    assert committee_history_status([A()], tx) == "unknown"  # a bare snapshot seat says nothing about that day
+    assert committee_history_status([A(start=date(2026, 5, 1))], tx) == "contradicted"  # not yet elected
+    assert committee_history_status([A(start=date(2025, 1, 14), end=date(2026, 2, 1))], tx) == "contradicted"  # removed before the trade
+    assert committee_history_status([A(start=date(2025, 1, 14), end=date(2025, 6, 1)), A(start=date(2026, 5, 1))], tx) == "contradicted"  # between two stints
+    assert committee_history_status([A(start=date(2026, 5, 1), complete=False)], tx) == "unknown"  # an incomplete scan never proves absence
+    assert committee_history_status([A(start=date(2025, 1, 14), through=date(2026, 1, 1))], tx) == "unknown"  # open seat, confirmed only up to Jan 1: unknown, not absent
+    assert committee_history_status([A(start=date(2025, 1, 14), congress=118)], tx) == "unknown"  # another Congress's record says nothing about this one
+
+
+def test_a_congress_precision_seat_verifies_only_within_that_congress_and_yields_to_a_complete_exact_record():
+    seat = Assignment("AS00", "Committee AS00", None, None, "house", None, None, 119, "congress")
+    assert committee_history_status([seat], date(2026, 3, 1)) == "verified" and committee_history_status([seat], date(2024, 3, 1)) == "unknown"
+    assert committee_history_status([seat, A(start=date(2026, 5, 1))], date(2026, 3, 1)) == "contradicted"  # contradictory exact information wins
+
+
+def test_effective_seats_drops_contradicted_committees_and_their_subcommittee_seats_and_never_promotes_a_subcommittee():
+    tx = date(2026, 3, 1)
+    gone = [A("AS00", start=date(2026, 5, 1)), A("AS00"), A("AS00", "AS25")]
+    assert effective_seats(gone, tx) == []  # the committee seat began later, so neither the snapshot seat nor the subcommittee seat applied
+    held = [A("AS00", start=date(2025, 1, 14)), A("AS00"), A("AS00", "AS25")]
+    got = {(a.committee_code, a.subcommittee_code): st for a, st in effective_seats(held, tx)}
+    assert got[("AS00", None)] == TEMPORALLY_VERIFIED and got[("AS00", "AS25")] == CURRENT_ASSIGNMENT_ONLY  # no dated record of the subcommittee seat
 
 
 def test_a_current_snapshot_seat_gives_a_match_but_only_current_assignment_status():
@@ -278,9 +304,25 @@ def test_a_current_snapshot_seat_gives_a_match_but_only_current_assignment_statu
     assert v.value is True and v.temporal_status == TEMPORALLY_VERIFIED
 
 
-def test_seats_that_did_not_cover_the_transaction_date_are_ignored_not_guessed_at():
-    r = committee_signal(CommitteeIndustryMatcher([M(1)], "v1"), [A(start=date(2026, 5, 1))], "3721", None, date(2026, 3, 1))
-    assert r.value is False and r.reason == "no_seat_on_transaction_date" and r.direct == []
+def test_a_current_seat_the_dated_record_rejects_is_contradicted_and_kept_only_as_rejected_evidence():
+    seats = [A(start=date(2026, 5, 1)), A()]  # elected in May 2026; the snapshot also lists the seat
+    r = committee_signal(CommitteeIndustryMatcher([M(1)], "v1"), seats, "3721", None, date(2026, 3, 1))
+    assert r.value is False and r.contradicted and r.temporal_status == CONTRADICTED and r.direct == [] and [m.mapping_id for m in r.rejected] == [1]
+    assert r.reason == "seat_not_held_on_transaction_date"
+    t = TradeInput(1, 1, "X", "buy", date(2026, 3, 1), date(2026, 6, 1), 250001, 500000, "3721", None)
+    res = analyze_trade(t, matcher=CommitteeIndustryMatcher([M(1)], "v1"), assignments=seats, prior_sizes_sorted=[8000.5] * 12, series=None, benchmark=None, cfg=CFG, today=TODAY)
+    assert res.secondary == 2 and not res.meets_rule and not res.flagged  # two secondaries, but the seat was not held
+    assert [e.evidence_type for e in res.evidence if e.signal_type == "committee_relevance"] == ["rejected_current_assignment"]
+
+
+def test_a_verified_committee_seat_verifies_a_committee_mapping_but_not_a_subcommittee_only_match():
+    seats = [A("AS00", start=date(2025, 1, 14)), A("AS00"), A("AS00", "AS25")]
+    committee_level = committee_signal(CommitteeIndustryMatcher([M(1)], "v1"), seats, "3721", None, date(2026, 3, 1))
+    assert committee_level.value is True and committee_level.temporal_status == TEMPORALLY_VERIFIED
+    sub_only = committee_signal(CommitteeIndustryMatcher([M(2, sub="AS25")], "v1"), seats, "3721", None, date(2026, 3, 1))
+    assert sub_only.value is True and sub_only.temporal_status == CURRENT_ASSIGNMENT_ONLY and sub_only.evidence_status == {2: CURRENT_ASSIGNMENT_ONLY}
+    both = committee_signal(CommitteeIndustryMatcher([M(1), M(2, sub="AS25")], "v1"), seats, "3721", None, date(2026, 3, 1))
+    assert both.temporal_status == TEMPORALLY_VERIFIED and both.evidence_status == {1: TEMPORALLY_VERIFIED, 2: CURRENT_ASSIGNMENT_ONLY}  # the sub match stays unverified
 
 
 def test_no_committee_data_is_unavailable():
@@ -322,7 +364,9 @@ def seed(factory, n_prior=12, mapping_status="reviewed", with_prices=False, date
         s.add_all([pol, other, sec, plain])
         s.flush()
         s.add(CommitteeAssignment(politician_id=pol.id, committee_name="Committee on Armed Services", committee_code="AS00", subcommittee_code="", chamber="house", source="t",
-                                 start_date=SEAT_START if dated_seat else None))
+                                 start_date=SEAT_START if dated_seat else None,
+                                 congress_number=119, temporal_precision="exact_date" if dated_seat else "current_snapshot", verified_through=SNAPSHOT,
+                                 history_complete=True if dated_seat else None))
         s.add(CommitteeIndustryMapping(chamber="house", committee_code="AS00", committee_name="Armed Services", sic_start=3720, sic_end=3729, relevance_level="direct",
                                        rationale="aircraft", source_url=SRC, mapping_version="v1", review_status=mapping_status,
                                        reviewed_at=datetime(2026, 10, 1) if mapping_status == "reviewed" else None, jurisdiction_basis="rule_x_text"))
@@ -560,7 +604,7 @@ def test_migration_0012_adds_only_the_two_tables_and_leaves_existing_data_untouc
     command.upgrade(cfg, "head")
     assert set(sa.inspect(engine).get_table_names()) - before == {"trade_context", "trade_context_evidence"}
     with engine.connect() as c:
-        assert c.exec_driver_sql("select count(*) from politicians").scalar() == 1 and c.exec_driver_sql("select version_num from alembic_version").scalar() == "0013"
+        assert c.exec_driver_sql("select count(*) from politicians").scalar() == 1 and c.exec_driver_sql("select version_num from alembic_version").scalar() == "0014"
     command.downgrade(cfg, "0011")
     assert not {"trade_context", "trade_context_evidence"} & set(sa.inspect(engine).get_table_names())
     with engine.connect() as c:
