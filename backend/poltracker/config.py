@@ -38,6 +38,26 @@ class Settings(BaseSettings):
     # The Data Status page warns when the last successful ingest is older than this.
     ingest_stale_after_hours: float = Field(24, gt=0)
 
+    # Official politician metadata. The key is optional: without it, enrichment reports "not configured" and the
+    # rest of the app is unaffected. Get a free key at https://api.congress.gov/sign-up/ and keep it out of git.
+    congress_api_key: str | None = None
+    congress_api_base_url: str = "https://api.congress.gov/v3"
+    congress_number: int = 119  # roster to match against; the current Congress covers trades from the last year
+    politician_enrich_stale_days: int = Field(30, ge=1)  # re-enrich matched politicians after this long
+    politician_retry_days: int = Field(7, ge=1)  # re-try unmatched/ambiguous politicians after this long
+    politician_request_interval: float = Field(0.5, ge=0)  # seconds between official-API requests
+
+    # Optional LLM-assisted identity resolution for politicians the deterministic matcher could not resolve. Off by
+    # default; it never runs for resolved politicians and its suggestions are always validated deterministically.
+    openai_api_key: str | None = None
+    politician_llm_enabled: bool = False
+    politician_llm_model: str = "gpt-4o-mini"
+    politician_llm_min_confidence: float = Field(0.9, ge=0, le=1)  # a suggestion must meet or exceed this (inclusive)
+    politician_llm_max_calls: int = Field(25, ge=0)  # cap per run
+    # Off by default: a validated LLM suggestion is held in the review queue and a person approves it (as a reviewed
+    # override). Turn on only to let validated suggestions apply directly.
+    politician_llm_auto_accept: bool = False
+
     benchmark_ticker: str = "SPY"
     price_batch_size: int = 40
     price_retry_days: int = 7  # how long before re-checking a ticker the provider had no data for
