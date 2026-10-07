@@ -240,6 +240,16 @@ contextual flags, scoring, AI explanation or personalized filters. Later phases:
 
 ---
 
+## [~] Phase 11B — Committee/industry mapping (`feature/committee-industry-mapping` branch, stacked on 11A)
+
+Deterministic, explainable mapping from committee/subcommittee jurisdiction (House Rule X) to SIC ranges, a matcher that returns
+relevant / not relevant / unknown with provenance, migration 0010, and a read-only measurement over existing trades. See
+`docs/COMMITTEE_INDUSTRY_MAPPING.md`. The 184 mappings are a **draft authored from the official text and not yet reviewed by a person**.
+No trade is flagged or scored, no market data or AI is used, and no per-trade result is stored. Later phases: 3 contextual signals and review
+flags, 4 AI explanation of structured signals, 5 personalized filters. Awaiting review.
+
+---
+
 ## [ ] Phase 7 — SEC EDGAR enrichment
 
 Status:
