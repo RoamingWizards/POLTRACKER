@@ -524,6 +524,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: MKC, UTZ.
 - **Overlaps other committees:** II00/II13 2091-2092 (related)
 - **Scrutiny:** `inferred_from_name`; `overlaps_other_committee`
+- **Review note:** Direct treatment should be reconciled with the more conservative handling of adjacent broad food SIC ranges (the 2000-2079 sibling was downgraded to related). Owner's preliminary preference: related, unless official jurisdiction text clearly supports a direct relationship. Not approved; stays needs_review (owner decision 2026-10-07).
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `AG00/AG03:5140-5149:related`  related  |  needs_review

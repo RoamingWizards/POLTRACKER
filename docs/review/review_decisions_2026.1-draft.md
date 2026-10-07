@@ -111,3 +111,10 @@ Applied 2026-10-07 from the project owner's written instruction. Only the decisi
 - Both the sub-level and the committee-level rows were treated alike for each approved or split range.
 - The sibling row Agriculture/Nutrition 2090-2099 (direct, miscellaneous food preparations) was not named in the instruction and stays `needs_review` and direct; it is inconsistent with the downgraded 2000-2079 row and needs a decision.
 - The other Ways and Means Health rows (6320-6324 direct, 2833-2836 and 3841-3845 related) were not named and stay `needs_review`.
+
+## Owner clarifications (2026-10-07)
+
+- Confirmed related: health-plan insurers 6320-6329, SIC 6199, 1623-1629, 2060-2069.
+- Agriculture/Nutrition 2090-2099 stays direct and `needs_review`, with a note that it should be reconciled with the more conservative handling of adjacent broad food ranges; preliminary preference is related unless official text clearly supports direct.
+- Left untouched until separately reviewed: Energy and Commerce Health 8000-8099, Agriculture 0100-0299 and 2010-2029, water transportation 4400-4499, Science space 3760-3769, remaining Ways and Means Health rows. Round 2 proposals for them are in `docs/review/round2/`.
+- The dataset version stays `2026.1-draft` for all rows; per-row state lives in `review_status` / `reviewed_at` / `reviewed_by`. Promote the whole set to `2026.1` when the review cycle is complete and the set is frozen for Phase 3.
