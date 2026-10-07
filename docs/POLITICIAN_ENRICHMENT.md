@@ -79,15 +79,17 @@ Resolution order, strictly: (1) stable identifier already stored, (2) exact/norm
 The model is consulted only for a politician all earlier steps left `unmatched`; never for a resolved one.
 
 ```
-ANTHROPIC_API_KEY=...            # in the environment or .env, never committed
+export OPENAI_API_KEY=...        # in your shell or .env, never committed
 .venv/bin/python -m poltracker.enrich_politicians --llm --dry-run   # try it, write nothing
 .venv/bin/python -m poltracker.enrich_politicians --llm
 .venv/bin/python -m poltracker.enrich_politicians --review-queue    # what is still unresolved, and why
 ```
 
-What is sent to the Anthropic API: the incoming politician's name, chamber, state and district (if known), and the official
-same-chamber, same-surname candidates (Bioguide ID, name, state, district, party). Nothing else, and no trade data. The model
-returns structured JSON (`selected_bioguide_id`, `confidence`, `explanation`, `alternate_candidates`).
+What is sent to the OpenAI API (Responses API, strict JSON-schema output, `store: false`, no tools, so no web browsing): the
+incoming politician's name, chamber, state and district (if known), and, for each official same-chamber, same-surname
+candidate, its name and Bioguide ID. Nothing else: no trade data, no party or other candidate attributes. The model returns
+`selected_bioguide_id`, `confidence`, `explanation` and `alternate_candidates`. Default model `gpt-4o-mini`
+(`POLITICIAN_LLM_MODEL`). Without `OPENAI_API_KEY` the run says so and continues without the LLM step.
 
 The answer is an untrusted suggestion. It is accepted only if all of these hold, otherwise the politician stays unresolved
 in the review queue with the reason: exactly one candidate is consistent with the recorded chamber/state/district; the selected ID

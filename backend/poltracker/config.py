@@ -49,11 +49,9 @@ class Settings(BaseSettings):
 
     # Optional LLM-assisted identity resolution for politicians the deterministic matcher could not resolve. Off by
     # default; it never runs for resolved politicians and its suggestions are always validated deterministically.
-    anthropic_api_key: str | None = None
     openai_api_key: str | None = None
-    politician_llm_provider: str = Field("anthropic", pattern="^(anthropic|openai)$")
     politician_llm_enabled: bool = False
-    politician_llm_model: str = "claude-haiku-4-5-20251001"
+    politician_llm_model: str = "gpt-4o-mini"
     politician_llm_min_confidence: float = Field(0.9, ge=0, le=1)  # a suggestion must EXCEED this
     politician_llm_max_calls: int = Field(25, ge=0)  # cap per run
 

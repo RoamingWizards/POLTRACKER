@@ -332,7 +332,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="ignore the recency rules")
     parser.add_argument("--dry-run", action="store_true", help="match and report, write nothing")
     parser.add_argument("--no-committees", action="store_true")
-    parser.add_argument("--llm", action="store_true", help="after the deterministic steps, ask the LLM about unmatched politicians (needs ANTHROPIC_API_KEY)")
+    parser.add_argument("--llm", action="store_true", help="after the deterministic steps, ask the LLM about unmatched politicians (needs OPENAI_API_KEY)")
     parser.add_argument("--review-queue", action="store_true", help="list unresolved politicians and any LLM outcome, then exit")
     parser.add_argument("--overrides", type=Path, help="JSON file of reviewed politician -> Bioguide ID overrides to record first")
     args = parser.parse_args(argv)
@@ -355,14 +355,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     llm = None
     if args.llm or settings.politician_llm_enabled:
-        from .politician_llm import AnthropicIdentityResolver, OpenAIIdentityResolver
+        from .politician_llm import build_resolver
 
-        openai = settings.politician_llm_provider == "openai"
-        key = settings.openai_api_key if openai else settings.anthropic_api_key
-        if not key:
-            print(f"LLM resolution requested but {'OPENAI' if openai else 'ANTHROPIC'}_API_KEY is not set; continuing without it.")
-        else:
-            llm = (OpenAIIdentityResolver if openai else AnthropicIdentityResolver)(key, settings.politician_llm_model)
+        llm = build_resolver(settings.openai_api_key, settings.politician_llm_model)
+        if llm is None:
+            print("LLM resolution requested but OPENAI_API_KEY is not set; continuing without it.")
     if args.overrides:
         from .politician_overrides import OverrideError, load_overrides_file
 
