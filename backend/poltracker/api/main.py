@@ -21,6 +21,7 @@ from .schemas import (
     StatusOut,
     TopPolitician,
     TopTicker,
+    PoliticianDetailOut,
     PoliticianOut,
     PoliticianPageOut,
     PriceSeriesOut,
@@ -101,6 +102,9 @@ def _politician_out(session: Session, pol: Politician) -> PoliticianOut:
     return PoliticianOut(
         id=pol.id, name=pol.name, chamber=pol.chamber, party=pol.party, state=pol.state,
         trade_count=count, latest_trade_date=latest,
+        bioguide_id=pol.bioguide_id, district=pol.district, official_url=pol.official_url, active=pol.active,
+        term_start_year=pol.term_start_year, term_end_year=pol.term_end_year, enriched_at=pol.enriched_at,
+        enrichment_source=pol.enrichment_source, enrichment_status=pol.enrichment_status, enrichment_method=pol.enrichment_method,
     )
 
 
@@ -122,12 +126,13 @@ def list_politicians(
     return PoliticianPageOut(items=[_politician_out(session, p) for p in pols], total=total, limit=limit, offset=offset)
 
 
-@router.get("/politicians/{politician_id}", response_model=PoliticianOut)
-def get_politician(politician_id: int, session: Session = Depends(get_session)) -> PoliticianOut:
+@router.get("/politicians/{politician_id}", response_model=PoliticianDetailOut)
+def get_politician(politician_id: int, session: Session = Depends(get_session)) -> PoliticianDetailOut:
     pol = session.get(Politician, politician_id)
     if pol is None:
         raise HTTPException(404, "Politician not found")
-    return _politician_out(session, pol)
+    seats = sorted(pol.committees, key=lambda c: (c.committee_name, c.subcommittee_name is not None, c.subcommittee_name or ""))
+    return PoliticianDetailOut(**_politician_out(session, pol).model_dump(), committees=seats)
 
 
 @router.get("/securities/{ticker}", response_model=SecurityOut)

@@ -2,6 +2,7 @@ from datetime import UTC, date, datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Date,
     DateTime,
     Float,
@@ -9,6 +10,7 @@ from sqlalchemy import (
     Index,
     MetaData,
     String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -40,7 +42,90 @@ class Politician(Base):
     state: Mapped[str | None] = mapped_column(String(2))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
+    # Official enrichment (Congress.gov / House Clerk). Only ever written for a verified, unambiguous match.
+    bioguide_id: Mapped[str | None] = mapped_column(String(10), unique=True)
+    district: Mapped[str | None] = mapped_column(String(20))
+    official_url: Mapped[str | None] = mapped_column(String(300))
+    active: Mapped[bool | None] = mapped_column(Boolean)  # in office in the most recent term the source reports
+    term_start_year: Mapped[int | None] = mapped_column()  # start of the most recent term (year only: sources give no day)
+    term_end_year: Mapped[int | None] = mapped_column()  # None while the term is ongoing
+    enriched_at: Mapped[datetime | None] = mapped_column(DateTime)  # last time official data was written
+    enrichment_source: Mapped[str | None] = mapped_column(String(40))
+    enrichment_status: Mapped[str | None] = mapped_column(String(20))  # matched | unmatched | ambiguous | conflict
+    enrichment_note: Mapped[str | None] = mapped_column(String(500))  # why a politician is unresolved
+    enrichment_checked_at: Mapped[datetime | None] = mapped_column(DateTime)  # last attempt, matched or not
+    enrichment_method: Mapped[str | None] = mapped_column(String(40))  # how it matched: exact_name+chamber..., override
+
     trades: Mapped[list["Trade"]] = relationship(back_populates="politician")
+    committees: Mapped[list["CommitteeAssignment"]] = relationship(
+        back_populates="politician", cascade="all, delete-orphan", order_by="CommitteeAssignment.id"
+    )
+
+
+class PoliticianAliasOverride(Base):
+    """A human-reviewed link from one POLTRACKER politician to one official Bioguide ID.
+
+    Only ever used for a politician the deterministic matcher left unmatched. Never created automatically.
+    """
+
+    __tablename__ = "politician_alias_overrides"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    politician_id: Mapped[int] = mapped_column(ForeignKey("politicians.id"), unique=True)
+    bioguide_id: Mapped[str] = mapped_column(String(10), unique=True)
+    reason: Mapped[str] = mapped_column(String(500))
+    source: Mapped[str] = mapped_column(String(200))  # what the reviewer checked, e.g. a URL or record
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class PoliticianLlmSuggestion(Base):
+    """Cache and audit trail of LLM identity suggestions.
+
+    The raw suggestion is cached so the same unresolved name is never sent twice. It is only a suggestion: every use
+    re-runs the deterministic validation, and `outcome`/`reason` record the latest decision.
+    """
+
+    __tablename__ = "politician_llm_suggestions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    cache_key: Mapped[str] = mapped_column(String(64), unique=True)
+    politician_id: Mapped[int | None] = mapped_column(ForeignKey("politicians.id"), index=True)
+    incoming_name: Mapped[str] = mapped_column(String(200))
+    chamber: Mapped[str] = mapped_column(String(10))
+    candidate_ids: Mapped[str] = mapped_column(String(2000))  # comma-separated Bioguide IDs shown to the model
+    selected_bioguide_id: Mapped[str | None] = mapped_column(String(10))
+    confidence: Mapped[float | None] = mapped_column(Float)
+    explanation: Mapped[str | None] = mapped_column(String(2000))
+    alternates: Mapped[str | None] = mapped_column(String(500))  # comma-separated Bioguide IDs
+    model: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    outcome: Mapped[str | None] = mapped_column(String(12))  # accepted | rejected
+    reason: Mapped[str | None] = mapped_column(String(300))  # why it was rejected
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class CommitteeAssignment(Base):
+    """One committee or subcommittee seat. A subcommittee row also carries its parent committee's name/code."""
+
+    __tablename__ = "committee_assignments"
+    __table_args__ = (UniqueConstraint("politician_id", "committee_code", "subcommittee_code", "source"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    politician_id: Mapped[int] = mapped_column(ForeignKey("politicians.id"), index=True)
+    committee_name: Mapped[str] = mapped_column(String(300))
+    committee_code: Mapped[str] = mapped_column(String(20))
+    subcommittee_name: Mapped[str | None] = mapped_column(String(300))
+    subcommittee_code: Mapped[str] = mapped_column(String(20), default="")  # "" = the full committee seat
+    role: Mapped[str] = mapped_column(String(60), default="Member")
+    chamber: Mapped[str] = mapped_column(String(10))
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    source: Mapped[str] = mapped_column(String(40))
+    source_url: Mapped[str | None] = mapped_column(String(300))
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    politician: Mapped[Politician] = relationship(back_populates="committees")
 
 
 class Security(Base):

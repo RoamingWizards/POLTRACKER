@@ -15,7 +15,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import { useHealth, useStatus } from '../api/hooks';
+import { useHealth, useRefreshStatus, useStatus, useTriggerRefresh } from '../api/hooks';
 import QueryError from '../components/QueryError';
 import SplitDonutCard from '../components/SplitDonutCard';
 import StatCard from '../components/StatCard';
@@ -36,6 +36,9 @@ export default function DataStatus() {
   const queryClient = useQueryClient();
   const { data: s, isLoading, error, isFetching } = useStatus();
   const health = useHealth();
+  const refresh = useRefreshStatus().data;
+  const trigger = useTriggerRefresh();
+  const desktop = !!refresh?.enabled;
 
   return (
     <Box sx={{ width: '100%', maxWidth: { sm: '100%', md: '1700px' } }}>
@@ -60,9 +63,50 @@ export default function DataStatus() {
           {s.last_successful_ingest_at
             ? `The last successful ingest was ${timeAgo(s.last_successful_ingest_at)} (${formatDateTime(s.last_successful_ingest_at)}), older than the ${s.ingest_stale_after_hours}-hour threshold.`
             : 'No successful ingest has been recorded yet.'}{' '}
-          If the scheduled workflow is not running, check that it has not been disabled: GitHub disables scheduled
-          workflows in public repositories after 60 days without repository activity.
+          {desktop
+            ? 'POLTRACKER updates itself while it is open; if this stays stale, check your internet connection.'
+            : 'If the scheduled workflow is not running, check that it has not been disabled: GitHub disables scheduled workflows in public repositories after 60 days without repository activity.'}
         </Alert>
+      )}
+
+      {desktop && refresh && (
+        <Card variant="outlined" sx={{ mb: 2 }}>
+          <CardContent>
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+              <Typography component="h2" variant="subtitle2">
+                Background refresh
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={refresh.running || trigger.isPending}
+                onClick={() => trigger.mutate()}
+              >
+                Update now
+              </Button>
+            </Stack>
+            <Table size="small">
+              <TableBody>
+                <Row label="State">
+                  <Chip
+                    size="small"
+                    color={refresh.running ? 'info' : refresh.last_attempt_ok === false ? 'warning' : 'success'}
+                    label={refresh.running ? (refresh.label ?? 'running') : refresh.last_attempt_ok === false ? 'last attempt failed' : 'idle'}
+                  />
+                </Row>
+                <Row label="Last completed update">{refresh.last_success_at ? `${timeAgo(refresh.last_success_at)} (${formatDateTime(refresh.last_success_at)})` : 'none yet'}</Row>
+                <Row label="Next automatic update">{refresh.next_run_at ? formatDateTime(refresh.next_run_at) : '—'}</Row>
+                <Row label="Update interval">{`about every ${refresh.interval_hours} hours while the app is open`}</Row>
+                {refresh.last_error && <Row label="Last problem">{refresh.last_error}</Row>}
+              </TableBody>
+            </Table>
+            {trigger.data && !trigger.data.accepted && (
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
+                {trigger.data.reason}
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>

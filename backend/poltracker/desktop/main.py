@@ -1,5 +1,6 @@
 """POLTRACKER desktop launcher: local server + native window. Also runnable as `python -m poltracker.desktop.main`."""
 
+import atexit
 import fcntl
 import html
 import logging
@@ -25,6 +26,8 @@ def configure_environment() -> None:
     os.environ["DATABASE_URL"] = override or sqlite_url(paths.database_path())
     os.environ["POLTRACKER_DESKTOP"] = "1"
     os.environ.setdefault("POLTRACKER_SQLITE_WAL", "1")
+    no_proxy = {h for h in os.environ.get("NO_PROXY", "").split(",") if h} | {"127.0.0.1", "localhost"}
+    os.environ["NO_PROXY"] = ",".join(sorted(no_proxy))  # the app's own server is never reached through a proxy
 
 
 def configure_logging() -> None:
@@ -89,6 +92,7 @@ def main(argv: list[str] | None = None) -> int:
 
         server = LocalServer(create_desktop_app())
         server.start()
+        atexit.register(server.stop)  # Cmd-Q exits through Cocoa, bypassing the finally below
         started = server.wait_ready()
         log.info("server ready at %s in %.2fs", server.url, started)
     except DatabaseError as exc:
@@ -99,6 +103,7 @@ def main(argv: list[str] | None = None) -> int:
 
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
     window = webview.create_window(APP_NAME, server.url, width=WINDOW_SIZE[0], height=WINDOW_SIZE[1], min_size=MIN_SIZE)
+    window.events.closed += server.stop  # runs on window close and on Cmd-Q, before the process exits
     func = None
     if selftest:
         from .selftest import run as selftest_run

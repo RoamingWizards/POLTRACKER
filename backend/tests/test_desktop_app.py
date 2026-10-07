@@ -118,3 +118,27 @@ def test_the_refresh_service_is_started_and_stopped_with_the_server(dist):
         assert client.get("/api/refresh/status").json()["database_empty"] is True
         assert client.post("/api/refresh").json() == {"accepted": True, "reason": "Refresh requested."}
     assert Fake.events == ["start", "stop"]
+
+
+def test_readiness_check_ignores_http_proxy_settings(dist, monkeypatch):
+    from poltracker.desktop.server import LocalServer
+
+    for var in ("HTTP_PROXY", "http_proxy", "ALL_PROXY"):
+        monkeypatch.setenv(var, "http://127.0.0.1:9")  # a dead proxy must not break the app's own loopback check
+    server = LocalServer(create_desktop_app(frontend_dir=dist, settings=Settings(_env_file=None), enable_refresh=False))
+    server.start()
+    try:
+        server.wait_ready(timeout=10)
+    finally:
+        server.stop()
+
+
+def test_packaging_version_matches_the_app_version():
+    import re
+    from pathlib import Path
+
+    from poltracker.desktop import APP_VERSION, BUNDLE_IDENTIFIER
+
+    spec = (Path(__file__).resolve().parents[2] / "packaging" / "macos" / "poltracker.spec").read_text()
+    assert re.search(r'VERSION = "([^"]+)"', spec).group(1) == APP_VERSION
+    assert f'BUNDLE_ID = "{BUNDLE_IDENTIFIER}"' in spec
