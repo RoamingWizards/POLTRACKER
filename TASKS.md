@@ -230,6 +230,16 @@ Politician Detail profile. See `docs/POLITICIAN_ENRICHMENT.md`. Reviewed alias o
 
 These tasks are intentionally not authorized yet.
 
+## [~] Phase 11A — Company sector and industry enrichment (`feature/committee-sector-context` branch)
+
+Phase 1 of the committee/sector context direction (bill and hearing ingestion was dropped; its experimental work lives on
+`feature/legislative-data`, unmerged). Adds SEC EDGAR company profiles (CIK, SIC code, industry, sector, exchange) to `securities` through
+migration 0009 and `python -m poltracker.enrich_securities`. See `docs/SECURITY_PROFILES.md`. Metadata only: no committee/industry mapping,
+contextual flags, scoring, AI explanation or personalized filters. Later phases: 2 committee-industry mapping, 3 contextual signals,
+4 AI explanation of structured signals, 5 personalized filters. Awaiting review.
+
+---
+
 ## [ ] Phase 7 — SEC EDGAR enrichment
 
 Status:

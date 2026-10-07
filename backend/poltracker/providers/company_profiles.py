@@ -19,6 +19,7 @@ log = logging.getLogger(__name__)
 
 SOURCE = "sec-edgar"
 TICKER_LIST_URL = "https://www.sec.gov/files/company_tickers_exchange.json"
+TICKER_TXT_URL = "https://www.sec.gov/include/ticker.txt"  # older official list; covers some tickers the JSON list omits
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 BROWSE_URL = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}"
 
@@ -133,6 +134,48 @@ class SecEdgarProvider(CompanyProfileProvider):
             self._sleep(min(2 ** (attempt + 1), 30))
         raise AssertionError("unreachable")
 
+    def _get_text(self, url: str) -> str:
+        """Same pacing, retry and error handling as _get, for the plain-text ticker list."""
+        for attempt in range(self._max_retries + 1):
+            if self._last is not None:
+                wait = self._min_interval - (self._clock() - self._last)
+                if wait > 0:
+                    self._sleep(wait)
+            self._last = self._clock()
+            self.requests_made += 1
+            try:
+                resp = self._client.get(url)
+            except httpx.HTTPError as exc:
+                error: ProviderError = ProviderError(f"{_host(url)}: network error ({type(exc).__name__})")
+            else:
+                if resp.status_code in (403, 429):
+                    error = ProviderRateLimited(f"{_host(url)}: rate limited or refused (HTTP {resp.status_code})")
+                elif resp.status_code >= 500:
+                    error = ProviderError(f"{_host(url)}: server error (HTTP {resp.status_code})")
+                elif resp.status_code >= 400:
+                    raise ProviderError(f"{_host(url)}: HTTP {resp.status_code}")
+                else:
+                    return resp.text
+            if attempt == self._max_retries:
+                raise error
+            self._sleep(min(2 ** (attempt + 1), 30))
+        raise AssertionError("unreachable")
+
+    def _load_txt_list(self) -> None:
+        """Optional fallback list: 'ticker<TAB>cik' lines. A failure here only reduces coverage; rate limiting still stops the run."""
+        self._txt: dict[str, set[int]] = {}
+        try:
+            text = self._get_text(TICKER_TXT_URL)
+        except ProviderRateLimited:
+            raise
+        except ProviderError as exc:
+            log.warning("SEC fallback ticker list unavailable (%s); continuing with the primary list only", exc)
+            return
+        for line in text.splitlines():
+            parts = line.split()
+            if len(parts) == 2 and parts[1].isdigit():
+                self._txt.setdefault(parts[0].strip().upper(), set()).add(int(parts[1]))
+
     def prepare(self, tickers: Iterable[str]) -> None:
         body = self._get(TICKER_LIST_URL)
         fields, rows = body.get("fields"), body.get("data")
@@ -150,6 +193,7 @@ class SecEdgarProvider(CompanyProfileProvider):
                 exchange = row[ix["exchange"]] if "exchange" in ix else None
                 by_ticker.setdefault(ticker, []).append((cik, name if isinstance(name, str) else None, exchange if isinstance(exchange, str) else None))
         self._tickers = by_ticker
+        self._load_txt_list()
 
     def get_profile(self, ticker: str) -> CompanyProfile | None:
         if self._tickers is None:
@@ -157,7 +201,11 @@ class SecEdgarProvider(CompanyProfileProvider):
         for variant in ticker_variants(ticker):
             found = self._tickers.get(variant)
             if not found:
-                continue
+                # Fallback: the older official ticker.txt list, exact ticker only (so still no name matching).
+                ciks = getattr(self, "_txt", {}).get(variant)
+                if not ciks:
+                    continue
+                found = [(next(iter(ciks)), None, None)] if len(ciks) == 1 else [(c, None, None) for c in sorted(ciks)]
             if len({c for c, _n, _e in found}) > 1:  # one ticker listed under several CIKs: never pick one
                 return None
             cik, list_name, exchange = found[0]
