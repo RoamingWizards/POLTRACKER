@@ -114,7 +114,8 @@ def candidates(
 def match_politician(name: str, chamber: str, state: str | None, members: list[OfficialMember]) -> MatchResult:
     found, rule = _find(name, members, chamber, state)
     if len(found) == 1:
-        return MatchResult("matched", found[0], f"{rule}+chamber" + ("+state" if state else ""), found)
+        # The label is stable: it must not change once a state has been filled in.
+        return MatchResult("matched", found[0], f"{rule}+chamber", found)
     if len(found) > 1:
         who = ", ".join(f"{m.full_name} ({m.state}, {m.bioguide_id})" for m in found[:5])
         return MatchResult("ambiguous", None, None, found, f"{len(found)} officials share this name in the {chamber}: {who}")

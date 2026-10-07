@@ -52,6 +52,26 @@ different official, is `conflict` (records are never merged). Each unresolved po
 helpful, same-surname candidates for a human to review in `politicians.enrichment_note`. Existing `trades`
 and politician ids are never changed.
 
+## Reviewed overrides (migration 0007)
+
+The matcher never guesses nicknames. For a name variant a person has checked, record an explicit link:
+
+```
+.venv/bin/python -m poltracker.enrich_politicians --overrides reviewed_overrides.json
+```
+
+```json
+[{"politician_id": 45, "bioguide_id": "C001120", "reason": "Dan is a short form of Daniel; sole Crenshaw in the House",
+  "source": "https://api.congress.gov/v3/member/C001120", "reviewed_at": "2026-10-07"}]
+```
+
+Rules: the file is all-or-nothing; the Bioguide ID must be well formed, not assigned to another politician and not the override of
+another; an override is used only for a politician the normal matcher left **unmatched** (never for an automatic match or an
+ambiguous one; if the two disagree the automatic match is kept and a warning is printed). Each run re-checks the override
+against the live roster: unknown ID, wrong chamber or wrong state is refused as a `conflict` and nothing is written. The reason,
+source and review date stay in `politician_alias_overrides` and in `politicians.enrichment_note`, and
+`enrichment_method` is `override`. Politicians matched before migration 0007 have no `enrichment_method` until `--force` re-enriches them.
+
 ## Data model (migration 0006, additive)
 
 `politicians`: `bioguide_id` (unique), `district`, `official_url`, `active`, `term_start_year`, `term_end_year`,
