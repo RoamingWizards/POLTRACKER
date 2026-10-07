@@ -41,7 +41,9 @@ function termText(p: PoliticianDetail) {
 }
 
 const unavailableReason = (p: PoliticianDetail) =>
-  p.enrichment_status === 'ambiguous'
+  p.enrichment_status === 'review'
+    ? 'A possible match has been found and is waiting for review.'
+    : p.enrichment_status === 'ambiguous'
     ? 'More than one official has this name, so none was linked.'
     : p.enrichment_status === 'unmatched'
       ? 'This name could not be matched to an official record with confidence.'

@@ -223,3 +223,30 @@ def test_an_unreadable_or_non_list_file_is_rejected(session_factory, tmp_path):
         (tmp_path / "o.json").write_text('{"a": 1}')
         with pytest.raises(OverrideError, match="JSON list"):
             load_overrides_file(s, tmp_path / "o.json")
+
+
+def test_the_committed_reviewed_overrides_file_is_well_formed():
+    from pathlib import Path
+    import re
+
+    entries = json.loads((Path(__file__).resolve().parents[2] / "data" / "reviewed_politician_overrides.json").read_text())
+    assert len(entries) == 14
+    assert len({e["politician_id"] for e in entries}) == 14 and len({e["bioguide_id"] for e in entries}) == 14
+    for e in entries:
+        assert re.fullmatch(r"[A-Z]\d{6}", e["bioguide_id"]) and e["bioguide_id"] in e["source"]
+        assert 10 < len(e["reason"]) <= 500 and len(e["source"]) <= 200 and e["reviewed_at"] == "2026-10-07"
+        assert not re.search(r"llm|gpt|openai|model", e["reason"] + e["source"], re.I)  # provenance is the human review, not a model
+
+
+def test_the_committed_overrides_file_loads_cleanly_into_a_database_with_those_politicians(session_factory):
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / "data" / "reviewed_politician_overrides.json"
+    ids = [e["politician_id"] for e in json.loads(path.read_text())]
+    with session_factory() as s:
+        for i in ids:
+            s.add(Politician(id=i, canonical_key=f"k{i}", name=f"P{i}", chamber="house"))
+        s.commit()
+        assert len(load_overrides_file(s, path)) == 14
+        s.commit()
+        assert len(load_overrides_file(s, path)) == 14  # reloading the reviewed file is safe
