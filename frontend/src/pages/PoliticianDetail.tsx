@@ -10,6 +10,7 @@ import { usePolitician, useTrades } from '../api/hooks';
 import ChartCard from '../components/ChartCard';
 import { ChamberChip } from '../components/Chips';
 import MonthlyBarChart from '../components/MonthlyBarChart';
+import OfficialProfile from '../components/OfficialProfile';
 import QueryError from '../components/QueryError';
 import StatCard from '../components/StatCard';
 import TopTickersChart from '../components/TopTickersChart';
@@ -70,9 +71,10 @@ export default function PoliticianDetail() {
       </Stack>
       {p && !p.party && !p.state && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Party and state aren’t provided by the current data source.
+          Party and state aren’t provided by the trade data source.
         </Alert>
       )}
+      {p && <OfficialProfile p={p} />}
       <Grid container spacing={2} columns={12} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard title="Trades" loading={politician.isLoading} value={formatInt(p?.trade_count)} interval="All disclosed trades" />

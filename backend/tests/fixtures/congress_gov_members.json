@@ -1,0 +1,22 @@
+{
+  "members": [
+    {"bioguideId": "B001323", "name": "Begich, Nicholas", "partyName": "Republican", "state": "Alaska", "district": 0,
+     "terms": {"item": [{"chamber": "House of Representatives", "startYear": 2025}]},
+     "url": "https://api.congress.gov/v3/member/B001323?format=json"},
+    {"bioguideId": "D000399", "name": "Doggett, Lloyd", "partyName": "Democratic", "state": "Texas", "district": 37,
+     "terms": {"item": [{"chamber": "House of Representatives", "startYear": 1995}, {"chamber": "House of Representatives", "startYear": 2025}]}},
+    {"bioguideId": "W000779", "name": "Wyden, Ron", "partyName": "Democratic", "state": "Oregon",
+     "terms": {"item": [{"chamber": "Senate", "startYear": 1997}]}},
+    {"bioguideId": "G000596", "name": "Greene, Marjorie Taylor", "partyName": "Republican", "state": "Georgia", "district": 14,
+     "terms": {"item": [{"chamber": "House of Representatives", "startYear": 2021, "endYear": 2026}]}},
+    {"bioguideId": "J000299", "name": "Johnson, Mike", "partyName": "Republican", "state": "Louisiana", "district": 4,
+     "terms": {"item": [{"chamber": "House of Representatives", "startYear": 2017}]}},
+    {"bioguideId": "J000999", "name": "Johnson, Mike", "partyName": "Democratic", "state": "Ohio", "district": 2,
+     "terms": {"item": [{"chamber": "House of Representatives", "startYear": 2019}]}},
+    {"bioguideId": "T000001", "name": "Smith Jones, Pat, Jr.", "partyName": "Democratic", "state": "Texas", "district": 18,
+     "terms": [{"chamber": "House of Representatives", "startYear": 2023}]},
+    {"bioguideId": "X000000", "name": "", "terms": {"item": []}},
+    {"name": "Nobody, No Id"}
+  ],
+  "pagination": {"count": 9, "next": "https://api.congress.gov/v3/member/congress/119?offset=250&limit=250&format=json"}
+}

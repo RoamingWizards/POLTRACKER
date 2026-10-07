@@ -57,6 +57,34 @@ export interface Politician {
   state: string | null;
   trade_count: number;
   latest_trade_date: string | null;
+  // Official enrichment: all null until the politician has been verified against an official roster.
+  bioguide_id: string | null;
+  district: string | null;
+  official_url: string | null;
+  active: boolean | null;
+  term_start_year: number | null;
+  term_end_year: number | null;
+  enriched_at: string | null;
+  enrichment_source: string | null;
+  enrichment_status: 'matched' | 'unmatched' | 'ambiguous' | 'conflict' | 'review' | null;
+  enrichment_method: string | null;
+}
+
+export interface CommitteeSeat {
+  committee_name: string;
+  committee_code: string;
+  subcommittee_name: string | null;
+  subcommittee_code: string;
+  role: string;
+  chamber: Chamber;
+  start_date: string | null;
+  end_date: string | null;
+  source: string;
+  source_url: string | null;
+}
+
+export interface PoliticianDetail extends Politician {
+  committees: CommitteeSeat[];
 }
 
 export interface Security {
@@ -162,4 +190,27 @@ export interface Status {
   benchmark_from: string | null;
   benchmark_to: string | null;
   benchmark_status: string | null;
+}
+
+// Desktop app only: the background refresh service (absent from the web API, which answers 404).
+export interface RefreshStatus {
+  enabled: boolean;
+  running: boolean;
+  phase: 'idle' | 'ingesting' | 'prices';
+  trigger: 'startup' | 'scheduled' | 'manual' | null;
+  label: string | null;
+  progress: { done: number; total: number | null } | null;
+  started_at: string | null;
+  finished_at: string | null;
+  last_attempt_ok: boolean | null;
+  last_error: string | null;
+  last_success_at: string | null;
+  next_run_at: string | null;
+  interval_hours: number;
+  database_empty: boolean;
+}
+
+export interface TriggerResult {
+  accepted: boolean;
+  reason: string;
 }

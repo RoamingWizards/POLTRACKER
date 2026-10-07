@@ -5,17 +5,21 @@ from poltracker.config import get_settings
 from poltracker.models import Base
 
 target_metadata = Base.metadata
-url = get_settings().database_url
+
+
+def _database_url() -> str:
+    # An explicit URL (set by the desktop app when it migrates programmatically) wins; otherwise the usual settings.
+    return context.config.get_main_option("sqlalchemy.url") or get_settings().database_url
 
 
 def run_migrations_offline() -> None:
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True, render_as_batch=True)
+    context.configure(url=_database_url(), target_metadata=target_metadata, literal_binds=True, render_as_batch=True)
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
-    engine = create_engine(url)
+    engine = create_engine(_database_url())
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, render_as_batch=True)
         with context.begin_transaction():
