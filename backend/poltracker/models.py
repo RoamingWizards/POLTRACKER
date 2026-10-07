@@ -144,6 +144,21 @@ class Security(Base):
     price_status: Mapped[str | None] = mapped_column(String(20))  # "ok" | "unavailable"
     price_checked_at: Mapped[datetime | None] = mapped_column(DateTime)
 
+    # Company profile (Phase 1 of committee/sector context). Official identifiers and classification from SEC EDGAR; never
+    # inferred, never from a language model. `name` above stays the name as it appeared in trades.
+    company_name: Mapped[str | None] = mapped_column(String(300))
+    cik: Mapped[str | None] = mapped_column(String(10))  # SEC Central Index Key, zero-padded
+    sic_code: Mapped[str | None] = mapped_column(String(4))  # Standard Industrial Classification code
+    industry: Mapped[str | None] = mapped_column(String(200))  # the official SIC description, as published
+    sector: Mapped[str | None] = mapped_column(String(100))  # the official SIC division derived from the SIC code
+    exchange: Mapped[str | None] = mapped_column(String(40))
+    profile_source: Mapped[str | None] = mapped_column(String(40))  # sec-edgar
+    profile_source_url: Mapped[str | None] = mapped_column(String(300))
+    profile_status: Mapped[str | None] = mapped_column(String(20))  # ok | partial (no SIC) | unresolved (not in the source)
+    profile_note: Mapped[str | None] = mapped_column(String(300))
+    profile_checked_at: Mapped[datetime | None] = mapped_column(DateTime)  # last attempt, whatever the outcome
+    profile_updated_at: Mapped[datetime | None] = mapped_column(DateTime)  # last time profile fields were written
+
     trades: Mapped[list["Trade"]] = relationship(back_populates="security")
 
 

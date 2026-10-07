@@ -90,6 +90,15 @@ class SecurityOut(BaseModel):
     trade_count: int
     latest_trade_date: date | None
     recent_trades: list[TradeOut]
+    # Official company profile (SEC EDGAR); all null until the security has been enriched or when the source does not list it.
+    company_name: str | None = None
+    cik: str | None = None
+    sic_code: str | None = None
+    industry: str | None = None  # SIC description
+    sector: str | None = None  # SIC division
+    exchange: str | None = None
+    profile_status: str | None = None  # ok | partial | unresolved | null (never attempted)
+    profile_source_url: str | None = None
 
 
 class PriceBarOut(BaseModel):

@@ -181,6 +181,11 @@ export default function SecurityDetail() {
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {sec?.name}
         </Typography>
+        {sec?.industry && (
+          <Tooltip title={`${sec.sector ?? 'Sector n/a'} · SIC ${sec.sic_code ?? 'n/a'}${sec.cik ? ` · CIK ${sec.cik}` : ''} (SEC EDGAR)`}>
+            <Chip size="small" variant="outlined" label={`${sec.industry}${sec.exchange ? ` · ${sec.exchange}` : ''}`} />
+          </Tooltip>
+        )}
         {sec?.price_status === 'ok' && <Chip size="small" color="success" variant="outlined" label="prices cached" />}
         {sec?.price_status === 'unavailable' && <Chip size="small" color="warning" variant="outlined" label="no price data" />}
       </Stack>

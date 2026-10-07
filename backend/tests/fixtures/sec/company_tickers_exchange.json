@@ -1,0 +1,62 @@
+{
+ "fields": [
+  "cik",
+  "name",
+  "ticker",
+  "exchange"
+ ],
+ "data": [
+  [
+   320193,
+   "Apple Inc.",
+   "AAPL",
+   "Nasdaq"
+  ],
+  [
+   1067983,
+   "BERKSHIRE HATHAWAY INC",
+   "BRK-B",
+   "NYSE"
+  ],
+  [
+   1067983,
+   "BERKSHIRE HATHAWAY INC",
+   "BRK-A",
+   "NYSE"
+  ],
+  [
+   936468,
+   "LOCKHEED MARTIN CORP",
+   "LMT",
+   "NYSE"
+  ],
+  [
+   1000001,
+   "SHARED TICKER ONE",
+   "DUAL",
+   "NYSE"
+  ],
+  [
+   1000002,
+   "SHARED TICKER TWO",
+   "DUAL",
+   "NYSE"
+  ],
+  [
+   1000003,
+   "NO SIC TRUST",
+   "NOSIC",
+   "NYSE"
+  ],
+  [
+   "bad",
+   "row"
+  ],
+  [
+   null,
+   null,
+   null,
+   null
+  ]
+ ]
+}
