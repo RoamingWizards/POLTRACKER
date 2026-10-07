@@ -41,6 +41,35 @@ class PoliticianOut(BaseModel):
     state: str | None
     trade_count: int = 0
     latest_trade_date: date | None = None
+    # Official enrichment; all null until a politician has been verified against an official roster.
+    bioguide_id: str | None = None
+    district: str | None = None
+    official_url: str | None = None
+    active: bool | None = None
+    term_start_year: int | None = None
+    term_end_year: int | None = None
+    enriched_at: datetime | None = None
+    enrichment_source: str | None = None
+    enrichment_status: str | None = None  # matched | unmatched | ambiguous | conflict | null (never attempted)
+
+
+class CommitteeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    committee_name: str
+    committee_code: str
+    subcommittee_name: str | None
+    subcommittee_code: str
+    role: str
+    chamber: str
+    start_date: date | None
+    end_date: date | None
+    source: str
+    source_url: str | None
+
+
+class PoliticianDetailOut(PoliticianOut):
+    committees: list[CommitteeOut] = []
 
 
 class PoliticianPageOut(BaseModel):

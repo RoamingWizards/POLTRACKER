@@ -57,6 +57,33 @@ export interface Politician {
   state: string | null;
   trade_count: number;
   latest_trade_date: string | null;
+  // Official enrichment: all null until the politician has been verified against an official roster.
+  bioguide_id: string | null;
+  district: string | null;
+  official_url: string | null;
+  active: boolean | null;
+  term_start_year: number | null;
+  term_end_year: number | null;
+  enriched_at: string | null;
+  enrichment_source: string | null;
+  enrichment_status: 'matched' | 'unmatched' | 'ambiguous' | 'conflict' | null;
+}
+
+export interface CommitteeSeat {
+  committee_name: string;
+  committee_code: string;
+  subcommittee_name: string | null;
+  subcommittee_code: string;
+  role: string;
+  chamber: Chamber;
+  start_date: string | null;
+  end_date: string | null;
+  source: string;
+  source_url: string | null;
+}
+
+export interface PoliticianDetail extends Politician {
+  committees: CommitteeSeat[];
 }
 
 export interface Security {
