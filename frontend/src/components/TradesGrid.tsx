@@ -5,6 +5,8 @@ import Link from '@mui/material/Link';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
+import Chip from '@mui/material/Chip';
+import TradeContextDialog from './TradeContextDialog';
 import AppDataGrid from './AppDataGrid';
 import { ChamberChip, TypeChip } from './Chips';
 import QueryError from './QueryError';
@@ -13,6 +15,30 @@ import type { Trade, TradeQuery, TradeSortField } from '../api/types';
 import { formatAmountRange } from '../lib/format';
 
 const SORTABLE: TradeSortField[] = ['transaction_date', 'disclosure_date', 'amount_min', 'ticker', 'politician_name'];
+
+function contextColumn(open: (t: Trade) => void): GridColDef<Trade> {
+  return {
+    field: 'context',
+    headerName: 'Context',
+    width: 150,
+    sortable: false,
+    renderCell: ({ row }) => {
+      const c = row.context;
+      if (!c) return '—';
+      const label = c.flagged_for_contextual_review ? 'Flagged for review' : c.committee_relevance ? 'Committee-relevant' : c.committee_relevance === null ? 'Unknown' : 'No flag';
+      return (
+        <Chip
+          size="small"
+          variant="outlined"
+          color={c.flagged_for_contextual_review ? 'warning' : 'default'}
+          label={label}
+          onClick={() => open(row)}
+          aria-label={`Context signals for ${row.ticker ?? 'trade'}`}
+        />
+      );
+    },
+  };
+}
 
 const columns: GridColDef<Trade>[] = [
   { field: 'disclosure_date', headerName: 'Disclosed', width: 110 },
@@ -96,6 +122,8 @@ export default function TradesGrid({
 }) {
   const [paging, setPaging] = React.useState<GridPaginationModel>({ page: 0, pageSize });
   const [sort, setSort] = React.useState<GridSortModel>([{ field: 'disclosure_date', sort: 'desc' }]);
+  const [selected, setSelected] = React.useState<Trade | null>(null);
+  const gridColumns = React.useMemo(() => [...columns.slice(0, -1), contextColumn(setSelected), columns[columns.length - 1]], []);
 
   const filtersKey = JSON.stringify(filters);
   React.useEffect(() => {
@@ -117,7 +145,7 @@ export default function TradesGrid({
       {error && <QueryError error={error} what="trades" />}
       <AppDataGrid
         rows={data?.items ?? []}
-        columns={columns}
+        columns={gridColumns}
         columnVisibilityModel={{ politician_name: !hidePoliticianColumn, chamber: !hidePoliticianColumn }}
         loading={isFetching}
         rowCount={data?.total ?? 0}
@@ -130,6 +158,7 @@ export default function TradesGrid({
         autoHeight
         sx={{ minHeight: 320 }}
       />
+      <TradeContextDialog trade={selected} onClose={() => setSelected(null)} />
     </>
   );
 }

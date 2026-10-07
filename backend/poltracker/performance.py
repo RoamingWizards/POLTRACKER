@@ -12,7 +12,7 @@ Conventions
 
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -26,6 +26,7 @@ STATUS_NO_TICKER = "no_ticker"
 STATUS_INVALID_DATE = "invalid_date"
 STATUS_NO_PRICES = "no_prices"
 STATUS_NO_PRICE_AT_DATE = "no_price_at_date"
+STATUS_HORIZON_NOT_ELAPSED = "horizon_not_elapsed"  # a fixed measurement window was requested and the cached prices do not reach its end
 
 
 def direction(transaction_type: str) -> int | None:
@@ -111,7 +112,7 @@ class TradePerformance:
 
 
 def _leg(
-    stated: date | None, today: date, series: PriceSeries, bench: PriceSeries, latest: tuple[date, float]
+    stated: date | None, today: date, series: PriceSeries, bench: PriceSeries, latest: tuple[date, float], horizon_days: int | None = None
 ) -> Leg:
     if stated is None:
         return Leg(status="no_date")
@@ -120,9 +121,15 @@ def _leg(
     anchor = series.on_or_after(stated)
     if anchor is None or anchor[0] > latest[0]:
         return Leg(status=STATUS_NO_PRICE_AT_DATE)
-    ret = _ret(anchor[1], latest[1])
+    end = latest
+    if horizon_days is not None:  # a fixed window from the anchor, so every trade is measured over the same length of time
+        end_date = anchor[0] + timedelta(days=horizon_days)
+        if latest[0] < end_date:
+            return Leg(status=STATUS_HORIZON_NOT_ELAPSED, anchor_date=anchor[0], price=anchor[1])
+        end = series.on_or_before(end_date)
+    ret = _ret(anchor[1], end[1])
     b_anchor = bench.on_or_after(stated) if bench else None
-    b_latest = bench.on_or_before(latest[0]) if bench else None
+    b_latest = bench.on_or_before(end[0]) if bench else None
     b_ret = _ret(b_anchor[1], b_latest[1]) if b_anchor and b_latest and b_anchor[0] <= b_latest[0] else None
     return Leg(
         status=STATUS_OK,
@@ -144,7 +151,10 @@ def compute_performance(
     benchmark: PriceSeries | None,
     benchmark_ticker: str,
     today: date,
+    horizon_days: int | None = None,
 ) -> TradePerformance:
+    """Without `horizon_days` every figure runs from the anchor to the latest bar. With it, from the anchor to `horizon_days` later
+    (the last bar on or before that date), or `horizon_not_elapsed` when the cached prices stop sooner."""
     if not ticker:
         return TradePerformance(status=STATUS_NO_TICKER)
     problem = transaction_date_problem(transaction_date, disclosure_date, today)
@@ -155,8 +165,8 @@ def compute_performance(
 
     latest = series.latest
     bench = benchmark or PriceSeries([])
-    tx_leg = _leg(transaction_date, today, series, bench, latest)
-    di_leg = _leg(disclosure_date, today, series, bench, latest)
+    tx_leg = _leg(transaction_date, today, series, bench, latest, horizon_days)
+    di_leg = _leg(disclosure_date, today, series, bench, latest, horizon_days)
     sign = direction(transaction_type)
     status = STATUS_OK if tx_leg.status == STATUS_OK else tx_leg.status
     return TradePerformance(

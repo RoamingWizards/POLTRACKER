@@ -49,7 +49,7 @@ def test_upgrade_preserves_politicians_ids_and_trades_and_leaves_new_fields_empt
         rows = c.exec_driver_sql("select id, name, party, state, bioguide_id, enrichment_status, active from politicians order by id").all()
         assert [tuple(r) for r in rows] == [(7, "Lloyd Doggett", "D", "TX", None, None, None), (9, "Ron Wyden", None, None, None, None, None)]
         assert c.exec_driver_sql("select politician_id from trades").scalar() == 7
-        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0011"
+        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0012"
 
 
 def test_a_bioguide_id_can_belong_to_only_one_politician(db):

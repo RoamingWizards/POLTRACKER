@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
@@ -54,6 +56,7 @@ export default function Trades() {
     politician_id: politicianId,
     date_from: get('from') || undefined,
     date_to: get('to') || undefined,
+    flagged: get('flagged') === '1' ? true : undefined,
   };
   const anyFilter = Object.values(filters).some(Boolean);
 
@@ -99,6 +102,10 @@ export default function Trades() {
           value={get('to') ? dayjs(get('to')) : null}
           onChange={(v) => update('to', v?.isValid() ? v.format('YYYY-MM-DD') : null)}
           slotProps={{ textField: { size: 'small', sx: { width: 195 } }, field: { clearable: true } }}
+        />
+        <FormControlLabel
+          control={<Switch size="small" checked={get('flagged') === '1'} onChange={(e) => update('flagged', e.target.checked ? '1' : null)} />}
+          label="Flagged for contextual review"
         />
         {politicianId && <PoliticianChip id={politicianId} onDelete={() => update('politician_id', null)} />}
         {anyFilter && (

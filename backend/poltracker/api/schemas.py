@@ -3,6 +3,48 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class ContextEvidenceOut(BaseModel):
+    """Why a signal has its value. `reviewed_related_mapping` rows are supporting context only and never create a signal."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    signal_type: str
+    evidence_type: str  # reviewed_direct_mapping | reviewed_related_mapping | metric
+    committee_code: str | None
+    subcommittee_code: str | None
+    source_url: str | None
+    description: str
+    metadata: dict | None = None
+
+
+class TradeContextOut(BaseModel):
+    """Deterministic context signals for one trade, from public data. Not a finding about anyone: see `notice`."""
+
+    context_version: str
+    mapping_version: str | None
+    analyzed_at: datetime
+    committee_relevance: bool | None  # True only when a reviewed + direct committee/industry mapping applies; None = unknown
+    committee_relevance_reason: str | None
+    trade_size_anomaly: bool | None
+    trade_size_value: float | None  # derived from the disclosed range; never an exact transaction value
+    trade_size_basis: str | None
+    trade_size_percentile: float | None  # 0-100 among the same politician's earlier trades
+    trade_size_sample_size: int | None
+    disclosure_delay_signal: bool | None
+    disclosure_delay_days: int | None
+    excess_return_signal: bool | None
+    security_return: float | None  # fractions: 0.10 == +10%
+    spy_return: float | None
+    excess_return: float | None
+    excess_return_direction_adjusted: float | None
+    excess_horizon_days: int | None
+    signals: dict[str, bool | None]
+    signal_count: int
+    flagged_for_contextual_review: bool
+    evidence: list[ContextEvidenceOut]
+    notice: str
+
+
 class TradeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -22,6 +64,7 @@ class TradeOut(BaseModel):
     amount_min: int | None
     amount_max: int | None
     source_url: str | None
+    context: TradeContextOut | None = None  # null until `python -m poltracker.analyze_trade_context` has run
 
 
 class TradePageOut(BaseModel):

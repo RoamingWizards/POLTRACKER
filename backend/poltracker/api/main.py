@@ -1,3 +1,4 @@
+import json
 from collections import Counter
 from collections.abc import Iterator
 from datetime import UTC, date, datetime, timedelta
@@ -6,14 +7,16 @@ from typing import Literal
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import case, extract, func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..config import Settings, get_settings
 from ..db import make_session_factory
-from ..models import IngestState, PriceBar, Politician, Security, Trade
+from ..models import CommitteeIndustryMapping, IngestState, PriceBar, Politician, Security, Trade, TradeContext
 from ..performance import load_benchmark, load_series, trade_performance
+from ..trade_context import NOTICE, SIGNALS, ContextConfig
 from .ordering import nulls_last, text_order
 from .schemas import (
+    ContextEvidenceOut,
     DailyCount,
     MonthlyCount,
     OverviewOut,
@@ -27,6 +30,7 @@ from .schemas import (
     PriceSeriesOut,
     SecurityOut,
     SecurityPerformanceOut,
+    TradeContextOut,
     TradeOut,
     TradePageOut,
     TradePerformanceOut,
@@ -50,6 +54,44 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+def _context_key(session: Session) -> tuple[str, str] | None:
+    """The current context: the default engine version evaluated against the most recently loaded mapping version."""
+    mapping_version = session.scalar(select(CommitteeIndustryMapping.mapping_version).order_by(CommitteeIndustryMapping.id.desc()).limit(1))
+    return (ContextConfig().version_label(), mapping_version) if mapping_version else None
+
+
+def _trade_outs(session: Session, trades: list[Trade]) -> list[TradeOut]:
+    outs = [TradeOut.model_validate(t) for t in trades]
+    key = _context_key(session)
+    if key is None or not outs:
+        return outs
+    rows = session.scalars(
+        select(TradeContext).options(selectinload(TradeContext.evidence))
+        .where(TradeContext.trade_id.in_([o.id for o in outs]), TradeContext.context_version == key[0], TradeContext.mapping_version == key[1])
+    ).all()
+    by_trade = {c.trade_id: c for c in rows}
+    for o in outs:
+        c = by_trade.get(o.id)
+        if c is not None:
+            o.context = TradeContextOut(
+                context_version=c.context_version, mapping_version=c.mapping_version, analyzed_at=c.analyzed_at,
+                committee_relevance=c.committee_relevance, committee_relevance_reason=c.committee_relevance_reason,
+                trade_size_anomaly=c.trade_size_anomaly, trade_size_value=c.trade_size_value, trade_size_basis=c.trade_size_basis,
+                trade_size_percentile=c.trade_size_percentile, trade_size_sample_size=c.trade_size_sample_size,
+                disclosure_delay_signal=c.disclosure_delay_signal, disclosure_delay_days=c.disclosure_delay_days,
+                excess_return_signal=c.excess_return_signal, security_return=c.security_return, spy_return=c.spy_return,
+                excess_return=c.excess_return, excess_return_direction_adjusted=c.excess_return_direction_adjusted,
+                excess_horizon_days=c.performance_horizon_days,
+                signals={name: getattr(c, name) for name in SIGNALS}, signal_count=c.signal_count,
+                flagged_for_contextual_review=c.flagged_for_contextual_review,
+                evidence=[ContextEvidenceOut(signal_type=e.signal_type, evidence_type=e.evidence_type, committee_code=e.committee_code,
+                                             subcommittee_code=e.subcommittee_code, source_url=e.source_url, description=e.description,
+                                             metadata=json.loads(e.metadata_json) if e.metadata_json else None) for e in c.evidence],
+                notice=NOTICE,
+            )
+    return outs
+
+
 @router.get("/trades", response_model=TradePageOut)
 def list_trades(
     ticker: str | None = None,
@@ -58,6 +100,7 @@ def list_trades(
     transaction_type: str | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    flagged: bool = Query(False, description="only trades flagged for contextual review (a review aid, not a finding)"),
     sort_by: Literal["transaction_date", "disclosure_date", "amount_min", "ticker", "politician_name"] = "disclosure_date",
     order: Literal["asc", "desc"] = "desc",
     limit: int = Query(50, ge=1, le=500),
@@ -77,6 +120,13 @@ def list_trades(
         stmt = stmt.where(Trade.transaction_date >= date_from)
     if date_to:
         stmt = stmt.where(Trade.transaction_date <= date_to)
+    if flagged:
+        key = _context_key(session)
+        stmt = stmt.where(Trade.id.in_(
+            select(TradeContext.trade_id).where(TradeContext.context_version == (key[0] if key else None),
+                                                TradeContext.mapping_version == (key[1] if key else None),
+                                                TradeContext.flagged_for_contextual_review.is_(True))
+        ))
 
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     column = getattr(Trade, sort_by)
@@ -84,15 +134,15 @@ def list_trades(
         column = text_order(session, column)
     direction = nulls_last(column.asc() if order == "asc" else column.desc())
     rows = session.scalars(stmt.order_by(direction, Trade.id.desc()).limit(limit).offset(offset)).all()
-    return TradePageOut(items=rows, total=total, limit=limit, offset=offset)
+    return TradePageOut(items=_trade_outs(session, list(rows)), total=total, limit=limit, offset=offset)
 
 
 @router.get("/trades/{trade_id}", response_model=TradeOut)
-def get_trade(trade_id: int, session: Session = Depends(get_session)) -> Trade:
+def get_trade(trade_id: int, session: Session = Depends(get_session)) -> TradeOut:
     trade = session.get(Trade, trade_id)
     if trade is None:
         raise HTTPException(404, "Trade not found")
-    return trade
+    return _trade_outs(session, [trade])[0]
 
 
 def _politician_out(session: Session, pol: Politician) -> PoliticianOut:
