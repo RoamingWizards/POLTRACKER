@@ -46,6 +46,12 @@ class AnalysisSummary:
     excess: Counter = field(default_factory=Counter)
     flagged: int = 0
     meets_rule: int = 0  # the context rule is met, whether or not the temporal gate then allows a flag
+    contradicted: int = 0  # a current seat would match, but the dated record shows it was not held on the transaction date
+    committee_level_trades: int = 0  # committee-relevant trades with committee-level direct evidence
+    committee_level_verified: int = 0
+    subcommittee_level_trades: int = 0  # ... with subcommittee-level direct evidence
+    subcommittee_level_verified: int = 0
+    subcommittee_only_trades: int = 0  # ... whose ONLY direct evidence is subcommittee-level
     pending_temporal: int = 0  # rule met but not flagged because the committee evidence is not temporally verified
     secondary_distribution: Counter = field(default_factory=Counter)  # all trades
     secondary_distribution_committee: Counter = field(default_factory=Counter)  # trades with committee relevance true
@@ -70,6 +76,8 @@ class AnalysisSummary:
             f"Secondary signals true, committee-relevant trades: " + ", ".join(f"{k}: {n(self.secondary_distribution_committee[k])}" for k in range(4)),
             f"Committee seat timing, all trades: " + ", ".join(f"{k} {n(v)}" for k, v in sorted(self.temporal_status.items())),
             f"Committee seat timing, committee-relevant trades: " + (", ".join(f"{k} {n(v)}" for k, v in sorted(self.temporal_status_committee.items())) or "none"),
+            f"Current-assignment view: {n(self.committee[True] + self.contradicted)} committee-relevant trades; rejected by dated history as not held on the transaction date: {n(self.contradicted)}",
+            f"Committee-level evidence verified: {n(self.committee_level_verified)} of {n(self.committee_level_trades)}; subcommittee-level evidence verified: {n(self.subcommittee_level_verified)} of {n(self.subcommittee_level_trades)} (subcommittee-only trades: {n(self.subcommittee_only_trades)})",
             f"Context rule met: {n(self.meets_rule)}  (not flagged because seat timing is unverified: {n(self.pending_temporal)})",
             f"Flagged for contextual review: {n(self.flagged)}  ({n(len(self.flagged_politicians))} politicians, {n(len(self.flagged_tickers))} tickers)",
             f"Committee relevance unknown because: " + (", ".join(f"{k} {n(v)}" for k, v in self.committee_unknown_reasons.most_common()) or "none"),
@@ -189,7 +197,17 @@ class TradeContextAnalyzer:
             summary.needs_review_matches_ignored += 1
         summary.secondary_distribution[res.secondary] += 1
         summary.temporal_status[res.committee.temporal_status] += 1
+        summary.contradicted += res.committee.contradicted
         if res.committee.value is True:
+            direct = res.committee.direct
+            cl = [m for m in direct if m.scope == "committee"]
+            sl = [m for m in direct if m.scope == "subcommittee"]
+            ok = lambda ms: any(res.committee.evidence_status.get(m.mapping_id) == "temporally_verified" for m in ms)  # noqa: E731
+            summary.committee_level_trades += bool(cl)
+            summary.committee_level_verified += bool(cl) and ok(cl)
+            summary.subcommittee_level_trades += bool(sl)
+            summary.subcommittee_level_verified += bool(sl) and ok(sl)
+            summary.subcommittee_only_trades += bool(sl) and not cl
             summary.secondary_distribution_committee[res.secondary] += 1
             summary.temporal_status_committee[res.committee.temporal_status] += 1
         summary.meets_rule += res.meets_rule

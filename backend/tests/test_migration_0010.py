@@ -24,9 +24,13 @@ def db(tmp_path, monkeypatch):
     get_settings.cache_clear()
 
 
+# committee_assignments gained columns in later migrations (0014); only the columns that existed at 0010 are compared.
+ASSIGNMENT_COLUMNS = "id, politician_id, committee_name, committee_code, subcommittee_name, subcommittee_code, role, chamber, start_date, end_date, source, source_url, fetched_at"
+
+
 def snapshot(engine):
     with engine.connect() as c:
-        return {t: sorted(map(tuple, c.exec_driver_sql(f"select * from {t}").all())) for t in EXISTING}
+        return {t: sorted(map(tuple, c.exec_driver_sql(f"select {ASSIGNMENT_COLUMNS if t == 'committee_assignments' else '*'} from {t}").all())) for t in EXISTING}
 
 
 def seed(engine):
@@ -47,7 +51,7 @@ def test_upgrade_adds_an_empty_table_and_changes_no_existing_data(db):
     assert "committee_industry_mappings" in sa.inspect(engine).get_table_names() and snapshot(engine) == before
     with engine.connect() as c:
         assert c.exec_driver_sql("select count(*) from committee_industry_mappings").scalar() == 0
-        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0013"
+        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0014"
 
 
 def test_downgrade_removes_only_the_new_table(db):
