@@ -45,7 +45,7 @@ def test_existing_rows_become_needs_review_and_are_never_marked_reviewed(db):
         row = c.exec_driver_sql("select id, sic_start, sic_end, relevance_level, rationale, reviewed_at, review_status, reviewed_by, review_note, jurisdiction_basis "
                                 "from committee_industry_mappings").one()
         assert tuple(row) == (1, 3720, 3729, "direct", "r", None, "needs_review", None, None, None)
-        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0015"
+        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0016"
 
 
 def test_downgrade_removes_only_the_review_columns_and_keeps_the_mapping(db):

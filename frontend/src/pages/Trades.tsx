@@ -1,126 +1,202 @@
 import * as React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import dayjs from 'dayjs';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch from '@mui/material/Switch';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import TradesGrid, { type TradeFilters } from '../components/TradesGrid';
-import { usePolitician } from '../api/hooks';
-import type { Chamber } from '../api/types';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import ContextRuleDialog from '../components/ContextRuleDialog';
+import FilterBar from '../components/FilterBar';
+import ScreenSummary from '../components/ScreenSummary';
+import TradesGrid from '../components/TradesGrid';
+import ViewsControls from '../components/ViewsControls';
+import { ApiError } from '../api/client';
+import { resetActiveScreen, saveActiveScreen, usePresets, useSavedViews, useViewMutations, useActiveScreen } from '../api/hooks';
+import type { ContextRule, FilterSpec, SavedView, ScreenPage } from '../api/types';
+import { DEFAULT_RULE, LEGACY_PARAMS, detectPreset, filtersFromLegacyParams, rulesEqual, ruleKind } from '../lib/filters';
 
-function PoliticianChip({ id, onDelete }: { id: number; onDelete: () => void }) {
-  const { data } = usePolitician(id);
-  return <Chip label={`Politician: ${data?.name ?? `#${id}`}`} onDelete={onDelete} />;
+interface Screen {
+  rule: ContextRule;
+  filters: FilterSpec[];
+  preset: string; // a built-in preset key or 'custom'
+  viewId: number | null;
 }
 
+const DEFAULT_SCREEN: Screen = { rule: DEFAULT_RULE, filters: [], preset: 'balanced', viewId: null };
+
+/** Trades with personalization: filters (AND), a preset or custom context rule, and local saved views. Nothing here rewrites stored context. */
 export default function Trades() {
   const [params, setParams] = useSearchParams();
-  const get = (k: string) => params.get(k) ?? '';
-  const update = React.useCallback(
-    (key: string, value: string | null) => {
-      setParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (value) next.set(key, value);
-          else next.delete(key);
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setParams],
-  );
+  const presetsQ = usePresets();
+  const activeQ = useActiveScreen();
+  const viewsQ = useSavedViews();
+  const mutations = useViewMutations();
+  const presets = presetsQ.data?.presets ?? [];
+  const defaultRule = presetsQ.data?.default_rule ?? DEFAULT_RULE;
 
-  // Ticker is typed freely, so debounce it into the URL.
-  const [tickerInput, setTickerInput] = React.useState(get('ticker'));
+  const [screen, setScreen] = React.useState<Screen>(DEFAULT_SCREEN);
+  const [hydrated, setHydrated] = React.useState(false);
+  const [ruleOpen, setRuleOpen] = React.useState(false);
+  const [page, setPage] = React.useState<ScreenPage | undefined>();
+  const [nameError, setNameError] = React.useState<string | null>(null);
+  const lastSaved = React.useRef<string>('');
+
+  // Local persistence exists only where the app provides it (the desktop app); a read-only web API answers 404 and the page works in memory.
+  const persistent = activeQ.isSuccess && activeQ.data !== null;
+  const views: SavedView[] = viewsQ.data ?? [];
+
+  // Hydrate once: older links (/trades?ticker=BA) win, otherwise the last-used screen, otherwise the default methodology.
   React.useEffect(() => {
-    const t = setTimeout(() => update('ticker', tickerInput.trim().toUpperCase() || null), 350);
-    return () => clearTimeout(t);
-  }, [tickerInput, update]);
+    if (hydrated || presetsQ.isLoading || activeQ.isLoading) return;
+    const legacy = filtersFromLegacyParams(params);
+    const stored = activeQ.data && activeQ.data.saved ? activeQ.data : null;
+    if (legacy.length) {
+      setScreen({ ...DEFAULT_SCREEN, filters: legacy });
+      setParams((prev) => {
+        const next = new URLSearchParams(prev);
+        LEGACY_PARAMS.forEach((k) => next.delete(k));
+        return next;
+      }, { replace: true });
+    } else if (stored) {
+      setScreen({ rule: stored.rule, filters: stored.filters, preset: stored.preset ?? detectPreset(stored.rule, presets), viewId: stored.view_id });
+      lastSaved.current = JSON.stringify([stored.rule, stored.filters, stored.preset, stored.view_id]);
+    }
+    setHydrated(true);
+  }, [hydrated, presetsQ.isLoading, activeQ.isLoading, activeQ.data, params, presets, setParams]);
 
-  const politicianId = Number(get('politician_id')) || undefined;
-  const filters: TradeFilters = {
-    ticker: get('ticker') || undefined,
-    chamber: (get('chamber') as Chamber) || undefined,
-    transaction_type: get('type') || undefined,
-    politician_id: politicianId,
-    date_from: get('from') || undefined,
-    date_to: get('to') || undefined,
-    flagged: get('flagged') === '1' ? true : undefined,
+  // Remember the last-used screen across restarts (debounced).
+  React.useEffect(() => {
+    if (!hydrated || !persistent) return;
+    const body = { rule: screen.rule, filters: screen.filters, preset: screen.preset, view_id: screen.viewId };
+    const key = JSON.stringify([body.rule, body.filters, body.preset, body.view_id]);
+    if (key === lastSaved.current) return;
+    const t = setTimeout(() => {
+      lastSaved.current = key;
+      saveActiveScreen(body).catch(() => undefined);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [screen, hydrated, persistent]);
+
+  const kind = ruleKind(screen.rule);
+  const preset = presets.find((p) => p.key === screen.preset) ?? null;
+  const activeView = views.find((v) => v.id === screen.viewId) ?? null;
+  const dirty = !!activeView && (!rulesEqual(activeView.rule, screen.rule) || JSON.stringify(activeView.filters) !== JSON.stringify(screen.filters));
+  const isDefaultScreen = rulesEqual(screen.rule, defaultRule) && screen.filters.length === 0;
+
+  const onPage = React.useCallback((p: ScreenPage | undefined) => setPage(p), []);
+  const choosePreset = (key: string) => {
+    if (key === 'custom') {
+      setRuleOpen(true);
+      return;
+    }
+    const p = presets.find((x) => x.key === key);
+    if (p) setScreen((s) => ({ ...s, rule: p.rule, preset: key, viewId: null }));
   };
-  const anyFilter = Object.values(filters).some(Boolean);
+  const applyRule = (rule: ContextRule) => {
+    setScreen((s) => ({ ...s, rule, preset: detectPreset(rule, presets), viewId: s.viewId }));
+    setRuleOpen(false);
+  };
+  const messageOf = (e: unknown) => (e instanceof ApiError ? e.message : 'Could not save');
 
   return (
     <Box sx={{ width: '100%', maxWidth: { sm: '100%', md: '1700px' } }}>
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
         Trades
       </Typography>
-      <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1.5, mb: 2, alignItems: 'center' }}>
-        <TextField
-          size="small"
-          label="Ticker"
-          value={tickerInput}
-          onChange={(e) => setTickerInput(e.target.value)}
-          sx={{ width: 120 }}
-        />
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel id="chamber-label">Chamber</InputLabel>
-          <Select labelId="chamber-label" label="Chamber" value={get('chamber')} onChange={(e) => update('chamber', e.target.value || null)}>
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="house">House</MenuItem>
-            <MenuItem value="senate">Senate</MenuItem>
+      <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1.5, mb: 1.5, alignItems: 'center' }}>
+        <FormControl size="small" sx={{ minWidth: 190 }}>
+          <InputLabel id="preset-label">Context rule</InputLabel>
+          <Select labelId="preset-label" label="Context rule" value={presets.length ? screen.preset : ''} onChange={(e) => choosePreset(e.target.value)} disabled={!presets.length}>
+            {presets.map((p) => (
+              <MenuItem key={p.key} value={p.key}>
+                {p.label}
+              </MenuItem>
+            ))}
+            <MenuItem value="custom">Custom…</MenuItem>
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel id="type-label">Type</InputLabel>
-          <Select labelId="type-label" label="Type" value={get('type')} onChange={(e) => update('type', e.target.value || null)}>
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="buy">Buy</MenuItem>
-            <MenuItem value="sell">Sell</MenuItem>
-            <MenuItem value="sell_partial">Sell (partial)</MenuItem>
-            <MenuItem value="exchange">Exchange</MenuItem>
-          </Select>
-        </FormControl>
-        <DatePicker
-          label="Traded from"
-          value={get('from') ? dayjs(get('from')) : null}
-          onChange={(v) => update('from', v?.isValid() ? v.format('YYYY-MM-DD') : null)}
-          slotProps={{ textField: { size: 'small', sx: { width: 195 } }, field: { clearable: true } }}
-        />
-        <DatePicker
-          label="Traded to"
-          value={get('to') ? dayjs(get('to')) : null}
-          onChange={(v) => update('to', v?.isValid() ? v.format('YYYY-MM-DD') : null)}
-          slotProps={{ textField: { size: 'small', sx: { width: 195 } }, field: { clearable: true } }}
-        />
-        <FormControlLabel
-          control={<Switch size="small" checked={get('flagged') === '1'} onChange={(e) => update('flagged', e.target.checked ? '1' : null)} />}
-          label="Flagged for contextual review"
-        />
-        {politicianId && <PoliticianChip id={politicianId} onDelete={() => update('politician_id', null)} />}
-        {anyFilter && (
-          <Button
-            size="small"
-            onClick={() => {
-              setTickerInput('');
-              setParams({}, { replace: true });
-            }}
-          >
-            Clear filters
+        <Tooltip title={preset ? [preset.description, ...preset.notes].join(' ') : 'Your own thresholds and signals'}>
+          <Button size="small" startIcon={<TuneRoundedIcon />} onClick={() => setRuleOpen(true)} aria-label="Rule settings">
+            Rule settings
           </Button>
+        </Tooltip>
+        {persistent ? (
+          <ViewsControls
+            views={views}
+            activeViewId={screen.viewId}
+            dirty={dirty}
+            error={nameError}
+            onSave={async (name) => {
+              setNameError(null);
+              try {
+                const v = await mutations.create.mutateAsync({ name, rule: screen.rule, filters: screen.filters, preset: screen.preset });
+                setScreen((s) => ({ ...s, viewId: v.id }));
+                return true;
+              } catch (e) {
+                setNameError(messageOf(e));
+                return false;
+              }
+            }}
+            onUpdate={() => activeView && mutations.update.mutate({ id: activeView.id, rule: screen.rule, filters: screen.filters, preset: screen.preset })}
+            onLoad={(v) => {
+              setNameError(null);
+              setScreen({ rule: v.rule, filters: v.filters, preset: v.preset ?? detectPreset(v.rule, presets), viewId: v.id });
+            }}
+            onRename={async (v, name) => {
+              setNameError(null);
+              try {
+                await mutations.update.mutateAsync({ id: v.id, name });
+                return true;
+              } catch (e) {
+                setNameError(messageOf(e));
+                return false;
+              }
+            }}
+            onDelete={(v) => {
+              mutations.remove.mutate(v.id);
+              if (screen.viewId === v.id) setScreen((s) => ({ ...s, viewId: null }));
+            }}
+          />
+        ) : (
+          activeQ.isSuccess && (
+            <Tooltip title="Saved views are stored by the desktop app on this device. This read-only web API does not store them.">
+              <span>
+                <Button size="small" disabled>
+                  Views
+                </Button>
+              </span>
+            </Tooltip>
+          )
         )}
+        <Button
+          size="small"
+          disabled={isDefaultScreen && screen.preset === 'balanced' && screen.viewId === null}
+          onClick={() => {
+            setScreen(DEFAULT_SCREEN);
+            if (persistent) {
+              lastSaved.current = '';
+              resetActiveScreen().catch(() => undefined);
+            }
+          }}
+        >
+          Reset
+        </Button>
       </Stack>
-      <TradesGrid filters={filters} />
+      <Box sx={{ mb: 1.5 }}>
+        <FilterBar filters={screen.filters} onChange={(filters) => setScreen((s) => ({ ...s, filters }))} />
+      </Box>
+      <Box sx={{ mb: 1.5 }}>
+        <ScreenSummary page={page} kind={kind} preset={preset} />
+      </Box>
+      {presetsQ.isError && <Alert severity="warning" sx={{ mb: 1 }}>Presets could not be loaded; the default methodology is shown.</Alert>}
+      {hydrated && <TradesGrid filters={{}} screen={{ rule: screen.rule, filters: screen.filters, onPage }} />}
+      <ContextRuleDialog open={ruleOpen} rule={screen.rule} onApply={applyRule} onClose={() => setRuleOpen(false)} />
     </Box>
   );
 }

@@ -66,6 +66,10 @@ class Settings(BaseSettings):
     trade_llm_input_usd_per_mtok: float | None = Field(None, ge=0, validation_alias=AliasChoices("POLTRACKER_TRADE_LLM_INPUT_USD_PER_MTOK", "trade_llm_input_usd_per_mtok"))
     trade_llm_output_usd_per_mtok: float | None = Field(None, ge=0, validation_alias=AliasChoices("POLTRACKER_TRADE_LLM_OUTPUT_USD_PER_MTOK", "trade_llm_output_usd_per_mtok"))
 
+    # Saved context views and the last-used screen are WRITES to a local table. The desktop app always enables them (single user, same origin); a web API only
+    # when you set POLTRACKER_LOCAL_VIEWS=1, because the public API is read-only and has no accounts.
+    local_views_enabled: bool = Field(False, validation_alias=AliasChoices("POLTRACKER_LOCAL_VIEWS", "local_views_enabled"))
+
     # Company profiles (python -m poltracker.enrich_securities) come from SEC EDGAR, whose fair-access policy asks every client to
     # identify itself. Set SEC_USER_AGENT to something like "Your Name your@email.com" (never committed).
     sec_user_agent: str = "POLTRACKER research project (set SEC_USER_AGENT with your contact details)"

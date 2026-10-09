@@ -10,6 +10,88 @@ export interface Page<T> {
   offset: number;
 }
 
+/** How the user's custom screen is built. Defaults are the canonical POLTRACKER methodology. Personalization never changes stored context. */
+export interface ContextRule {
+  committee_relevance_required: boolean;
+  reviewed_direct_only: boolean;
+  require_temporal_verification: boolean;
+  enable_trade_size_signal: boolean;
+  trade_size_percentile_threshold: number;
+  enable_disclosure_delay_signal: boolean;
+  disclosure_delay_threshold_days: number;
+  enable_excess_return_signal: boolean;
+  excess_return_threshold_pct_points: number;
+  minimum_secondary_signals: number;
+}
+
+export type RuleKind = 'default' | 'custom' | 'committee_only' | 'market_only';
+
+export interface Preset {
+  key: string;
+  label: string;
+  kind: RuleKind;
+  description: string;
+  notes: string[];
+  rule: ContextRule;
+}
+
+export interface PresetsResponse {
+  default_rule: ContextRule;
+  presets: Preset[];
+  kind_labels: Record<RuleKind, string>;
+  notice: string;
+}
+
+export type FilterField =
+  | 'politician' | 'chamber' | 'party' | 'state' | 'district' | 'ticker' | 'company' | 'industry' | 'transaction_type'
+  | 'transaction_date' | 'disclosure_date' | 'value' | 'committee_relevance' | 'committee_name' | 'trade_size_percentile'
+  | 'disclosure_delay' | 'excess_return' | 'active_signals' | 'review_status' | 'custom_screen' | 'ai_context';
+
+export interface FilterSpec {
+  field: FilterField;
+  op: string;
+  value: string | number | string[];
+}
+
+/** The user's CURRENT rule applied to a trade's stored facts. A custom screen, not the contextual-review flag. */
+export interface CustomScreen {
+  matches: boolean;
+  active_signals: string[];
+  active_signal_count: number;
+  kind: RuleKind;
+  kind_label: string;
+  canonical_flag: boolean;
+  differs_from_canonical: boolean;
+}
+
+export interface ScreenPage extends Page<Trade> {
+  rule: ContextRule;
+  kind: RuleKind;
+  kind_label: string;
+  is_default_rule: boolean;
+  custom_match_count: number;
+  canonical_flag_count: number;
+  notice: string;
+}
+
+export interface SavedView {
+  id: number;
+  name: string;
+  preset: string | null;
+  rule: ContextRule;
+  filters: FilterSpec[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActiveScreen {
+  rule: ContextRule;
+  filters: FilterSpec[];
+  preset: string | null;
+  view_id: number | null;
+  saved: boolean;
+}
+
 export interface Trade {
   id: number;
   source: string;
@@ -30,6 +112,7 @@ export interface Trade {
   /** Same politician + security + transaction date + type. Display grouping only: rows are never merged. */
   group_key?: string | null;
   group_size?: number | null;
+  custom_screen?: CustomScreen | null;
   /** Null until the context analyzer has run. */
   context?: TradeContext | null;
 }
