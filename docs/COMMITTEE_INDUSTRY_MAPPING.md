@@ -56,7 +56,7 @@ Every row carries explicit review fields. The loader rejects any inconsistent co
 | `review_note` | reviewer comments, or the history of an earlier correction |
 | `jurisdiction_basis` | `rule_x_text` (the Rule X wording was read), `committee_published_text` (the committee's own subcommittee text was read), `subcommittee_name` (inferred from the subcommittee's name), or `committee_name` (inferred from the committee's name only) |
 
-Round 1 of human review is applied (`docs/review/review_decisions_2026.1-draft.md`): 64 of 191 rows are `reviewed` (round 1: 47; round 2: 17), 127 remain `needs_review`. The
+Round 1 of human review is applied (`docs/review/review_decisions_2026.1-draft.md`): 69 of 191 rows are `reviewed` (round 1: 47; round 2: 17; round 3: 5), 122 remain `needs_review`. The
 rows were written from the official text by an AI assistant; the remaining ones contain
 judgement calls (for example which SIC codes count as `related`). To approve a row, edit `data/committee_industry_mappings.json` (set
 `review_status`, `reviewed_at` and `reviewed_by` together), then run `--sync`. Only the Transportation and Infrastructure Committee publishes

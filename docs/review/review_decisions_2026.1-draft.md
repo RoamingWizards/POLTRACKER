@@ -151,3 +151,34 @@ Notes on the sources: the E&C Health text says "the health sector broadly" but d
 | Downgrade, consistent with the parent row | `AG00/AG16:2040-2049:direct` | `AG00/AG16:2040-2049:related`, reviewed |
 
 Medical devices are not named in the published Health text; they fall under "the health sector broadly". No other pending round 2 proposal was applied.
+
+## Round 3: Energy and Commerce committee-level rows (applied 2026-10-09)
+
+Owner rule: a full-committee row may be approved direct when the committee's published jurisdiction directly and specifically covers the industry. Broad interstate-commerce jurisdiction is not a basis for software, manufacturing, retail, travel or other economy-wide industries. A specific subcommittee row is preferred when one exists. Committee-level rows may supply temporal committee relevance on verified committee membership alone; a historical subcommittee seat is not required when the committee-level row independently covers the industry.
+
+| Decision | Row before | Row after |
+|---|---|---|
+| Approve direct (Rule X 1(f)(6), fossil fuels) | `IF00:1200-1299:direct` | same, reviewed |
+| Approve direct (Rule X 1(f)(6), fossil fuels) | `IF00:1311-1311:direct` | same, reviewed |
+| Approve direct (Rule X 1(f)(6), fossil fuels) | `IF00:2911-2911:direct` | same, reviewed |
+| Approve direct (Rule X 1(f)(1),(3),(12)) | `IF00:2833-2836:direct` | same, reviewed |
+| Approve direct (Rule X 1(f)(3), consistent with `IF00/IF14:3841-3845`) | `IF00:3841-3845:direct` | same, reviewed |
+
+Not changed: all E&C committee-level `related` rows (pipelines, ophthalmic goods, health plans, drug wholesale and retail, communications equipment, hotels) stay `needs_review`; `IF00:4700-4729:related` was already reviewed. No generic software, manufacturing or retail row exists at the E&C committee level. 69 reviewed, 122 needs_review.
+
+Medical devices are not named in Rule X; the approval rests on "health and health facilities", as for the IF14 row.
+
+### Round 3 measured effect (scratch copy of the real database, 2026-10-09, context engine 2026.3)
+
+Scratch copy: SEC SIC profiles (920 of 1,062 securities) and dated House committee history (Congress 118 and 119) added to a copy of `poltracker.db`; the real database was not modified. Old mappings (64 reviewed) against new (69 reviewed), same data:
+
+| Measure | Before | After |
+|---|---|---|
+| Committee relevance true / false / unknown | 156 / 3,939 / 1,286 | 164 / 3,931 / 1,286 |
+| Committee-relevant trades, temporally verified | 131 | 156 |
+| Committee-level evidence verified | 131 of 131 | 156 of 156 |
+| Context rule met | 2 | 2 |
+| Flagged for contextual review | 2 (1 politician, 1 ticker) | 2 (1 politician, 1 ticker) |
+| Politicians / tickers with committee-relevant trades | 15 / 56 | 15 / 60 |
+
+Eight trades became committee-relevant, all through the five approved `IF00` committee-level rows and all temporally verified (ABT 2834 twice; EQT, DMLP, KRP and VNOM 1311 six times). None has two secondary signals, so none is flagged. The two flagged trades are unchanged and rest on `AS00` 3720-3729 (a different committee). No relevance result moved the other way. Every committee-relevant trade's direct evidence is a `reviewed` + `direct` mapping, and no evidence row points at a `needs_review` mapping.

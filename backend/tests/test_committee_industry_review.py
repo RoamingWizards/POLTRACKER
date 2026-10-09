@@ -33,7 +33,7 @@ def test_shipped_review_status_is_consistent_and_limited_to_the_recorded_decisio
     rows = load_rows(REAL)
     assert len(rows) == 191
     reviewed = [r for r in rows if r["review_status"] == "reviewed"]
-    assert len(reviewed) == 64 and len(rows) - len(reviewed) == 127
+    assert len(reviewed) == 69 and len(rows) - len(reviewed) == 122
     assert all((r["review_status"] == "reviewed") == (r["reviewed_at"] is not None) for r in rows)
     assert all(r["reviewed_by"] and r["review_note"] for r in reviewed)  # every reviewed row says who decided and why
     assert all(r["reviewed_by"] is None for r in rows if r["review_status"] == "needs_review")
@@ -436,9 +436,22 @@ def test_round_2_resourced_rows_cite_the_official_subcommittee_text_not_the_name
 
 def test_round_2_leaves_the_other_proposals_unapplied():
     rows = shipped()
-    for key in ["IF00:2833-2836:direct", "SY00:3760-3769:direct", "AG00:0100-0299:direct", "AG00:2010-2029:direct", "PW00:4400-4499:direct",
-                "WM00/WM02:2833-2836:related", "WM00/WM02:3841-3845:related", "AS00:3730-3732:direct", "IF00:1311-1311:direct", "IF00:3841-3845:direct"]:
+    for key in ["SY00:3760-3769:direct", "AG00:0100-0299:direct", "AG00:2010-2029:direct", "PW00:4400-4499:direct",
+                "WM00/WM02:2833-2836:related", "WM00/WM02:3841-3845:related", "AS00:3730-3732:direct"]:
         assert rows[key]["review_status"] == "needs_review", key
+
+
+# --- round 3: Energy and Commerce committee-level rows ----------------------------------------------------------
+
+def test_round_3_approves_only_the_specific_direct_energy_and_commerce_committee_rows():
+    rows = shipped()
+    approved = ["IF00:1200-1299:direct", "IF00:1311-1311:direct", "IF00:2911-2911:direct", "IF00:2833-2836:direct", "IF00:3841-3845:direct"]
+    for key in approved:
+        assert rows[key]["review_status"] == "reviewed" and rows[key]["reviewed_by"] and rows[key]["review_note"], key
+    # Everything else at the E&C committee level that is not already a reviewed decision stays pending; broad commerce jurisdiction is not a basis.
+    ec = {k: r for k, r in rows.items() if r["committee_code"] == "IF00" and not r["subcommittee_code"]}
+    assert all(r["review_status"] == "needs_review" for k, r in ec.items() if r["relevance_level"] == "related" and k not in {"IF00:4700-4729:related"})
+    assert not any(r["review_status"] == "reviewed" and r["relevance_level"] == "direct" and r["sic_start"] in ("7011", "7370") for r in ec.values())
 
 
 # --- final round 2 decisions -------------------------------------------------------------------------------------

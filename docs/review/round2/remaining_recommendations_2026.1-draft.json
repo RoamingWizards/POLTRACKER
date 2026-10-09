@@ -1,20 +1,5 @@
 [
  {
-  "key": "IF00:2833-2836:direct",
-  "action": "APPROVE DIRECT",
-  "reason": "Rule X 1(f)(1),(3) gives Energy and Commerce biomedical research and health; drug makers are the regulated industry (FDA). All 4 SIC codes are drug/biologic makers. Largest direct row by trades (14)."
- },
- {
-  "key": "IF00:1311-1311:direct",
-  "action": "APPROVE DIRECT",
-  "reason": "Rule X 1(f)(6) names exploration, production, supply and regulation of all fossil fuels; SIC 1311 is crude oil and gas producers. Overlaps Natural Resources 1311 (direct), which is fine: one signal, two evidence records."
- },
- {
-  "key": "IF00:3841-3845:direct",
-  "action": "APPROVE DIRECT",
-  "reason": "Medical device makers fall under 'health and health facilities' (FDA device regulation); the four SIC codes are all devices. 3844 X-ray apparatus also appears in the Homeland Security related row."
- },
- {
   "key": "IF00/IF03:1311-1311:direct",
   "action": "NEEDS MORE SOURCE REVIEW",
   "reason": "Name-inferred Energy subcommittee row; the reviewed committee-level 1311 row carries the signal. Clause (6) is explicit, so this can follow once the subcommittee's published text is read."

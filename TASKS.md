@@ -244,7 +244,7 @@ contextual flags, scoring, AI explanation or personalized filters. Later phases:
 
 Deterministic, explainable mapping from committee/subcommittee jurisdiction (House Rule X) to SIC ranges, a matcher that returns
 relevant / not relevant / unknown with provenance, migration 0010, and a read-only measurement over existing trades. See
-`docs/COMMITTEE_INDUSTRY_MAPPING.md`. Round 1 of human review is applied (round 2 decisions applied; remaining proposals are in `docs/review/round2/`): 191 mappings, 64 `reviewed` (rounds 1 and 2), 127 still `needs_review` (`docs/review/review_decisions_2026.1-draft.md`).
+`docs/COMMITTEE_INDUSTRY_MAPPING.md`. Round 1 of human review is applied (round 2 decisions applied; remaining proposals are in `docs/review/round2/`): 191 mappings, 69 `reviewed` (rounds 1 to 3), 122 still `needs_review` (`docs/review/review_decisions_2026.1-draft.md`).
 Review pass: every row now has `review_status` / `reviewed_by` / `jurisdiction_basis` (migration 0011, all rows `needs_review`), and
 `python -m poltracker.committee_industry_review` generates the human-review packet (`docs/review/`). The intended Phase 3 flagging policy is
 documented, not implemented. The Phase 3 policy is now adopted (only `reviewed` + `direct` mappings may contribute to a flag; one
