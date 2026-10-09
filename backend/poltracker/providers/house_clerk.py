@@ -11,6 +11,7 @@ Akamai), so Senate committees are not available from here; see docs/POLITICIAN_E
 import logging
 import re
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 import httpx
 
@@ -84,6 +85,15 @@ def parse_committees(root: ET.Element, source_url: str = URL) -> dict[str, list[
                 if sub.get("subcomcode") and sub_name:
                     subs[sub.get("subcomcode")] = (code, sub_name)
 
+    # The snapshot's own metadata: a point in time and a Congress, never a seat start date.
+    try:
+        published = datetime.strptime(root.get("publish-date") or "", "%B %d, %Y").date()
+    except ValueError:
+        published = None
+    congress = _text(root, "title-info/congress-num")
+    meta = dict(congress_number=int(congress) if congress and congress.isdigit() else None, temporal_precision="current_snapshot",
+                source_type="house_clerk_member_data", verified_through=published)
+
     seats: dict[str, list[CommitteeSeat]] = {}
     for node in root.iter("member"):
         bioguide = _text(node.find("member-info"), "bioguideID")
@@ -94,12 +104,12 @@ def parse_committees(root: ET.Element, source_url: str = URL) -> dict[str, list[
             role = entry.get("leadership") or "Member"
             if entry.tag == "committee" and entry.get("comcode") in names:
                 code = entry.get("comcode")
-                seat = CommitteeSeat(bioguide, names[code], code, "house", role=role, source=SOURCE, source_url=source_url)
+                seat = CommitteeSeat(bioguide, names[code], code, "house", role=role, source=SOURCE, source_url=source_url, **meta)
             elif entry.tag == "subcommittee" and entry.get("subcomcode") in subs:
                 sub_code = entry.get("subcomcode")
                 parent, sub_name = subs[sub_code]
                 seat = CommitteeSeat(
-                    bioguide, names[parent], parent, "house", sub_name, sub_code, role, source=SOURCE, source_url=source_url
+                    bioguide, names[parent], parent, "house", sub_name, sub_code, role, source=SOURCE, source_url=source_url, **meta
                 )
             else:
                 if entry.get("comcode") or entry.get("subcomcode"):  # a coded entry we cannot name; blank ones are noise

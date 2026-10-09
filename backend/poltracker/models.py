@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     MetaData,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -109,7 +110,7 @@ class CommitteeAssignment(Base):
     """One committee or subcommittee seat. A subcommittee row also carries its parent committee's name/code."""
 
     __tablename__ = "committee_assignments"
-    __table_args__ = (UniqueConstraint("politician_id", "committee_code", "subcommittee_code", "source"),)
+    __table_args__ = (UniqueConstraint("politician_id", "committee_code", "subcommittee_code", "source", "start_date"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     politician_id: Mapped[int] = mapped_column(ForeignKey("politicians.id"), index=True)
@@ -124,6 +125,16 @@ class CommitteeAssignment(Base):
     source: Mapped[str] = mapped_column(String(40))
     source_url: Mapped[str | None] = mapped_column(String(300))
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    # Temporal provenance: when this seat is established to have been held. A row from the House Clerk snapshot (`current_snapshot`) only shows the seat
+    # existed on the snapshot's publish date. A row built from adopted House resolutions (`exact_date`) has real start/end dates. `congress` precision means an
+    # official source establishes service for that whole Congress without dates. Dates are never invented from Congress boundaries.
+    congress_number: Mapped[int | None] = mapped_column()
+    temporal_precision: Mapped[str | None] = mapped_column(String(20))  # exact_date | congress | current_snapshot
+    source_type: Mapped[str | None] = mapped_column(String(40))  # house_clerk_member_data | house_resolution
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)  # when this temporal evidence was established and stored
+    verified_through: Mapped[date | None] = mapped_column(Date)  # for a seat with no end date: the latest date an official source confirms it was still held
+    history_complete: Mapped[bool | None] = mapped_column(Boolean)  # the scan of official records for this member and committee found nothing it could not place
 
     politician: Mapped[Politician] = relationship(back_populates="committees")
 
@@ -143,6 +154,21 @@ class Security(Base):
     price_to: Mapped[date | None] = mapped_column(Date)
     price_status: Mapped[str | None] = mapped_column(String(20))  # "ok" | "unavailable"
     price_checked_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    # Company profile (Phase 1 of committee/sector context). Official identifiers and classification from SEC EDGAR; never
+    # inferred, never from a language model. `name` above stays the name as it appeared in trades.
+    company_name: Mapped[str | None] = mapped_column(String(300))
+    cik: Mapped[str | None] = mapped_column(String(10))  # SEC Central Index Key, zero-padded
+    sic_code: Mapped[str | None] = mapped_column(String(4))  # Standard Industrial Classification code
+    industry: Mapped[str | None] = mapped_column(String(200))  # the official SIC description, as published
+    sector: Mapped[str | None] = mapped_column(String(100))  # the official SIC division derived from the SIC code
+    exchange: Mapped[str | None] = mapped_column(String(40))
+    profile_source: Mapped[str | None] = mapped_column(String(40))  # sec-edgar
+    profile_source_url: Mapped[str | None] = mapped_column(String(300))
+    profile_status: Mapped[str | None] = mapped_column(String(20))  # ok | partial (no SIC) | unresolved (not in the source)
+    profile_note: Mapped[str | None] = mapped_column(String(300))
+    profile_checked_at: Mapped[datetime | None] = mapped_column(DateTime)  # last attempt, whatever the outcome
+    profile_updated_at: Mapped[datetime | None] = mapped_column(DateTime)  # last time profile fields were written
 
     trades: Mapped[list["Trade"]] = relationship(back_populates="security")
 
@@ -212,3 +238,123 @@ class IngestState(Base):
     # Drives the stale-ingestion warning; max(trades.created_at) cannot, because quiet days add no trades.
     last_success_at: Mapped[datetime | None] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+
+class CommitteeIndustryMapping(Base):
+    """A reviewed, deterministic link from a committee/subcommittee's official jurisdiction to a range of SIC codes.
+
+    Used only to say whether a company's industry is within an area plausibly relevant to a committee's jurisdiction. It is context,
+    not evidence of anything. Rows are authored from the official jurisdiction text and carry their citation and rationale.
+    `relevance_level` is direct, related, or none (the committee was reviewed and has no industry-specific jurisdiction, in which case
+    the SIC range is empty). A subcommittee row (subcommittee_code set) is more specific than its parent committee's rows.
+    """
+
+    __tablename__ = "committee_industry_mappings"
+    __table_args__ = (Index("ix_committee_industry_mappings_version_committee", "mapping_version", "committee_code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chamber: Mapped[str] = mapped_column(String(10))
+    committee_code: Mapped[str] = mapped_column(String(20))  # the House Clerk code used by committee_assignments (e.g. AS00)
+    subcommittee_code: Mapped[str | None] = mapped_column(String(20))
+    committee_name: Mapped[str] = mapped_column(String(300))
+    subcommittee_name: Mapped[str | None] = mapped_column(String(300))
+    sic_start: Mapped[int | None] = mapped_column()  # inclusive; null only for relevance_level 'none'
+    sic_end: Mapped[int | None] = mapped_column()
+    industry_pattern: Mapped[str | None] = mapped_column(String(200))  # optional regex that must also match the SIC description
+    relevance_level: Mapped[str] = mapped_column(String(10))  # direct | related | none
+    rationale: Mapped[str] = mapped_column(Text)
+    jurisdiction_text: Mapped[str | None] = mapped_column(Text)  # the official text relied on
+    source_citation: Mapped[str | None] = mapped_column(String(300))
+    source_url: Mapped[str] = mapped_column(String(300))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)  # null until a person has reviewed the mapping
+    # Human review state. `reviewed` requires reviewed_at (and ideally reviewed_by); every row starts as needs_review and stays that way until
+    # a person explicitly approves it.
+    review_status: Mapped[str] = mapped_column(String(15), default="needs_review", server_default="needs_review")  # needs_review | reviewed
+    reviewed_by: Mapped[str | None] = mapped_column(String(100))
+    review_note: Mapped[str | None] = mapped_column(Text)  # reviewer comments, or the history of an earlier correction
+    # How the jurisdiction was established: rule_x_text (the Rule X wording was read), committee_published_text (the committee's own subcommittee
+    # text was read), subcommittee_name (inferred from the subcommittee's official name), committee_name (inferred from the committee's name only).
+    jurisdiction_basis: Mapped[str | None] = mapped_column(String(30))
+    mapping_version: Mapped[str] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class TradeContext(Base):
+    """Deterministic context signals for one trade under one context-engine version and one committee-mapping version.
+
+    Computed only from stored public data (the trade's disclosed range and dates, the politician's committee seats, the security's SIC
+    code, cached prices). A signal is True, False, or NULL (unknown). `flagged_for_contextual_review` is a review aid, not a finding:
+    it never implies wrongdoing. Rows of an older context version are kept, never overwritten by a newer one.
+    """
+
+    __tablename__ = "trade_context"
+    __table_args__ = (
+        UniqueConstraint("trade_id", "context_version", "mapping_version"),
+        Index("ix_trade_context_version_flagged", "context_version", "mapping_version", "flagged_for_contextual_review"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trade_id: Mapped[int] = mapped_column(ForeignKey("trades.id"), index=True)
+    context_version: Mapped[str] = mapped_column(String(60))
+    mapping_version: Mapped[str | None] = mapped_column(String(40))  # the committee/industry mapping version evaluated
+    result_digest: Mapped[str] = mapped_column(String(64))  # hash of the whole result; a rerun leaves a row alone when it is unchanged
+    analyzed_at: Mapped[datetime] = mapped_column(DateTime)
+
+    committee_relevance: Mapped[bool | None] = mapped_column(Boolean)
+    trade_size_anomaly: Mapped[bool | None] = mapped_column(Boolean)
+    disclosure_delay_signal: Mapped[bool | None] = mapped_column(Boolean)
+    excess_return_signal: Mapped[bool | None] = mapped_column(Boolean)
+
+    # committee_relevance detail
+    committee_relevance_reason: Mapped[str | None] = mapped_column(String(40))  # direct_match | no_direct_match | no_sic | no_committee_assignments | unmapped_committees
+    # trade size: the representative value is derived from a disclosed RANGE, never an exact transaction value
+    trade_size_value: Mapped[float | None] = mapped_column(Float)
+    trade_size_basis: Mapped[str | None] = mapped_column(String(30))  # range_midpoint | open_ended_lower_bound | exact_figure
+    trade_size_percentile: Mapped[float | None] = mapped_column(Float)  # 0-100, among the same politician's earlier trades
+    trade_size_sample_size: Mapped[int | None] = mapped_column()
+    trade_size_median: Mapped[float | None] = mapped_column(Float)
+    # disclosure delay
+    disclosure_delay_days: Mapped[int | None] = mapped_column()
+    # post-trade performance, from the transaction-date anchor to the latest cached bar (raw security figures)
+    performance_status: Mapped[str | None] = mapped_column(String(30))
+    security_return: Mapped[float | None] = mapped_column(Float)
+    spy_return: Mapped[float | None] = mapped_column(Float)
+    excess_return: Mapped[float | None] = mapped_column(Float)
+    excess_return_direction_adjusted: Mapped[float | None] = mapped_column(Float)  # separate view; +1 buys, -1 sells, NULL for exchanges
+    performance_anchor_date: Mapped[date | None] = mapped_column(Date)
+    performance_through_date: Mapped[date | None] = mapped_column(Date)  # anchor + horizon
+    performance_horizon_days: Mapped[int | None] = mapped_column()
+
+    signal_count: Mapped[int] = mapped_column(default=0)  # how many of the four signals are True
+    secondary_signal_count: Mapped[int | None] = mapped_column()  # how many of size / delay / excess are True (NULL on rows made before this column)
+    # How well the committee seat behind committee_relevance is tied to the transaction date: temporally_verified | current_assignment_only | unavailable.
+    committee_temporal_status: Mapped[str | None] = mapped_column(String(30))
+    meets_flag_rule: Mapped[bool | None] = mapped_column(Boolean)  # committee + enough secondary signals, before the temporal check
+    flagged_for_contextual_review: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    evidence: Mapped[list["TradeContextEvidence"]] = relationship(
+        back_populates="context", cascade="all, delete-orphan", order_by="TradeContextEvidence.id"
+    )
+
+
+class TradeContextEvidence(Base):
+    """Why a signal has its value. Mapping evidence is a self-contained snapshot (no foreign key to the mapping table, whose rows are
+    replaced when a mapping version is reloaded), so an explanation stays readable after the mapping changes."""
+
+    __tablename__ = "trade_context_evidence"
+    __table_args__ = (UniqueConstraint("trade_context_id", "signal_type", "evidence_key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trade_context_id: Mapped[int] = mapped_column(ForeignKey("trade_context.id", ondelete="CASCADE"), index=True)
+    trade_id: Mapped[int] = mapped_column(ForeignKey("trades.id"), index=True)
+    signal_type: Mapped[str] = mapped_column(String(30))  # committee_relevance | trade_size_anomaly | disclosure_delay_signal | excess_return_signal
+    evidence_type: Mapped[str] = mapped_column(String(30))  # reviewed_direct_mapping | reviewed_related_mapping | metric
+    evidence_key: Mapped[str] = mapped_column(String(60))  # mapping:<id> or metric: makes (context, signal, key) unique
+    committee_code: Mapped[str | None] = mapped_column(String(20))
+    subcommittee_code: Mapped[str | None] = mapped_column(String(20))
+    mapping_id: Mapped[int | None] = mapped_column()  # informational only: mapping rows are replaced on reload
+    source_url: Mapped[str | None] = mapped_column(String(500))
+    description: Mapped[str] = mapped_column(Text)
+    metadata_json: Mapped[str | None] = mapped_column(Text)
+
+    context: Mapped[TradeContext] = relationship(back_populates="evidence")

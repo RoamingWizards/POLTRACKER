@@ -3,6 +3,52 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class ContextEvidenceOut(BaseModel):
+    """Why a signal has its value. `reviewed_related_mapping` rows are supporting context only and never create a signal."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    signal_type: str
+    evidence_type: str  # reviewed_direct_mapping | reviewed_related_mapping | metric
+    committee_code: str | None
+    subcommittee_code: str | None
+    source_url: str | None
+    description: str
+    metadata: dict | None = None
+
+
+class TradeContextOut(BaseModel):
+    """Deterministic context signals for one trade, from public data. Not a finding about anyone: see `notice`."""
+
+    context_version: str
+    mapping_version: str | None
+    analyzed_at: datetime
+    committee_relevance: bool | None  # True only when a reviewed + direct committee/industry mapping applies; None = unknown
+    committee_relevance_reason: str | None
+    trade_size_anomaly: bool | None
+    trade_size_value: float | None  # derived from the disclosed range; never an exact transaction value
+    trade_size_basis: str | None
+    trade_size_percentile: float | None  # 0-100 among the same politician's earlier trades
+    trade_size_sample_size: int | None
+    disclosure_delay_signal: bool | None
+    disclosure_delay_days: int | None
+    excess_return_signal: bool | None
+    security_return: float | None  # fractions: 0.10 == +10%
+    spy_return: float | None
+    excess_return: float | None
+    excess_return_direction_adjusted: float | None
+    excess_horizon_days: int | None
+    signals: dict[str, bool | None]
+    signal_count: int
+    secondary_signal_count: int | None = None  # how many of size / delay / excess are true
+    committee_temporal_status: str | None = None  # temporally_verified | current_assignment_only | unavailable
+    meets_flag_rule: bool | None = None  # committee relevance plus enough secondary signals, before the temporal check
+    flag_pending_temporal_verification: bool = False  # the rule is met but seat timing is not established, so the trade is not flagged
+    flagged_for_contextual_review: bool
+    evidence: list[ContextEvidenceOut]
+    notice: str
+
+
 class TradeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -22,6 +68,9 @@ class TradeOut(BaseModel):
     amount_min: int | None
     amount_max: int | None
     source_url: str | None
+    group_key: str | None = None  # same politician + security + transaction date + type; for display grouping only, rows are never merged
+    group_size: int | None = None  # how many disclosed rows share that group_key (owner codes may differ; each is a separate disclosure)
+    context: TradeContextOut | None = None  # null until `python -m poltracker.analyze_trade_context` has run
 
 
 class TradePageOut(BaseModel):
@@ -90,6 +139,15 @@ class SecurityOut(BaseModel):
     trade_count: int
     latest_trade_date: date | None
     recent_trades: list[TradeOut]
+    # Official company profile (SEC EDGAR); all null until the security has been enriched or when the source does not list it.
+    company_name: str | None = None
+    cik: str | None = None
+    sic_code: str | None = None
+    industry: str | None = None  # SIC description
+    sector: str | None = None  # SIC division
+    exchange: str | None = None
+    profile_status: str | None = None  # ok | partial | unresolved | null (never attempted)
+    profile_source_url: str | None = None
 
 
 class PriceBarOut(BaseModel):
