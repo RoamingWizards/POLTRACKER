@@ -121,7 +121,7 @@ def test_the_facts_are_this_trades_structured_context_and_nothing_else(session_f
     assert e["committee"] == "Armed Services" and e["evidence_type"] == "reviewed_direct_mapping" and e["seat_held_on_transaction_date"] is True and e["seat_timing"] == "temporally_verified"
     assert e["mapping_review_status"] == "reviewed" and e["source_url"]
     sizes = {s["type"]: s for s in f["signals"]}
-    assert sizes["trade_size_anomaly"]["percentile_among_politicians_earlier_trades"] == 100 and sizes["trade_size_anomaly"]["prior_trades_compared"] == 12
+    assert sizes["trade_size_anomaly"]["percentile_among_this_members_own_earlier_trades"] == 100 and sizes["trade_size_anomaly"]["prior_trades_compared"] == 12
     assert sizes["disclosure_delay_signal"]["days_from_transaction_to_disclosure"] == 59 and sizes["excess_return_signal"]["value"] is None
     assert f["flag"]["flagged_for_contextual_review"] is True and f["flag"]["secondary_signal_count"] == 2
     blob = json.dumps(f)
@@ -654,7 +654,7 @@ def test_several_valid_committee_evidence_records_are_each_accepted_and_not_mixe
 
 def test_the_instructions_ask_for_shares_and_spy_and_still_forbid_external_facts():
     assert "'shares' or 'the security'" in SYSTEM and "'stake'" in SYSTEM and "SPY" in SYSTEM and "no news" in SYSTEM and "Do not introduce any external fact" in SYSTEM
-    assert PROMPT_VERSION == "2"  # the wording changed, so earlier cached explanations are not reused
+    assert PROMPT_VERSION == "3"  # the wording changed, so earlier cached explanations are not reused
 
 
 def test_a_rejected_answer_is_kept_in_memory_for_diagnosis_but_never_stored(session_factory, flagged):
@@ -662,3 +662,47 @@ def test_a_rejected_answer_is_kept_in_memory_for_diagnosis_but_never_stored(sess
     res = service(session_factory, FakeExplainer(answer=bad)).run()
     [item] = res.items
     assert item.status == "rejected" and item.rejected_answer["summary"].endswith("Committee.") and analyses(session_factory) == []
+
+
+# --- prompt version 3: wording accuracy ------------------------------------------------------------------------------
+
+def test_the_percentile_field_says_whose_trades_it_is_compared_against(session_factory, flagged):
+    size = next(s for s in facts_of(session_factory, flagged["big"])["signals"] if s["type"] == "trade_size_anomaly")
+    assert "percentile_among_this_members_own_earlier_trades" in size and "percentile_among_politicians_earlier_trades" not in size
+    assert size["percentile_among_this_members_own_earlier_trades"] == 100 and size["prior_trades_compared"] == 12
+    assert not any("politicians" in k for k in size)  # nothing in the field names invites a comparison with other politicians
+
+
+def test_the_prompt_ties_the_percentile_to_the_same_member_and_forbids_other_comparisons():
+    assert "against this same member's own earlier disclosed trades only" in SYSTEM
+    assert "Never describe the comparison as being against other politicians or the broader market" in SYSTEM
+    assert "the trade was at the 46th percentile of this member's own earlier disclosed trades" in SYSTEM
+
+
+def test_the_prompt_rules_out_loose_percentile_wording():
+    assert "'similar transactions'" in SYSTEM and "'normal'" in SYSTEM and "unless a supplied fact says so" in SYSTEM
+
+
+def test_the_prompt_says_excess_return_is_in_percentage_points_not_percent():
+    assert "percentage-point differences between the security return and the SPY return" in SYSTEM
+    assert "Describe them as percentage points, not percent" in SYSTEM
+
+
+def test_the_excess_return_facts_are_labelled_as_percentage_points(session_factory, flagged):
+    ex = next(s for s in facts_of(session_factory, flagged["big"])["signals"] if s["type"] == "excess_return_signal")
+    assert {"excess_return_pct_points", "direction_adjusted_excess_return_pct_points", "threshold_pct_points"} <= set(ex) and "security_return_pct" in ex and "spy_return_pct" in ex
+
+
+def test_the_correct_same_member_wording_validates(session_factory, flagged):
+    a = json.loads(json.dumps(GOOD))
+    a["signals"][1]["explanation"] = "The trade was at the 100th percentile of this member's own earlier disclosed trades (12 compared), above the 90th percentile threshold."
+    validate_explanation(parse_explanation(a), facts_of(session_factory, flagged["big"]), KNOWN)
+
+
+def test_a_prompt_version_change_to_3_does_not_reuse_version_2_answers(session_factory, flagged, monkeypatch):
+    monkeypatch.setattr(svc_mod, "PROMPT_VERSION", "2")
+    service(session_factory, FakeExplainer(answer=GOOD)).run()
+    monkeypatch.setattr(svc_mod, "PROMPT_VERSION", PROMPT_VERSION)
+    ex = FakeExplainer(answer=GOOD)
+    res = service(session_factory, ex).run()
+    assert res.generated == 1 and ex.requests_made == 1 and sorted(a.prompt_version for a in analyses(session_factory)) == ["2", PROMPT_VERSION]

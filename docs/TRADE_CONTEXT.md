@@ -87,7 +87,7 @@ the explanation is simply unavailable (the app, the API and the dialog work as b
   (committee, reviewed-direct status, seat timing and whether the seat was held on the transaction date, mapping rationale and source); the four signals with their values,
   percentile, sample size, delay, 90-day security / SPY / excess return (raw, plus the direction-adjusted figure labelled as such); and the flag state. No other rows, no key.
 - **How.** OpenAI Responses API, `store: false`, no tools, strict JSON schema (`headline`, `summary`, `signals[]`, `limitations`). Model: `POLTRACKER_TRADE_LLM_MODEL`
-  (default `gpt-4o-mini`). Prompt version `1`.
+  (default `gpt-4o-mini`). Prompt version `3` (the size percentile is always against this member's own earlier disclosed trades; excess return is described in percentage points).
 - **Validation (untrusted text).** A reply is rejected, never stored and never repaired, if it is malformed, refused or incomplete; names a signal that is not one of the trade's
   four; explains a signal twice; names a committee that is not in this trade's stored evidence (including a known committee named without the word "committee"); states a number
   that is not among the supplied values (to the precision written); uses insider / illegal / corrupt / suspicious / wrongdoing / non-public / probability and similar wording outside an
