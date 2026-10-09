@@ -17,7 +17,7 @@ import httpx
 
 from .providers.base import ProviderError
 
-PROMPT_VERSION = "2"  # part of the cache identity: change the prompt or the schema, and earlier answers are not reused
+PROMPT_VERSION = "3"  # part of the cache identity: change the prompt or the schema, and earlier answers are not reused
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 SIGNAL_TYPES = ("committee_relevance", "trade_size_anomaly", "disclosure_delay_signal", "excess_return_signal")
 
@@ -53,6 +53,9 @@ SYSTEM = (
     "Avoid 'insider', 'suspicious', 'corrupt', 'guilty', 'illegal' and similar, except to say plainly that POLTRACKER does not establish such things.\n"
     "- Call the holding 'shares' or 'the security'. Do not say 'stake', 'position size' or 'ownership' unless an ownership percentage is supplied (none is). "
     "When you refer to the benchmark, call it SPY, as supplied.\n"
+    "- Trade-size percentile comparisons are against this same member's own earlier disclosed trades only. Never describe the comparison as being against other politicians or the broader market. "
+    "Prefer plain wording such as 'the trade was at the 46th percentile of this member's own earlier disclosed trades'; do not call it 'normal', 'typical' or 'similar transactions' unless a supplied fact says so.\n"
+    "- Excess return values are percentage-point differences between the security return and the SPY return. Describe them as percentage points, not percent.\n"
     "- Disclosed amounts are ranges, never exact values. Returns and thresholds are given in percent; use the numbers as given. Returns are raw price movements after the transaction date, "
     "not the member's gain or loss: say 'the security's price fell' or 'rose', and do not call a result a profit or a loss for the member.\n"
     "- Name a committee only if it appears in committee_evidence. Refer to a signal only by its exact type name.\n"
@@ -116,7 +119,7 @@ def build_facts(*, trade, politician, security, context, evidence) -> dict:
         "signals": [
             {"type": "committee_relevance", "value": context.committee_relevance, "reason": context.committee_relevance_reason,
              "seat_timing": context.committee_temporal_status},
-            {"type": "trade_size_anomaly", "value": context.trade_size_anomaly, "percentile_among_politicians_earlier_trades": hist["percentile"],
+            {"type": "trade_size_anomaly", "value": context.trade_size_anomaly, "percentile_among_this_members_own_earlier_trades": hist["percentile"],
              "prior_trades_compared": hist["prior_trades_compared"], "threshold_percentile": 90},
             {"type": "disclosure_delay_signal", "value": context.disclosure_delay_signal, "days_from_transaction_to_disclosure": context.disclosure_delay_days,
              "threshold_days": 45},
