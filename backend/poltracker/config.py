@@ -1,7 +1,7 @@
 import re
 from functools import lru_cache
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _ORIGIN = re.compile(r"^https?://[^/\s?#]+$")
@@ -19,7 +19,7 @@ def normalize_database_url(url: str) -> str:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 
     # SQLite for local development; set to a PostgreSQL URL in production. Never commit real credentials.
     database_url: str = "sqlite:///./poltracker.db"
@@ -57,6 +57,14 @@ class Settings(BaseSettings):
     # Off by default: a validated LLM suggestion is held in the review queue and a person approves it (as a reviewed
     # override). Turn on only to let validated suggestions apply directly.
     politician_llm_auto_accept: bool = False
+
+    # OpenAI-written explanations of trade context (python -m poltracker.analyze_trade_context_llm). The model only explains facts the deterministic engine
+    # already calculated; it never decides a signal or a flag. Needs OPENAI_API_KEY; without it the explanation is simply unavailable.
+    trade_llm_model: str = Field("gpt-4o-mini", validation_alias=AliasChoices("POLTRACKER_TRADE_LLM_MODEL", "trade_llm_model"))
+    trade_llm_max_calls: int = Field(25, ge=0, validation_alias=AliasChoices("POLTRACKER_TRADE_LLM_MAX_CALLS", "trade_llm_max_calls"))  # API calls per run
+    # Optional USD per million tokens, only for the run summary's cost estimate. Rates change: set them yourself; nothing is assumed.
+    trade_llm_input_usd_per_mtok: float | None = Field(None, ge=0, validation_alias=AliasChoices("POLTRACKER_TRADE_LLM_INPUT_USD_PER_MTOK", "trade_llm_input_usd_per_mtok"))
+    trade_llm_output_usd_per_mtok: float | None = Field(None, ge=0, validation_alias=AliasChoices("POLTRACKER_TRADE_LLM_OUTPUT_USD_PER_MTOK", "trade_llm_output_usd_per_mtok"))
 
     # Company profiles (python -m poltracker.enrich_securities) come from SEC EDGAR, whose fair-access policy asks every client to
     # identify itself. Set SEC_USER_AGENT to something like "Your Name your@email.com" (never committed).
