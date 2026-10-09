@@ -44,6 +44,18 @@ export interface ContextEvidence {
   metadata: Record<string, unknown> | null;
 }
 
+/** An OpenAI-written explanation of the stored facts, validated against them. It explains; it never sets a signal or the flag. */
+export interface AiContext {
+  headline: string;
+  summary: string;
+  signals: { type: string; explanation: string }[];
+  limitations: string;
+  generated_for: 'flagged' | 'manual';
+  model: string;
+  prompt_version: string;
+  generated_at: string;
+}
+
 /** Deterministic context signals from public data. A signal is true, false, or null (unknown). */
 export interface TradeContext {
   context_version: string;
@@ -73,6 +85,7 @@ export interface TradeContext {
   flagged_for_contextual_review: boolean;
   evidence: ContextEvidence[];
   notice: string;
+  ai_context?: AiContext | null;
 }
 
 export type TradeSortField =

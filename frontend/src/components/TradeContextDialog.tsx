@@ -9,7 +9,7 @@ import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import type { ContextEvidence, Trade, TradeContext } from '../api/types';
+import type { AiContext, ContextEvidence, Trade, TradeContext } from '../api/types';
 import { formatPct } from '../lib/format';
 
 const UNKNOWN_REASON: Record<string, string> = {
@@ -45,6 +45,53 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
         {label}
       </Typography>
       <Box>{children}</Box>
+    </Box>
+  );
+}
+
+const SIGNAL_LABEL: Record<string, string> = {
+  committee_relevance: 'Committee relevance',
+  trade_size_anomaly: 'Trade size',
+  disclosure_delay_signal: 'Disclosure delay',
+  excess_return_signal: 'Excess return',
+};
+
+/** Generated text, kept visibly apart from the deterministic signals above it. It explains those signals; it never changes them. */
+function AiContextSection({ ai, flagged }: { ai: AiContext | null | undefined; flagged: boolean }) {
+  return (
+    <Box sx={{ mt: 2, p: 1.5, border: 1, borderStyle: 'dashed', borderColor: 'divider', borderRadius: 1 }} data-testid="ai-context">
+      <Stack direction="row" spacing={1} sx={{ mb: 0.5, alignItems: 'center' }}>
+        <Typography variant="overline" sx={{ lineHeight: 1.5 }}>
+          AI context
+        </Typography>
+        <Chip size="small" variant="outlined" label="generated text · explains the signals above, does not change them" />
+      </Stack>
+      {!ai ? (
+        <Typography variant="body2" color="text.secondary">
+          No AI explanation has been generated for this trade.
+        </Typography>
+      ) : (
+        <Stack spacing={1}>
+          {!flagged && (
+            <Typography variant="caption" color="text.secondary">
+              This trade is not flagged. This explanation was requested manually and describes its context; it is not a flag.
+            </Typography>
+          )}
+          <Typography variant="subtitle2">{ai.headline}</Typography>
+          <Typography variant="body2">{ai.summary}</Typography>
+          {ai.signals.map((s) => (
+            <Typography key={s.type} variant="body2" color="text.secondary">
+              <strong>{SIGNAL_LABEL[s.type] ?? s.type}:</strong> {s.explanation}
+            </Typography>
+          ))}
+          <Typography variant="caption" color="text.secondary">
+            Limitations: {ai.limitations}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {ai.model} · prompt v{ai.prompt_version} · {ai.generated_at.slice(0, 10)}
+          </Typography>
+        </Stack>
+      )}
     </Box>
   );
 }
@@ -176,6 +223,7 @@ export default function TradeContextDialog({ trade, onClose }: { trade: Trade | 
                 </Stack>
               </Row>
             )}
+            <AiContextSection ai={c.ai_context} flagged={c.flagged_for_contextual_review} />
           </>
         )}
         <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 2 }}>
