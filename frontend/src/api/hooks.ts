@@ -1,7 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost, ApiError } from './client';
+import { apiGet, apiPost, apiSend, ApiError } from './client';
 import type {
+  ActiveScreen,
+  ContextRule,
+  FilterSpec,
+  PresetsResponse,
+  SavedView,
+  ScreenPage,
   Overview,
   Page,
   Politician,
@@ -16,11 +22,12 @@ import type {
   TriggerResult,
 } from './types';
 
-export const useTrades = (query: TradeQuery) =>
+export const useTrades = (query: TradeQuery, enabled = true) =>
   useQuery({
     queryKey: ['trades', query],
     queryFn: () => apiGet<Page<Trade>>('/trades', { ...query }),
     placeholderData: keepPreviousData,
+    enabled,
   });
 
 export const usePoliticians = (params: { q?: string; chamber?: string }) =>
@@ -29,8 +36,8 @@ export const usePoliticians = (params: { q?: string; chamber?: string }) =>
     queryFn: () => apiGet<Page<Politician>>('/politicians', { ...params, limit: 500 }),
   });
 
-export const usePolitician = (id: number) =>
-  useQuery({ queryKey: ['politician', id], queryFn: () => apiGet<PoliticianDetail>(`/politicians/${id}`) });
+export const usePolitician = (id: number, enabled = true) =>
+  useQuery({ queryKey: ['politician', id], queryFn: () => apiGet<PoliticianDetail>(`/politicians/${id}`), enabled });
 
 export const useSecurity = (ticker: string) =>
   useQuery({
@@ -104,3 +111,70 @@ export function useTriggerRefresh() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['refresh-status'] }),
   });
 }
+
+
+// --- Personalization: a custom screen over the STORED trade context. Nothing here changes stored context. ---
+
+export const usePresets = () =>
+  useQuery({ queryKey: ['context-presets'], queryFn: () => apiGet<PresetsResponse>('/context/presets'), staleTime: Infinity });
+
+export interface ScreenQuery {
+  rule: ContextRule;
+  filters: FilterSpec[];
+  sort_by?: string;
+  order?: 'asc' | 'desc';
+  limit: number;
+  offset: number;
+}
+
+export const useScreen = (q: ScreenQuery, enabled = true) =>
+  useQuery({
+    enabled,
+    queryKey: ['screen', q],
+    queryFn: () =>
+      apiGet<ScreenPage>('/trades/screen', {
+        rule: JSON.stringify(q.rule),
+        filters: JSON.stringify(q.filters),
+        sort_by: q.sort_by,
+        order: q.order,
+        limit: q.limit,
+        offset: q.offset,
+      }),
+    placeholderData: keepPreviousData,
+  });
+
+// Saved views and the last-used screen are local writes: the desktop app has them, a read-only web API answers 404, which simply means "not available here".
+async function orUnavailable<T>(fn: () => Promise<T>): Promise<T | null> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+export const useActiveScreen = () =>
+  useQuery({ queryKey: ['context-active'], queryFn: () => orUnavailable(() => apiGet<ActiveScreen>('/context/active')), retry: false, staleTime: Infinity });
+
+export const useSavedViews = () =>
+  useQuery({ queryKey: ['context-views'], queryFn: () => orUnavailable(() => apiGet<SavedView[]>('/context/views')), retry: false });
+
+export function useViewMutations() {
+  const qc = useQueryClient();
+  const refresh = () => qc.invalidateQueries({ queryKey: ['context-views'] });
+  return {
+    create: useMutation({
+      mutationFn: (v: { name: string; rule: ContextRule; filters: FilterSpec[]; preset: string | null }) => apiSend<SavedView>('POST', '/context/views', v),
+      onSuccess: refresh,
+    }),
+    update: useMutation({
+      mutationFn: ({ id, ...patch }: { id: number; name?: string; rule?: ContextRule; filters?: FilterSpec[]; preset?: string | null }) =>
+        apiSend<SavedView>('PATCH', `/context/views/${id}`, patch),
+      onSuccess: refresh,
+    }),
+    remove: useMutation({ mutationFn: (id: number) => apiSend<void>('DELETE', `/context/views/${id}`), onSuccess: refresh }),
+  };
+}
+
+export const saveActiveScreen = (a: Omit<ActiveScreen, 'saved'>) => apiSend<ActiveScreen>('PUT', '/context/active', a);
+export const resetActiveScreen = () => apiSend<ActiveScreen>('DELETE', '/context/active');

@@ -9,7 +9,7 @@ import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import type { AiContext, ContextEvidence, Trade, TradeContext } from '../api/types';
+import type { AiContext, ContextEvidence, CustomScreen, Trade, TradeContext } from '../api/types';
 import { formatPct } from '../lib/format';
 
 const UNKNOWN_REASON: Record<string, string> = {
@@ -95,6 +95,36 @@ function AiContextSection({ ai, flagged }: { ai: AiContext | null | undefined; f
     </Box>
   );
 }
+
+/** The user's CURRENT rule next to the canonical flag. Kept separate: a custom screen is never the contextual-review flag. */
+export function CustomScreenSection({ cs }: { cs: CustomScreen }) {
+  return (
+    <Box sx={{ mt: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }} data-testid="custom-screen">
+      <Typography variant="overline" sx={{ lineHeight: 1.5 }}>
+        Your custom screen
+      </Typography>
+      <Stack spacing={0.5}>
+        <Typography variant="body2">
+          <strong>Default POLTRACKER flag:</strong> {cs.canonical_flag ? 'flagged for contextual review' : 'not flagged'}
+        </Typography>
+        <Typography variant="body2">
+          <strong>Current custom screen:</strong> {cs.matches ? 'match' : 'no match'} <Typography component="span" variant="caption" color="text.secondary">({cs.kind_label})</Typography>
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Active signals under your settings: {cs.active_signals.length ? cs.active_signals.map((s) => SIGNAL_NAME[s] ?? s).join(', ') : 'none'}.
+          {cs.differs_from_canonical ? ' This differs from the default flag because your settings differ from the default methodology.' : ''} A custom screen is a way of browsing; it is not the contextual-review flag.
+        </Typography>
+      </Stack>
+    </Box>
+  );
+}
+
+const SIGNAL_NAME: Record<string, string> = {
+  committee_relevance: 'committee relevance',
+  trade_size_anomaly: 'trade size',
+  disclosure_delay_signal: 'disclosure delay',
+  excess_return_signal: 'excess return',
+};
 
 /** Context signals for one trade. Neutral wording only: these are public-data indicators, not findings. */
 export default function TradeContextDialog({ trade, onClose }: { trade: Trade | null; onClose: () => void }) {
@@ -223,6 +253,7 @@ export default function TradeContextDialog({ trade, onClose }: { trade: Trade | 
                 </Stack>
               </Row>
             )}
+            {trade?.custom_screen && trade.custom_screen.kind !== 'default' && <CustomScreenSection cs={trade.custom_screen} />}
             <AiContextSection ai={c.ai_context} flagged={c.flagged_for_contextual_review} />
           </>
         )}

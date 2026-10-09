@@ -56,7 +56,7 @@ def test_an_older_database_is_backed_up_then_upgraded_with_data_intact(tmp_path)
 
     result = dbm.prepare_database(db, MIGRATIONS)
 
-    assert result.upgraded and result.from_revision == "0004" and result.to_revision == "0015"
+    assert result.upgraded and result.from_revision == "0004" and result.to_revision == "0016"
     assert result.backup and result.backup.exists() and sha(result.backup) != ""  # a real backup file
     assert dbm.inspect_database(result.backup).revision == "0004"  # the backup is the pre-upgrade state
     assert sqlite3.connect(result.backup).execute("select count(*) from ingest_state").fetchone()[0] == 1

@@ -1,7 +1,7 @@
 """The one local server the packaged app runs: the React frontend at / and the existing API under /api.
 
 127.0.0.1:<port>/        -> React single-page app (deep links such as /trades work on refresh)
-127.0.0.1:<port>/api/... -> the unchanged FastAPI API, plus the desktop-only /api/refresh routes
+127.0.0.1:<port>/api/... -> the unchanged FastAPI API, plus the desktop-only /api/refresh and /api/context/views routes
 """
 
 import logging
@@ -18,6 +18,7 @@ from ..api.main import create_app
 from ..config import Settings, get_settings
 from . import paths
 from .refresh import RefreshService, build_default_runners
+from ..api.views import router as views_router
 from .routes import router as refresh_router
 
 log = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ def create_desktop_app(
 
     api = create_app(settings)
     api.include_router(refresh_router)
+    api.include_router(views_router)  # local saved views and the last-used screen: single user, same origin
     if refresh is None and enable_refresh:
         from ..db import make_session_factory
 
