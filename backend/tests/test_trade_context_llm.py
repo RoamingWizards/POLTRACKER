@@ -358,11 +358,11 @@ def test_a_failed_forced_refresh_keeps_the_valid_cached_result(session_factory, 
 
 def test_a_new_prompt_version_does_not_reuse_the_old_answer(session_factory, flagged, monkeypatch):
     service(session_factory, FakeExplainer(answer=GOOD)).run()
-    monkeypatch.setattr(svc_mod, "PROMPT_VERSION", "2")
+    monkeypatch.setattr(svc_mod, "PROMPT_VERSION", "99")
     ex = FakeExplainer(answer=GOOD)
     res = service(session_factory, ex).run()
-    assert res.generated == 1 and ex.requests_made == 1 and sorted(a.prompt_version for a in analyses(session_factory)) == [PROMPT_VERSION, "2"]
-    assert input_hash({"a": 1}, MODEL, "1") != input_hash({"a": 1}, MODEL, "2")
+    assert res.generated == 1 and ex.requests_made == 1 and sorted(a.prompt_version for a in analyses(session_factory)) == [PROMPT_VERSION, "99"]
+    assert input_hash({"a": 1}, MODEL, "1") != input_hash({"a": 1}, MODEL, "99")
 
 
 def test_a_new_model_does_not_reuse_the_old_answer(session_factory, flagged):
@@ -577,3 +577,88 @@ def test_a_negative_return_is_matched_by_magnitude_and_an_invented_one_still_fai
     a["signals"][3]["explanation"] = a["signals"][3]["explanation"].replace("25.5%", "31%")
     with pytest.raises(ExplanationRejected, match="31"):
         validate_explanation(parse_explanation(a), f, frozenset())
+
+
+# --- regression: a person's name in prose is not a committee (live validation, trade 328) -------------------------
+
+KNOWN = frozenset({"armed services", "energy and commerce", "ways and means"})
+
+
+def cisneros_facts(session_factory, flagged):
+    f = facts_of(session_factory, flagged["big"])
+    f["politician"]["name"] = "Gilbert Cisneros"
+    f["trade"]["company_name"] = "AeroVironment, Inc. - Common Stock"
+    return f
+
+
+def with_text(text, field="explanation"):
+    a = json.loads(json.dumps(GOOD))
+    a["signals"][0]["explanation"] = text
+    return parse_explanation(a)
+
+
+@pytest.mark.parametrize("text", [
+    "The seat reflects Cisneros's committee assignment on Armed Services.",  # the reported failure: the surname right before the word 'committee'
+    "Gilbert Cisneros's committee seat was verified for the trade date.",
+    "This links Cisneros' committee role to the aircraft industry.",
+    "This links Cisneros’s committee role to the aircraft industry.",  # typographic apostrophe
+    "AeroVironment's committee-relevant industry is aircraft.",
+    "Cisneros committee context is verified.",  # no apostrophe at all: the member's own name words are never committee words
+])
+def test_a_politician_or_company_name_in_prose_is_not_a_committee(session_factory, flagged, text):
+    validate_explanation(with_text(text), cisneros_facts(session_factory, flagged), KNOWN)
+
+
+def test_the_stored_committee_still_passes_in_every_ordinary_form(session_factory, flagged):
+    f = cisneros_facts(session_factory, flagged)
+    for text in ("Cisneros held a seat on the House Armed Services Committee.", "Cisneros sat on the Committee on Armed Services on the trade date.",
+                 "The Armed Services Committee's jurisdiction covers military aircraft."):
+        validate_explanation(with_text(text), f, KNOWN)
+
+
+def test_a_politician_name_and_a_stored_committee_in_one_explanation(session_factory, flagged):
+    text = "Gilbert Cisneros held a seat on the Armed Services Committee; Cisneros's committee seat was verified for 2026-02-20, and Cisneros's Armed Services Committee seat maps to SIC 3721."
+    validate_explanation(with_text(text), cisneros_facts(session_factory, flagged), KNOWN)
+
+
+@pytest.mark.parametrize("text", [
+    "Cisneros also sits on the Energy and Commerce Committee.",
+    "Cisneros's Energy and Commerce Committee seat is relevant.",  # the member's name next to an invented committee does not hide it
+    "Gilbert Cisneros's seat on the Ways and Means Committee is relevant.",
+    "The Committee on Financial Services held a hearing.",
+    "Cisneros's seat on the Energy and Commerce panel is relevant.",  # known committee named without the word 'committee'
+])
+def test_an_invented_committee_still_fails_even_next_to_the_members_name(session_factory, flagged, text):
+    with pytest.raises(ExplanationRejected, match="committee"):
+        validate_explanation(with_text(text), cisneros_facts(session_factory, flagged), KNOWN)
+
+
+def test_a_name_word_that_is_also_a_committee_word_is_not_ignored(session_factory, flagged):
+    f = cisneros_facts(session_factory, flagged)
+    f["politician"]["name"] = "Alex Commerce"  # a surname that happens to be a committee word must not open a hole
+    with pytest.raises(ExplanationRejected, match="committee"):
+        validate_explanation(with_text("Alex sits on the Energy and Commerce Committee."), f, KNOWN)
+
+
+def test_several_valid_committee_evidence_records_are_each_accepted_and_not_mixed(session_factory, flagged):
+    f = cisneros_facts(session_factory, flagged)
+    f["committee_evidence"].append({**f["committee_evidence"][0], "evidence_type": "reviewed_related_mapping", "committee": "Committee on Energy and Commerce", "subcommittee": "Subcommittee on Health"})
+    ok = "Cisneros's committee seat on the Armed Services Committee is the direct match; the Committee on Energy and Commerce and its Subcommittee on Health are supporting context only."
+    validate_explanation(with_text(ok), f, KNOWN)
+    mixed = "Cisneros held a seat on the Armed Services and Health Committee."  # words from two different records do not make a committee
+    with pytest.raises(ExplanationRejected, match="committee"):
+        validate_explanation(with_text(mixed), f, KNOWN)
+    with pytest.raises(ExplanationRejected, match="Ways and Means|ways"):
+        validate_explanation(with_text("Cisneros also serves on the Ways and Means Committee."), f, KNOWN)
+
+
+def test_the_instructions_ask_for_shares_and_spy_and_still_forbid_external_facts():
+    assert "'shares' or 'the security'" in SYSTEM and "'stake'" in SYSTEM and "SPY" in SYSTEM and "no news" in SYSTEM and "Do not introduce any external fact" in SYSTEM
+    assert PROMPT_VERSION == "2"  # the wording changed, so earlier cached explanations are not reused
+
+
+def test_a_rejected_answer_is_kept_in_memory_for_diagnosis_but_never_stored(session_factory, flagged):
+    bad = {**GOOD, "summary": GOOD["summary"] + " The member also sits on the Energy and Commerce Committee."}
+    res = service(session_factory, FakeExplainer(answer=bad)).run()
+    [item] = res.items
+    assert item.status == "rejected" and item.rejected_answer["summary"].endswith("Committee.") and analyses(session_factory) == []

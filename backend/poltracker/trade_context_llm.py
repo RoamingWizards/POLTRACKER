@@ -17,7 +17,7 @@ import httpx
 
 from .providers.base import ProviderError
 
-PROMPT_VERSION = "1"  # part of the cache identity: change the prompt or the schema, and earlier answers are not reused
+PROMPT_VERSION = "2"  # part of the cache identity: change the prompt or the schema, and earlier answers are not reused
 RESPONSES_URL = "https://api.openai.com/v1/responses"
 SIGNAL_TYPES = ("committee_relevance", "trade_size_anomaly", "disclosure_delay_signal", "excess_return_signal")
 
@@ -51,6 +51,8 @@ SYSTEM = (
     "- Clearly separate observed facts (what the records show) from interpretation (what a reviewer might take from them), and keep interpretation modest.\n"
     "- Use neutral wording: contextual review, relevant committee responsibility, unusual trade size relative to the member's earlier trades, long disclosure delay, strong subsequent performance relative to the benchmark. "
     "Avoid 'insider', 'suspicious', 'corrupt', 'guilty', 'illegal' and similar, except to say plainly that POLTRACKER does not establish such things.\n"
+    "- Call the holding 'shares' or 'the security'. Do not say 'stake', 'position size' or 'ownership' unless an ownership percentage is supplied (none is). "
+    "When you refer to the benchmark, call it SPY, as supplied.\n"
     "- Disclosed amounts are ranges, never exact values. Returns and thresholds are given in percent; use the numbers as given. Returns are raw price movements after the transaction date, "
     "not the member's gain or loss: say 'the security's price fell' or 'rose', and do not call a result a profit or a loss for the member.\n"
     "- Name a committee only if it appears in committee_evidence. Refer to a signal only by its exact type name.\n"
@@ -188,9 +190,12 @@ def _words(text: str) -> list[str]:
     return re.findall(r"[A-Za-z][A-Za-z.&'\-]*|\S", text)
 
 
-def committee_mentions(text: str) -> list[set[str]]:
-    """Capitalised name words around each 'committee' / 'subcommittee' mention, as lowercase sets ('Armed Services Committee', 'Committee on Energy and Commerce')."""
-    words = _words(text)
+def committee_mentions(text: str, ignore: frozenset[str] = frozenset()) -> list[set[str]]:
+    """Capitalised name words around each 'committee' / 'subcommittee' mention, as lowercase sets ('Armed Services Committee', 'Committee on Energy and Commerce').
+
+    Two things are never part of a committee's name: a possessive right before the word ('Cisneros's committee seat' is the member's seat, not a committee called
+    Cisneros), and the words of the politician's or company's own name (`ignore`, never including a word that is part of a committee name)."""
+    words = _words(text.replace("\u2019", "'"))
     out: list[set[str]] = []
     for i, w in enumerate(words):
         if w.lower().strip(".,;:()") not in ("committee", "subcommittee", "committees", "subcommittees"):
@@ -199,6 +204,8 @@ def committee_mentions(text: str) -> list[set[str]]:
         j = i - 1  # preceding capitalised words: "House Armed Services Committee"
         while j >= 0 and len(tokens) < 6:
             wj = words[j]
+            if j == i - 1 and wj.endswith(("'s", "'")):  # a possessive directly before 'committee' belongs to a person or company, not to the committee's name
+                break
             if wj[:1].isupper() and wj.lower() not in _CONNECT:
                 tokens.append(wj)
             elif wj.lower() in _CONNECT and j - 1 >= 0 and words[j - 1][:1].isupper():
@@ -221,8 +228,8 @@ def committee_mentions(text: str) -> list[set[str]]:
                     count += 1
                 else:
                     break
-        names = {t.lower().strip(".,;:()").removesuffix("'s") for t in tokens} - _STOP
-        names = {n for n in names if n}
+        names = {t.lower().strip(".,;:()").removesuffix("'s").rstrip("'") for t in tokens} - _STOP
+        names = {n for n in names if n and n not in ignore}
         if names:
             out.append(names)
     return out
@@ -322,10 +329,12 @@ def validate_explanation(exp: Explanation, facts: dict, known_committees: set[st
 
     evidence = facts.get("committee_evidence", [])
     allowed_sets = [_name_tokens(e.get("committee"), e.get("subcommittee")) for e in evidence]
+    committee_vocab = set().union(*allowed_sets, *(_name_tokens(p) for p in known_committees)) if (allowed_sets or known_committees) else set()
+    own_words = _name_tokens(facts["politician"].get("name"), facts["trade"].get("company_name"), facts["trade"].get("ticker")) - committee_vocab
     allowed_phrases = {p for e in evidence for p in known_committee_phrases([e.get("committee"), e.get("subcommittee")])}
     numbers = _allowed_numbers(facts)
     for where, text in texts.items():
-        for names in committee_mentions(text):
+        for names in committee_mentions(text, frozenset(own_words)):
             if not any(names <= allowed for allowed in allowed_sets):
                 problems.append(f"{where} names a committee that is not in the stored evidence: {' '.join(sorted(names))!r}")
         low = text.lower()
