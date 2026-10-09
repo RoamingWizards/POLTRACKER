@@ -70,15 +70,18 @@ export const useStatus = () =>
 export const useHealth = () =>
   useQuery({
     queryKey: ['health'],
-    queryFn: () => apiGet<{ status: string }>('/health'),
+    queryFn: () => apiGet<{ status: string; desktop?: boolean }>('/health'),
     refetchInterval: 30_000,
     retry: false,
   });
 
-// Desktop background refresh. The web API has no such route (404), which simply means "no banner".
+// Desktop background refresh. The refresh routes exist only in the desktop app, which says so on /health ("desktop": true); anywhere else this
+// never makes the request (no 404 in the console) and the banner simply does not appear. The 404 handling stays as a defence.
 export function useRefreshStatus() {
   const queryClient = useQueryClient();
+  const isDesktop = useHealth().data?.desktop === true;
   const query = useQuery({
+    enabled: isDesktop,
     queryKey: ['refresh-status'],
     queryFn: async () => {
       try {
