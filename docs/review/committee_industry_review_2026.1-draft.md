@@ -16,15 +16,15 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 | Explicit-jurisdiction mappings (official wording read) | 98 |
 | Inferred from a subcommittee name | 81 |
 | Inferred from a committee name only | 12 |
-| Rows needing review / already reviewed | 127 / 64 |
+| Rows needing review / already reviewed | 122 / 69 |
 | Trades in the data that have a security | 5380 |
-| Trades with at least one match | 357 |
-| Trades affected by a direct mapping | 175 |
-| Trades affected by related-only mappings | 182 |
+| Trades with at least one match | 363 |
+| Trades affected by a direct mapping | 180 |
+| Trades affected by related-only mappings | 183 |
 | Rows flagged for any scrutiny reason | 176 |
 | Rows with a priority concern (broad, mixed, many matches, earlier false positive) | 34 |
 | Industry rows matching no current security | 14 |
-| Industry rows matching no current trade | 110 |
+| Industry rows matching no current trade | 107 |
 
 **Phase 3 policy:** only mappings that are both `reviewed` and `direct` may contribute to a contextual-review flag. `reviewed` + `related` is supporting context only. `needs_review` mappings never affect a flag. A trade has one committee-relevance signal with possibly several evidence records (see the docs).
 
@@ -34,7 +34,7 @@ Generated from the mapping file and the current POLTRACKER securities, trades an
 |---|---|---|---|---|---|---|
 | 1 | BA00:6000-6099:direct  (Committee on Financial Services) | direct | 47 | 46 | 51 | 5 |
 | 2 | BA00:6330-6499:direct  (Committee on Financial Services) | direct | 33 | 27 | 26 | 4 |
-| 3 | AS00:3720-3729:direct  (Committee on Armed Services) | direct | 27 | 27 | 11 | 1 |
+| 3 | AS00:3720-3729:direct  (Committee on Armed Services) | direct | 30 | 30 | 11 | 2 |
 | 4 | BA00:6320-6329:related  (Committee on Financial Services) | related | 19 | 16 | 9 | 4 |
 | 5 | BA00:6795-6799:related  (Committee on Financial Services) | related | 19 | 19 | 41 | 2 |
 | 6 | BA00:6200-6299:direct  (Committee on Financial Services) | direct | 18 | 4 | 33 | 4 |
@@ -79,12 +79,12 @@ Broad ranges, ranges mixing industry groups, rows matching many trades, and rows
 | AG00/AG03:2000-2079:related (Committee on Agriculture / Nutrition and Foreign Agriculture) | related | broad_range, mixed_industries, inferred_from_name, related_level | 0 | 16 |
 | IF00/IF14:8000-8099:direct (Committee on Energy and Commerce / Health) | direct | broad_range, mixed_industries, overlaps_other_committee | 0 | 15 |
 | IF00:8000-8099:direct (Committee on Energy and Commerce) | direct | broad_range, mixed_industries, overlaps_other_committee | 0 | 15 |
-| AS00:3720-3729:direct (Committee on Armed Services) | direct | many_matches, overlaps_other_committee | 27 | 11 |
+| AS00:3720-3729:direct (Committee on Armed Services) | direct | many_matches, overlaps_other_committee | 30 | 11 |
 | BA00:6200-6299:direct (Committee on Financial Services) | direct | mixed_industries, overlaps_other_committee | 18 | 33 |
 | BA00/BA16:6200-6299:direct (Committee on Financial Services / Capital Markets) | direct | mixed_industries, inferred_from_name, overlaps_other_committee | 14 | 33 |
 | BA00:6500-6599:related (Committee on Financial Services) | related | mixed_industries, related_level | 9 | 8 |
-| IF00/IF16:4800-4899:direct (Committee on Energy and Commerce / Communications and Technology) | direct | mixed_industries, inferred_from_name | 3 | 19 |
-| IF00:4800-4899:direct (Committee on Energy and Commerce) | direct | mixed_industries | 3 | 19 |
+| IF00/IF16:4800-4899:direct (Committee on Energy and Commerce / Communications and Technology) | direct | mixed_industries, inferred_from_name | 3 | 18 |
+| IF00:4800-4899:direct (Committee on Energy and Commerce) | direct | mixed_industries | 3 | 18 |
 | AP00/AP10:4911-4939:related (Committee on Appropriations / Energy and Water Development and Related Agencies) | related | mixed_industries, inferred_from_name, related_level, overlaps_other_committee | 2 | 35 |
 | IF00/IF03:4911-4939:direct (Committee on Energy and Commerce / Energy) | direct | mixed_industries, inferred_from_name, overlaps_other_committee | 2 | 35 |
 | IF00:4911-4939:direct (Committee on Energy and Commerce) | direct | mixed_industries, overlaps_other_committee | 2 | 35 |
@@ -125,8 +125,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **BA00/BA16:6200-6299:direct** (Committee on Financial Services / Capital Markets): [620] 6200 Security & Commodity Brokers, Dealers, Exchanges & Services (6); [621] 6211 Security Brokers, Dealers & Flotation Companies (11); [622] 6221 Commodity Contracts Brokers & Dealers (5); [628] 6282 Investment Advice (11)
 - **BA00:6200-6299:direct** (Committee on Financial Services): [620] 6200 Security & Commodity Brokers, Dealers, Exchanges & Services (6); [621] 6211 Security Brokers, Dealers & Flotation Companies (11); [622] 6221 Commodity Contracts Brokers & Dealers (5); [628] 6282 Investment Advice (11)
 - **BA00:6330-6499:direct** (Committee on Financial Services): [633] 6331 Fire, Marine & Casualty Insurance (16); [636] 6361 Title Insurance (1); [639] 6399 Insurance Carriers, NEC (1); [641] 6411 Insurance Agents, Brokers & Service (8)
-- **IF00/IF16:4800-4899:direct** (Committee on Energy and Commerce / Communications and Technology): [481] 4812 Radiotelephone Communications (1), 4813 Telephone Communications (No Radiotelephone) (5); [483] 4832 Radio Broadcasting Stations (2), 4833 Television Broadcasting Stations (5); [484] 4841 Cable & Other Pay Television Services (4); [489] 4899 Communications Services, NEC (2)
-- **IF00:4800-4899:direct** (Committee on Energy and Commerce): [481] 4812 Radiotelephone Communications (1), 4813 Telephone Communications (No Radiotelephone) (5); [483] 4832 Radio Broadcasting Stations (2), 4833 Television Broadcasting Stations (5); [484] 4841 Cable & Other Pay Television Services (4); [489] 4899 Communications Services, NEC (2)
+- **IF00/IF16:4800-4899:direct** (Committee on Energy and Commerce / Communications and Technology): [481] 4812 Radiotelephone Communications (1), 4813 Telephone Communications (No Radiotelephone) (5); [483] 4832 Radio Broadcasting Stations (2), 4833 Television Broadcasting Stations (4); [484] 4841 Cable & Other Pay Television Services (4); [489] 4899 Communications Services, NEC (2)
+- **IF00:4800-4899:direct** (Committee on Energy and Commerce): [481] 4812 Radiotelephone Communications (1), 4813 Telephone Communications (No Radiotelephone) (5); [483] 4832 Radio Broadcasting Stations (2), 4833 Television Broadcasting Stations (4); [484] 4841 Cable & Other Pay Television Services (4); [489] 4899 Communications Services, NEC (2)
 - **AP00/AP10:4911-4939:related** (Committee on Appropriations / Energy and Water Development and Related Agencies): [491] 4911 Electric Services (14); [492] 4922 Natural Gas Transmission (6), 4923 Natural Gas Transmisison & Distribution (1), 4924 Natural Gas Distribution (4); [493] 4931 Electric & Other Services Combined (9), 4932 Gas & Other Services Combined (1)
 - **BA00/BA04:6500-6599:related** (Committee on Financial Services / Housing and Insurance): [650] 6500 Real Estate (4); [651] 6510 Real Estate Operators (No Developers) & Lessors (1); [653] 6531 Real Estate Agents & Managers (For Others) (3)
 - **BA00:6500-6599:related** (Committee on Financial Services): [650] 6500 Real Estate (4); [651] 6510 Real Estate Operators (No Developers) & Lessors (1); [653] 6531 Real Estate Agents & Managers (For Others) (3)
@@ -802,7 +802,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(c)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 11 securities (3720 Aircraft & Parts x1, 3721 Aircraft x2, 3724 Aircraft Engines & Engine Parts x5, 3728 Aircraft Parts & Auxiliary Equipment, NEC x3)
-- **Trades matched:** 27 by 1 politician (primary match for 27). Examples: AVAV, BA, DCO, ESLT, HEI.A, HON, HONA, RTX.
+- **Trades matched:** 30 by 2 politicians (primary match for 30). Examples: AVAV, BA, DCO, ESLT, HEI.A, HON, HONA, RTX.
 - **Overlaps other committees:** PW00 3720-3729 (related); PW00/PW05 3720-3729 (related); SY00 3720-3729 (related); SY00/SY16 3720-3729 (direct); FA00 3720-3729 (related); AP00/AP02 3720-3729 (direct)
 - **Scrutiny:** `many_matches`; `overlaps_other_committee`
 - **Review note:** Approved direct (owner decision 2026-10-07). The SIC range mixes civilian and military aviation; it is approved direct because the matched suppliers are mainly defense-industrial-base firms, but a civil-only aircraft supplier would match too.
@@ -1535,7 +1535,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 
 ### IF00: Committee on Energy and Commerce
 
-#### `IF00:1200-1299:direct`  direct  |  needs_review
+#### `IF00:1200-1299:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 1200-1299
@@ -1548,9 +1548,10 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: ARLP.
 - **Overlaps other committees:** II00 1200-1299 (direct); II00/II06 1200-1299 (direct)
 - **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-09, round 3). Rule X 1(f)(6) names the exploration, production, supply and regulation of energy resources 'including all fossil fuels'; the SIC range is coal mining only.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:1311-1311:direct`  direct  |  needs_review
+#### `IF00:1311-1311:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 1311-1311
@@ -1563,6 +1564,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 6 by 2 politicians (primary match for 3). Examples: AESI, APA, CHRD, CNQ, CTRA, DMLP, DVN, EOG.
 - **Overlaps other committees:** II00 1311-1311 (related); II00/II06 1311-1311 (direct); AP00/AP10 1311-1311 (related)
 - **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-09, round 3). Rule X 1(f)(6) names the exploration, production, supply and regulation of energy resources 'including all fossil fuels'; SIC 1311 is crude petroleum and natural gas production.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00:1381-1389:related`  related  |  needs_review
@@ -1580,7 +1582,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:2833-2836:direct`  direct  |  needs_review
+#### `IF00:2833-2836:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 2833-2836
@@ -1593,9 +1595,10 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 14 by 4 politicians (primary match for 2). Examples: ABBV, ABT, AGIO, ALKS, ALNY, AMGN, ARGX, ARQT.
 - **Overlaps other committees:** VR00/VR03 2833-2836 (related); AP00/AP01 2833-2836 (related); AP00/AP07 2833-2836 (related); WM00/WM02 2833-2836 (related)
 - **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-09, round 3). Rule X 1(f)(1),(3),(12) cover biomedical research, health and public health; all four official titles are drug and biological products. A member of the IF14 Health subcommittee is matched by the more specific subcommittee row.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:2911-2911:direct`  direct  |  needs_review
+#### `IF00:2911-2911:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 2911-2911
@@ -1605,7 +1608,8 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 8 securities (2911 Petroleum Refining x8)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: BP, COP, CVX, IMO, MPC, PSX, VLO, XOM.
+- **Trades matched:** 1 by 1 politician (primary match for 1). Examples: BP, COP, CVX, IMO, MPC, PSX, VLO, XOM.
+- **Review note:** Approved direct (owner decision 2026-10-09, round 3). Rule X 1(f)(6) names the marketing, pricing and regulation of energy resources 'including all fossil fuels'; SIC 2911 is petroleum refining.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00:3661-3669:related`  related  |  needs_review
@@ -1622,7 +1626,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Scrutiny:** `related_level`
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
-#### `IF00:3841-3845:direct`  direct  |  needs_review
+#### `IF00:3841-3845:direct`  direct  |  reviewed
 
 - **Scope:** committee level
 - **SIC range:** 3841-3845
@@ -1635,6 +1639,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Trades matched:** 6 by 1 politician (primary match for 0). Examples: ALGN, AORT, ATRC, BAX, BDX, BSX, CDRE, DXCM.
 - **Overlaps other committees:** HM00 3844-3844 (related); WM00/WM02 3841-3845 (related)
 - **Scrutiny:** `overlaps_other_committee`
+- **Review note:** Approved direct (owner decision 2026-10-09, round 3). Devices are not named in Rule X; they fall under 'health and health facilities' (1(f)(3)), consistent with the approved IF00/IF14 row. All five official titles are medical devices.
 - **Decision:** [ ] approve   [ ] change   [ ] remove
 
 #### `IF00:3851-3851:related`  related  |  needs_review
@@ -1690,7 +1695,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Official jurisdiction wording used:** (1) Biomedical research and development. (3) Health and health facilities. (6) Exploration, production, storage, supply, marketing, pricing, and regulation of energy resources, including all fossil fuels, solar energy, and other unconventional or renewable energy resources. (9) The generation and marketing of power; reliability and interstate transmission of, and ratemaking for, all power. (10) ... all functions of the Federal Energy Regulatory Commission. (13) Regulation of the domestic nuclear energy industry. (14) Regulation of interstate and foreign communications. (15) Travel and tourism.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
-- **In POLTRACKER data:** 19 securities (4812 Radiotelephone Communications x1, 4813 Telephone Communications (No Radiotelephone) x5, 4832 Radio Broadcasting Stations x2, 4833 Television Broadcasting Stations x5, 4841 Cable & Other Pay Television Services x4, 4899 Communications Services, NEC x2)
+- **In POLTRACKER data:** 18 securities (4812 Radiotelephone Communications x1, 4813 Telephone Communications (No Radiotelephone) x5, 4832 Radio Broadcasting Stations x2, 4833 Television Broadcasting Stations x4, 4841 Cable & Other Pay Television Services x4, 4899 Communications Services, NEC x2)
 - **Trades matched:** 3 by 2 politicians (primary match for 0). Examples: AMX, CHTR, CMCSA, FOX, FOXA, FWONK, KT, LBRDK.
 - **Scrutiny:** `mixed_industries`
 - **Review note:** Approved direct (owner decision 2026-10-07).
@@ -1808,7 +1813,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Official jurisdiction wording used:** (1) Biomedical research and development. (3) Health and health facilities. (6) Exploration, production, storage, supply, marketing, pricing, and regulation of energy resources, including all fossil fuels, solar energy, and other unconventional or renewable energy resources. (9) The generation and marketing of power; reliability and interstate transmission of, and ratemaking for, all power. (10) ... all functions of the Federal Energy Regulatory Commission. (13) Regulation of the domestic nuclear energy industry. (14) Regulation of interstate and foreign communications. (15) Travel and tourism.
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(f)(14); subcommittee name  <https://energycommerce.house.gov/subcommittees>
 - **Jurisdiction basis:** `subcommittee_name`: inferred from the subcommittee name, not verified
-- **In POLTRACKER data:** 19 securities (4812 Radiotelephone Communications x1, 4813 Telephone Communications (No Radiotelephone) x5, 4832 Radio Broadcasting Stations x2, 4833 Television Broadcasting Stations x5, 4841 Cable & Other Pay Television Services x4, 4899 Communications Services, NEC x2)
+- **In POLTRACKER data:** 18 securities (4812 Radiotelephone Communications x1, 4813 Telephone Communications (No Radiotelephone) x5, 4832 Radio Broadcasting Stations x2, 4833 Television Broadcasting Stations x4, 4841 Cable & Other Pay Television Services x4, 4899 Communications Services, NEC x2)
 - **Trades matched:** 3 by 2 politicians (primary match for 3). Examples: AMX, CHTR, CMCSA, FOX, FOXA, FWONK, KT, LBRDK.
 - **Scrutiny:** `mixed_industries`; `inferred_from_name`
 - **Review note:** Approved direct (owner decision 2026-10-07).
@@ -2376,7 +2381,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(r)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 3 securities (1600 Heavy Construction Other Than Bldg Const - Contractors x3)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: FLR, J, STRL.
+- **Trades matched:** 1 by 1 politician (primary match for 1). Examples: FLR, J, STRL.
 - **Overlaps other committees:** AP00/AP10 1600-1629 (related)
 - **Scrutiny:** `overlaps_other_committee`
 - **Review note:** Split from 1600-1629 direct (owner decision 2026-10-07): Highway, bridge and street construction (1600-1622) stays direct; 1623-1629 (water, sewer, pipeline, power and communication-line contractors) mixes utility and telecom contractors and is separated as related. This piece is direct.
@@ -2392,7 +2397,7 @@ Grouped by the first three digits of the SIC code (a SIC industry group). Whethe
 - **Citation / source:** Rules of the House of Representatives, 119th Congress, Rule X, clause 1(r)  <https://www.govinfo.gov/content/pkg/HMAN-119/pdf/HMAN-119.pdf>
 - **Jurisdiction basis:** `rule_x_text`: explicitly verified (official wording read)
 - **In POLTRACKER data:** 3 securities (1623 Water, Sewer, Pipeline, Comm & Power Line Construction x3)
-- **Trades matched:** 0 by 0 politicians (primary match for 0). Examples: DY, MTZ, PRIM.
+- **Trades matched:** 1 by 1 politician (primary match for 1). Examples: DY, MTZ, PRIM.
 - **Overlaps other committees:** AP00/AP10 1600-1629 (related)
 - **Scrutiny:** `related_level`; `overlaps_other_committee`
 - **Review note:** Split from 1600-1629 direct (owner decision 2026-10-07): Highway, bridge and street construction (1600-1622) stays direct; 1623-1629 (water, sewer, pipeline, power and communication-line contractors) mixes utility and telecom contractors and is separated as related. This piece is related.
