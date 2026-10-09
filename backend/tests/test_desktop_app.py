@@ -49,7 +49,7 @@ def test_nothing_outside_the_build_can_be_read(dist):
 def test_health_exists_at_both_levels(dist):
     client, _ = client_for(dist)
     assert client.get("/health").json() == {"status": "ok"}
-    assert client.get("/api/health").json() == {"status": "ok"}
+    assert client.get("/api/health").json() == {"status": "ok", "desktop": True}  # the desktop app advertises that its refresh routes exist
 
 
 def test_the_existing_api_is_mounted_under_api(dist, session_factory):
@@ -142,3 +142,11 @@ def test_packaging_version_matches_the_app_version():
     spec = (Path(__file__).resolve().parents[2] / "packaging" / "macos" / "poltracker.spec").read_text()
     assert re.search(r'VERSION = "([^"]+)"', spec).group(1) == APP_VERSION
     assert f'BUNDLE_ID = "{BUNDLE_IDENTIFIER}"' in spec
+
+
+def test_the_public_web_api_health_is_unchanged_and_does_not_claim_to_be_the_desktop_app():
+    from fastapi.testclient import TestClient
+
+    from poltracker.api.main import app as web_app
+
+    assert TestClient(web_app).get("/health").json() == {"status": "ok"}
