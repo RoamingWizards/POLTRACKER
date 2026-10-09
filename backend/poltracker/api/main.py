@@ -7,15 +7,19 @@ from typing import Literal
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import case, extract, func, or_, select
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session, selectinload
 
 from ..config import Settings, get_settings
 from ..db import make_session_factory
-from ..models import CommitteeIndustryMapping, IngestState, PriceBar, Politician, Security, Trade, TradeContext
+from ..models import CommitteeIndustryMapping, IngestState, PriceBar, Politician, Security, Trade, TradeContext, TradeContextAnalysis
 from ..performance import load_benchmark, load_series, trade_performance
 from ..trade_context import NOTICE, SIGNALS, ContextConfig, trade_group_key
+from ..trade_context_llm import PROMPT_VERSION
 from .ordering import nulls_last, text_order
 from .schemas import (
+    AiContextOut,
+    AiSignalExplanationOut,
     ContextEvidenceOut,
     DailyCount,
     MonthlyCount,
@@ -60,6 +64,32 @@ def _context_key(session: Session) -> tuple[str, str] | None:
     return (ContextConfig().version_label(), mapping_version) if mapping_version else None
 
 
+def _ai_out(a: TradeContextAnalysis | None) -> AiContextOut | None:
+    if a is None:
+        return None
+    return AiContextOut(headline=a.headline, summary=a.summary, signals=[AiSignalExplanationOut(**s) for s in json.loads(a.signals_json)], limitations=a.limitations,
+                        generated_for=a.generated_for, model=a.model, prompt_version=a.prompt_version, generated_at=a.created_at)
+
+
+def _ai_by_trade(session: Session, by_trade: dict[int, TradeContext], key: tuple[str, str]) -> dict[int, TradeContextAnalysis]:
+    """Cached explanations that still match the context as it is now (newest first, so the first per trade wins). Optional: if the table does not exist yet
+    (a database not yet migrated to 0015) the trades simply have no explanation."""
+    found: dict[int, TradeContextAnalysis] = {}
+    try:
+        with session.begin_nested():
+            rows = session.scalars(
+                select(TradeContextAnalysis).where(TradeContextAnalysis.trade_id.in_(list(by_trade)), TradeContextAnalysis.context_version == key[0],
+                                                   TradeContextAnalysis.mapping_version == key[1], TradeContextAnalysis.prompt_version == PROMPT_VERSION)
+                .order_by(TradeContextAnalysis.created_at.desc(), TradeContextAnalysis.id.desc())
+            ).all()
+    except (OperationalError, ProgrammingError):
+        return found
+    for a in rows:
+        if a.context_digest == by_trade[a.trade_id].result_digest:
+            found.setdefault(a.trade_id, a)
+    return found
+
+
 def _trade_outs(session: Session, trades: list[Trade]) -> list[TradeOut]:
     outs = [TradeOut.model_validate(t) for t in trades]
     if trades:  # how many disclosed rows share each group key (display only; nothing is merged)
@@ -78,6 +108,7 @@ def _trade_outs(session: Session, trades: list[Trade]) -> list[TradeOut]:
         .where(TradeContext.trade_id.in_([o.id for o in outs]), TradeContext.context_version == key[0], TradeContext.mapping_version == key[1])
     ).all()
     by_trade = {c.trade_id: c for c in rows}
+    ai_by_trade = _ai_by_trade(session, by_trade, key)
     for o in outs:
         c = by_trade.get(o.id)
         if c is not None:
@@ -98,6 +129,7 @@ def _trade_outs(session: Session, trades: list[Trade]) -> list[TradeOut]:
                                              subcommittee_code=e.subcommittee_code, source_url=e.source_url, description=e.description,
                                              metadata=json.loads(e.metadata_json) if e.metadata_json else None) for e in c.evidence],
                 notice=NOTICE,
+                ai_context=_ai_out(ai_by_trade.get(o.id)),
             )
     return outs
 
