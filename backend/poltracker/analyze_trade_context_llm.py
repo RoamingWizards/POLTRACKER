@@ -33,6 +33,7 @@ class ItemResult:
     status: str  # cached | generated | would_generate | rejected | error | over_limit | unavailable
     facts: dict | None = None
     explanation: dict | None = None
+    rejected_answer: dict | None = None  # the model's text when validation rejected it: shown by --verbose for diagnosis, never stored
     reasons: list[str] = field(default_factory=list)
     tokens_in: int = 0
     tokens_out: int = 0
@@ -146,11 +147,13 @@ class TradeContextExplanationService:
         try:
             try:
                 explanation = self._explainer.explain(item.facts)
+                item.rejected_answer = {"headline": explanation.headline, "summary": explanation.summary, "signals": explanation.signals, "limitations": explanation.limitations}
             finally:
                 item.tokens_in, item.tokens_out = self._explainer.tokens_in - before[0], self._explainer.tokens_out - before[1]
                 summary.tokens_in += item.tokens_in
                 summary.tokens_out += item.tokens_out
             validate_explanation(explanation, item.facts, known)
+            item.rejected_answer = None
         except ExplanationRejected as exc:
             item.status, item.reasons = "rejected", exc.reasons
             summary.rejected += 1
@@ -245,6 +248,8 @@ def main(argv: list[str] | None = None) -> int:
             print("facts:", json.dumps(it.facts, indent=1, default=str))
             if it.explanation:
                 print("explanation:", json.dumps(it.explanation, indent=1))
+            if it.rejected_answer:
+                print("REJECTED answer (not stored):", json.dumps(it.rejected_answer, indent=1), "\nreasons:", it.reasons)
     return 0 if not summary.aborted else 1
 
 
