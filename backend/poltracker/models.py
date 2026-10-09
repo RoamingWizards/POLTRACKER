@@ -337,6 +337,32 @@ class TradeContext(Base):
     )
 
 
+class TradeContextAnalysis(Base):
+    """A cached, validated natural-language explanation of one trade's stored context. It explains structured facts that are already calculated
+    and decides nothing: the deterministic `trade_context` row stays authoritative for every signal and for the flag. One row per
+    (trade, context version, mapping version, prompt version, model); `input_hash` changes when the facts sent to the model change, and the row is then replaced."""
+
+    __tablename__ = "trade_context_analysis"
+    __table_args__ = (UniqueConstraint("trade_id", "context_version", "mapping_version", "prompt_version", "model"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trade_id: Mapped[int] = mapped_column(ForeignKey("trades.id"), index=True)
+    context_version: Mapped[str] = mapped_column(String(60))
+    mapping_version: Mapped[str | None] = mapped_column(String(40))
+    prompt_version: Mapped[str] = mapped_column(String(20))
+    model: Mapped[str] = mapped_column(String(80))
+    input_hash: Mapped[str] = mapped_column(String(64))  # hash of the exact facts, prompt version and model
+    context_digest: Mapped[str] = mapped_column(String(64))  # trade_context.result_digest at generation: the API shows the text only while it still matches
+    generated_for: Mapped[str] = mapped_column(String(10))  # flagged | manual (an unflagged trade analysed on request; the text is labelled as an explanation, not a flag)
+    headline: Mapped[str] = mapped_column(Text)
+    summary: Mapped[str] = mapped_column(Text)
+    signals_json: Mapped[str] = mapped_column(Text)
+    limitations: Mapped[str] = mapped_column(Text)
+    input_tokens: Mapped[int | None] = mapped_column()
+    output_tokens: Mapped[int | None] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class TradeContextEvidence(Base):
     """Why a signal has its value. Mapping evidence is a self-contained snapshot (no foreign key to the mapping table, whose rows are
     replaced when a mapping version is reloaded), so an explanation stays readable after the mapping changes."""

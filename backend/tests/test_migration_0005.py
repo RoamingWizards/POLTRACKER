@@ -57,4 +57,4 @@ def test_head_is_0011_on_a_clean_database(db):
     url, cfg = db
     command.upgrade(cfg, "head")
     with sa.create_engine(url).connect() as c:
-        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0014"
+        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0015"

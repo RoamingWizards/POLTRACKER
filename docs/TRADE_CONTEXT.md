@@ -73,3 +73,28 @@ version adds rows and keeps the old ones. A changed input (new prices, a correct
 delay, returns, `secondary_signal_count`, `committee_temporal_status`, `meets_flag_rule`, `flag_pending_temporal_verification`, `flagged_for_contextual_review`,
 `evidence` and a `notice`. `GET /trades?flagged=true` returns flagged trades only. Existing fields are unchanged. The Trades page has a Context column and a
 "Flagged for contextual review" filter; clicking a chip shows the signals, their evidence and the seat-timing caveat.
+
+## AI context (optional explanations)
+
+`python -m poltracker.analyze_trade_context_llm` asks OpenAI for a short, neutral explanation of one trade's **already-calculated** context. The deterministic engine stays
+authoritative: the model cannot set a signal, change the flag, or add evidence, and this command never writes `trade_context`. It needs `OPENAI_API_KEY`; without it
+the explanation is simply unavailable (the app, the API and the dialog work as before).
+
+- **Which trades.** Flagged trades only by default, at most 25 OpenAI calls per run (`--limit`, `POLTRACKER_TRADE_LLM_MAX_CALLS`). `--trade-id` explains a named trade even when it is
+  not flagged; that text is labelled `manual` and the dialog says it is an explanation on request, not a flag. `--ticker`/`--politician` stay flagged-only unless `--no-flagged-only`.
+  `--dry-run` shows what would be sent without a key or a call. `--force` regenerates. `--verbose` prints the facts and the answer.
+- **What is sent.** One trade's facts: ticker, company, SIC industry, type, disclosed range, dates; the politician's name, chamber, state and district; the committee evidence
+  (committee, reviewed-direct status, seat timing and whether the seat was held on the transaction date, mapping rationale and source); the four signals with their values,
+  percentile, sample size, delay, 90-day security / SPY / excess return (raw, plus the direction-adjusted figure labelled as such); and the flag state. No other rows, no key.
+- **How.** OpenAI Responses API, `store: false`, no tools, strict JSON schema (`headline`, `summary`, `signals[]`, `limitations`). Model: `POLTRACKER_TRADE_LLM_MODEL`
+  (default `gpt-4o-mini`). Prompt version `1`.
+- **Validation (untrusted text).** A reply is rejected, never stored and never repaired, if it is malformed, refused or incomplete; names a signal that is not one of the trade's
+  four; explains a signal twice; names a committee that is not in this trade's stored evidence (including a known committee named without the word "committee"); states a number
+  that is not among the supplied values (to the precision written); uses insider / illegal / corrupt / suspicious / wrongdoing / non-public / probability and similar wording outside an
+  explicit denial in the same clause; speaks of a flag on an unflagged trade; or is empty or over-long.
+- **Cache.** Table `trade_context_analysis` (migration 0015), one row per trade, context version, mapping version, prompt version and model. A rerun with unchanged facts makes no call.
+  Changed facts replace the row only after the new text validates. A changed prompt, model or context version adds a new row. The API shows an explanation only while it still
+  matches the context it explained (`context_digest`).
+- **API and UI.** `context.ai_context` is optional (null when none exists). The dialog shows it in a separate "AI context" panel below the deterministic signals, with a subtle
+  "not generated" state.
+- **Cost.** The run summary reports calls, input and output tokens and, only if you set `POLTRACKER_TRADE_LLM_INPUT_USD_PER_MTOK` / `..._OUTPUT_USD_PER_MTOK`, an estimate. No rate is assumed.

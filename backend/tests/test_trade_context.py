@@ -602,9 +602,9 @@ def test_migration_0012_adds_only_the_two_tables_and_leaves_existing_data_untouc
         c.exec_driver_sql("insert into politicians (id, canonical_key, name, chamber, created_at) values (1, 'a', 'A', 'house', '2026-01-01')")
     before = set(sa.inspect(engine).get_table_names())
     command.upgrade(cfg, "head")
-    assert set(sa.inspect(engine).get_table_names()) - before == {"trade_context", "trade_context_evidence"}
+    assert set(sa.inspect(engine).get_table_names()) - before == {"trade_context", "trade_context_evidence", "trade_context_analysis"}
     with engine.connect() as c:
-        assert c.exec_driver_sql("select count(*) from politicians").scalar() == 1 and c.exec_driver_sql("select version_num from alembic_version").scalar() == "0014"
+        assert c.exec_driver_sql("select count(*) from politicians").scalar() == 1 and c.exec_driver_sql("select version_num from alembic_version").scalar() == "0015"
     command.downgrade(cfg, "0011")
     assert not {"trade_context", "trade_context_evidence"} & set(sa.inspect(engine).get_table_names())
     with engine.connect() as c:
