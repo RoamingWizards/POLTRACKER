@@ -10,31 +10,46 @@ import TradeContextDialog from './TradeContextDialog';
 import AppDataGrid from './AppDataGrid';
 import { ChamberChip, TypeChip } from './Chips';
 import QueryError from './QueryError';
-import { useTrades } from '../api/hooks';
-import type { Trade, TradeQuery, TradeSortField } from '../api/types';
+import { useScreen, useTrades } from '../api/hooks';
+import type { ContextRule, FilterSpec, ScreenPage, Trade, TradeQuery, TradeSortField } from '../api/types';
 import { formatAmountRange } from '../lib/format';
 
 const SORTABLE: TradeSortField[] = ['transaction_date', 'disclosure_date', 'amount_min', 'ticker', 'politician_name'];
 
-function contextColumn(open: (t: Trade) => void): GridColDef<Trade> {
+/** What the grid is showing under the user's rule. Absent on pages that only use the default methodology. */
+export interface ScreenMode {
+  rule: ContextRule;
+  filters: FilterSpec[];
+  onPage?: (page: ScreenPage | undefined) => void;
+}
+
+function contextColumn(open: (t: Trade) => void, screenOn: boolean): GridColDef<Trade> {
   return {
     field: 'context',
     headerName: 'Context',
-    width: 200,
+    width: screenOn ? 290 : 200,
     sortable: false,
     renderCell: ({ row }) => {
       const c = row.context;
       if (!c) return '—';
+      const cs = row.custom_screen;
+      const screenChip =
+        screenOn && cs && cs.kind !== 'default' ? (
+          <Chip size="small" variant={cs.matches ? 'filled' : 'outlined'} color={cs.matches ? 'info' : 'default'} label={cs.matches ? 'Screen: match' : 'Screen: no match'} onClick={() => open(row)} aria-label={`Custom screen ${cs.matches ? 'match' : 'no match'} for ${row.ticker ?? 'trade'}`} />
+        ) : null;
       const label = c.flagged_for_contextual_review ? 'Flagged for review' : c.flag_pending_temporal_verification ? 'Rule met, timing unverified' : c.committee_relevance ? 'Committee-relevant' : c.committee_relevance === null ? 'Unknown' : 'No flag';
       return (
-        <Chip
-          size="small"
-          variant="outlined"
-          color={c.flagged_for_contextual_review ? 'warning' : 'default'}
-          label={label}
-          onClick={() => open(row)}
-          aria-label={`Context signals for ${row.ticker ?? 'trade'}`}
-        />
+        <>
+          <Chip
+            size="small"
+            variant="outlined"
+            color={c.flagged_for_contextual_review ? 'warning' : 'default'}
+            label={label}
+            onClick={() => open(row)}
+            aria-label={`Context signals for ${row.ticker ?? 'trade'}`}
+          />
+          {screenChip && <span style={{ marginLeft: 6 }}>{screenChip}</span>}
+        </>
       );
     },
   };
@@ -115,30 +130,32 @@ export default function TradesGrid({
   filters,
   pageSize = 25,
   hidePoliticianColumn = false,
+  screen,
 }: {
   filters: TradeFilters;
   pageSize?: number;
   hidePoliticianColumn?: boolean;
+  screen?: ScreenMode;
 }) {
   const [paging, setPaging] = React.useState<GridPaginationModel>({ page: 0, pageSize });
   const [sort, setSort] = React.useState<GridSortModel>([{ field: 'disclosure_date', sort: 'desc' }]);
   const [selected, setSelected] = React.useState<Trade | null>(null);
-  const gridColumns = React.useMemo(() => [...columns.slice(0, -1), contextColumn(setSelected), columns[columns.length - 1]], []);
+  const screenOn = !!screen;
+  const gridColumns = React.useMemo(() => [...columns.slice(0, -1), contextColumn(setSelected, screenOn), columns[columns.length - 1]], [screenOn]);
 
-  const filtersKey = JSON.stringify(filters);
+  const filtersKey = JSON.stringify([filters, screen?.rule, screen?.filters]);
   React.useEffect(() => {
     setPaging((p) => ({ ...p, page: 0 }));
   }, [filtersKey]);
 
   const active = sort[0];
   const sortBy = SORTABLE.find((f) => f === active?.field);
-  const { data, error, isFetching } = useTrades({
-    ...filters,
-    limit: paging.pageSize,
-    offset: paging.page * paging.pageSize,
-    sort_by: sortBy,
-    order: active?.sort ?? undefined,
-  });
+  const paging_ = { limit: paging.pageSize, offset: paging.page * paging.pageSize, sort_by: sortBy, order: active?.sort ?? undefined };
+  const plain = useTrades({ ...filters, ...paging_ }, !screen);
+  const screened = useScreen({ rule: screen?.rule ?? ({} as ContextRule), filters: screen?.filters ?? [], ...paging_ }, !!screen);
+  const { data, error, isFetching } = screen ? screened : plain;
+  const onPage = screen?.onPage;
+  React.useEffect(() => onPage?.(screened.data), [onPage, screened.data]);
 
   return (
     <>

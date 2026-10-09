@@ -429,6 +429,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             allow_credentials=False,
             max_age=600,
         )
+    from .personalization import router as personalization_router  # before `router`: /trades/screen must win over /trades/{trade_id}
+
+    app.include_router(personalization_router)
+    if settings.local_views_enabled:
+        from .views import router as views_router
+
+        app.include_router(views_router)
     app.include_router(router)
     return app
 

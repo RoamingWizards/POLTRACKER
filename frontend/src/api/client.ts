@@ -42,3 +42,24 @@ export async function apiPost<T>(path: string): Promise<T> {
   if (!res.ok) throw new ApiError(res.status, res.statusText);
   return res.json() as Promise<T>;
 }
+
+/** JSON write (POST/PUT/PATCH/DELETE). Only the local saved-views and last-used-screen routes use it; the rest of the API is read-only. */
+export async function apiSend<T>(method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers: { Accept: 'application/json', ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const data = await res.json();
+      detail = data.detail ?? detail;
+      if (Array.isArray(detail)) detail = (detail as { msg?: string }[]).map((d) => d.msg ?? '').filter(Boolean).join('; ') || res.statusText;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new ApiError(res.status, typeof detail === 'string' ? detail : JSON.stringify(detail));
+  }
+  return res.status === 204 ? (undefined as T) : (res.json() as Promise<T>);
+}

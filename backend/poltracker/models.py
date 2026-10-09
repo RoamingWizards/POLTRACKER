@@ -363,6 +363,30 @@ class TradeContextAnalysis(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class ContextView(Base):
+    """A saved personalization: a context rule plus a list of trade filters, under a name. Local user preference only; it never touches `trade_context`."""
+
+    __tablename__ = "context_views"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), unique=True)
+    preset: Mapped[str | None] = mapped_column(String(30))  # the built-in preset this started from, for display only
+    rule_json: Mapped[str] = mapped_column(Text)
+    filters_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class AppPreference(Base):
+    """Small local key/value preferences (for example the last-used rule and filters, so they survive an app restart)."""
+
+    __tablename__ = "app_preferences"
+
+    key: Mapped[str] = mapped_column(String(60), primary_key=True)
+    value_json: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class TradeContextEvidence(Base):
     """Why a signal has its value. Mapping evidence is a self-contained snapshot (no foreign key to the mapping table, whose rows are
     replaced when a mapping version is reloaded), so an explanation stays readable after the mapping changes."""
