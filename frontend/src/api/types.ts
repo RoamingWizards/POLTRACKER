@@ -27,6 +27,52 @@ export interface Trade {
   amount_min: number | null;
   amount_max: number | null;
   source_url: string | null;
+  /** Same politician + security + transaction date + type. Display grouping only: rows are never merged. */
+  group_key?: string | null;
+  group_size?: number | null;
+  /** Null until the context analyzer has run. */
+  context?: TradeContext | null;
+}
+
+export interface ContextEvidence {
+  signal_type: string;
+  evidence_type: 'reviewed_direct_mapping' | 'reviewed_related_mapping' | 'rejected_current_assignment' | 'metric';
+  committee_code: string | null;
+  subcommittee_code: string | null;
+  source_url: string | null;
+  description: string;
+  metadata: Record<string, unknown> | null;
+}
+
+/** Deterministic context signals from public data. A signal is true, false, or null (unknown). */
+export interface TradeContext {
+  context_version: string;
+  mapping_version: string | null;
+  analyzed_at: string;
+  committee_relevance: boolean | null;
+  committee_relevance_reason: string | null;
+  trade_size_anomaly: boolean | null;
+  trade_size_value: number | null;
+  trade_size_basis: string | null;
+  trade_size_percentile: number | null;
+  trade_size_sample_size: number | null;
+  disclosure_delay_signal: boolean | null;
+  disclosure_delay_days: number | null;
+  excess_return_signal: boolean | null;
+  security_return: number | null;
+  spy_return: number | null;
+  excess_return: number | null;
+  excess_return_direction_adjusted: number | null;
+  excess_horizon_days: number | null;
+  signals: Record<string, boolean | null>;
+  signal_count: number;
+  secondary_signal_count: number | null;
+  committee_temporal_status: 'temporally_verified' | 'current_assignment_only' | 'unavailable' | 'contradicted' | null;
+  meets_flag_rule: boolean | null;
+  flag_pending_temporal_verification: boolean;
+  flagged_for_contextual_review: boolean;
+  evidence: ContextEvidence[];
+  notice: string;
 }
 
 export type TradeSortField =
@@ -43,6 +89,7 @@ export interface TradeQuery {
   transaction_type?: string;
   date_from?: string;
   date_to?: string;
+  flagged?: boolean;
   sort_by?: TradeSortField;
   order?: 'asc' | 'desc';
   limit?: number;
@@ -97,6 +144,15 @@ export interface Security {
   trade_count: number;
   latest_trade_date: string | null;
   recent_trades: Trade[];
+  // Official company profile (SEC EDGAR); null until enriched or when the source does not list the ticker.
+  company_name?: string | null;
+  cik?: string | null;
+  sic_code?: string | null;
+  industry?: string | null;
+  sector?: string | null;
+  exchange?: string | null;
+  profile_status?: 'ok' | 'partial' | 'unresolved' | null;
+  profile_source_url?: string | null;
 }
 
 export interface PriceBar {

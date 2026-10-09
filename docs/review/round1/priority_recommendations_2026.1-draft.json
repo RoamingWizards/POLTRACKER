@@ -1,0 +1,252 @@
+[
+ {
+  "key": "BA00:6300-6499:direct",
+  "action": "SPLIT RANGE",
+  "reason": "Insurance generally is squarely Financial Services (Rule X 1(h)(4)), but 6320-6324 health plans (UNH, HUM, MOH) are chiefly Energy and Commerce / Ways and Means territory. Keep 6300-6319 and 6330-6499 direct; move 6320-6329 to related."
+ },
+ {
+  "key": "BA00:6000-6099:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Banks and banking, including deposit insurance, is the first item of Rule X 1(h)(1). Commercial and savings banks are one industry here; the 'mixed' flag is only the commercial/savings split."
+ },
+ {
+  "key": "AS00:3720-3729:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Military and civil aircraft share these SIC codes, but the 11 current securities are mostly defense-industrial-base suppliers (BA, RTX, HON, TDG, DCO, AVAV). Caveat: a civil-only aircraft supplier would match too; note that all 27 trades come from one politician."
+ },
+ {
+  "key": "BA00:6200-6299:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Securities and exchanges (Rule X 1(h)(9)): exchanges, brokers, commodity brokers and investment advisers are all securities-regulation subjects. Overlap with Agriculture 6221 should be one signal, not two."
+ },
+ {
+  "key": "BA00/BA16:6200-6299:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Capital Markets is squarely securities and exchanges; same range as the verified committee-level row, so it adds attribution, not new reach."
+ },
+ {
+  "key": "BA00:6100-6199:direct",
+  "action": "SPLIT RANGE",
+  "reason": "Credit institutions (6100-6198) are 'money and credit' (Rule X 1(h)(7)), but catch-all 6199 mixes card issuers (AXP, SYF) with crypto and advisory firms (COIN, IREN, MSTR, PWP). Keep 6100-6198 direct, 6199 related; this downgrades AXP/SYF unless a ticker-level exception is added later."
+ },
+ {
+  "key": "BA00/BA04:6300-6499:direct",
+  "action": "SPLIT RANGE",
+  "reason": "Same as the committee-level insurance row: keep core insurance direct, move 6320-6329 health plans to related."
+ },
+ {
+  "key": "BA00/BA20:6100-6199:direct",
+  "action": "SPLIT RANGE",
+  "reason": "Same split as the committee-level 6100-6199 row: 6100-6198 direct, 6199 related."
+ },
+ {
+  "key": "IF00/IF16:4800-4899:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Regulation of interstate and foreign communications (Rule X 1(f)(14)) covers telephone, broadcasting and cable. The groups differ but share one jurisdiction."
+ },
+ {
+  "key": "IF00:4800-4899:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Verified wording: 'Regulation of interstate and foreign communications' (Rule X 1(f)(14)). Telephone, radio/TV broadcasting and cable are all in it."
+ },
+ {
+  "key": "WM00/WM02:8000-8099:direct",
+  "action": "NEEDS MORE SOURCE REVIEW",
+  "reason": "Rule X gives Ways and Means only payroll-funded health programs and Energy and Commerce the rest; Medicare Parts A and B practice is not in the wording I read. Verify the Health Subcommittee's published jurisdiction; until then treat as related. If confirmed, direct could be limited to 8050-8082 providers."
+ },
+ {
+  "key": "IF00/IF03:4911-4939:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Generation, marketing, transmission and ratemaking for 'all power', FERC, and all fossil fuels (Rule X 1(f)(6),(9),(10)) cover electric and gas utilities. Local gas distribution is the weakest member but still within 'energy resources'."
+ },
+ {
+  "key": "IF00:4911-4939:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Verified wording (Rule X 1(f)(9),(10)): power generation, transmission, ratemaking and FERC. Electric and gas utilities are both energy."
+ },
+ {
+  "key": "BA00/BA20:6000-6099:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Financial Institutions is squarely banks and depository institutions; same range as the verified committee-level banks row."
+ },
+ {
+  "key": "II00:1000-1099:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "'Mining interests generally' and 'mineral resources of public lands' (Rule X 1(m)(12),(13)). Metal mining, gold/silver and other metal ores are one jurisdiction."
+ },
+ {
+  "key": "PW00:4730-4739:direct",
+  "action": "DOWNGRADE TO RELATED",
+  "reason": "Freight arrangement (CH Robinson, Expeditors, Brink's) is an intermediary service, not the transportation modes or infrastructure Rule X 1(r)(20) enumerates. Keep as related."
+ },
+ {
+  "key": "AG00/AG03:2000-2079:direct",
+  "action": "DOWNGRADE TO RELATED",
+  "reason": "Nutrition and Foreign Agriculture is about nutrition programs and food aid; food manufacturers are a stretch for 'direct'. Related is defensible; the committee-level meat/dairy/grain rows already cover the clear cases."
+ },
+ {
+  "key": "IF00/IF14:8000-8099:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "'Health and health facilities' (Rule X 1(f)(3)): hospitals, labs, nursing and home health are health facilities and services. Same range as the verified committee-level row."
+ },
+ {
+  "key": "IF00:8000-8099:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Verified wording: 'Health and health facilities' (Rule X 1(f)(3)). The several health-services groups are all within it. Overlaps with Ways and Means and Veterans must count as one signal."
+ },
+ {
+  "key": "AG00/AG16:2060-2079:direct",
+  "action": "SPLIT RANGE",
+  "reason": "Farm-commodity processors (2070 fats and oils: ADM, BG) fit 'general farm commodities'; 2060 sugar and confectionery (HSY) is largely a consumer-goods maker. Keep 2070-2079 direct, move 2060-2069 to related."
+ },
+ {
+  "key": "AG00:0100-0299:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Crop and livestock production is 'agriculture generally' (Rule X 1(a)(2)); the range is wide but contains only production agriculture. Only Corteva currently matches."
+ },
+ {
+  "key": "AG00:2010-2029:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "'Inspection of livestock, poultry, meat products' and 'dairy industry' (Rule X 1(a)(11),(14)) name these industries directly."
+ },
+ {
+  "key": "BA00/BA04:6500-6599:direct",
+  "action": "DOWNGRADE TO RELATED",
+  "reason": "Real estate agents and operators are only indirectly 'housing'; the committee-level 6500-6599 row is already related, so this sub-level direct is inconsistent."
+ },
+ {
+  "key": "II00/II06:1000-1099:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Energy and Mineral Resources is squarely mining; same range as the verified committee-level row."
+ },
+ {
+  "key": "PW00/PW07:4400-4499:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "Water transportation and the merchant marine (Rule X 1(r)(12),(20)); Coast Guard and Maritime Transportation. Cruise lines and shippers are in-scope water carriers."
+ },
+ {
+  "key": "PW00/PW12:1600-1629:direct",
+  "action": "SPLIT RANGE",
+  "reason": "1611/1622 highway and bridge construction fit Highways and Transit, but current matches (DY, MTZ, PRIM) are 1623 utility, pipeline and communication-line contractors. Keep 1600-1622 direct, move 1623-1629 to related."
+ },
+ {
+  "key": "PW00:1600-1629:direct",
+  "action": "SPLIT RANGE",
+  "reason": "Same: roads and bridges (Rule X 1(r)(10),(17),(19)) are direct; 1623 water, sewer, pipeline, power and communication line construction is related."
+ },
+ {
+  "key": "PW00:4400-4499:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "'Water transportation' (Rule X 1(r)(20)) and 'merchant marine' (1(r)(12)) are named. Cruise lines and shipping are within it."
+ },
+ {
+  "key": "VR00/VR03:8050-8099:direct",
+  "action": "DOWNGRADE TO RELATED",
+  "reason": "The VA is itself the health provider; private hospitals and nursing homes matter only through community-care contracts. The committee-level row is related, so this sub-level direct is inconsistent."
+ },
+ {
+  "key": "AG00/AG22:6221-6221:direct",
+  "action": "NEEDS MORE SOURCE REVIEW",
+  "reason": "Commodity exchanges are named (Rule X 1(a)(9)), but the five current 6221 securities are bitcoin and metals ETFs, not exchanges or brokers. Decide whether commodity-linked ETFs count as 'commodity markets'. Overlaps Financial Services 6200-6299."
+ },
+ {
+  "key": "PW00/PW02:1623-1623:direct",
+  "action": "DOWNGRADE TO RELATED",
+  "reason": "SIC 1623 mixes water and sewer construction with pipeline, power and communication-line construction (DY is a telecom contractor), so a match does not mean water resources."
+ },
+ {
+  "key": "PW00/PW02:4941-4941:direct",
+  "action": "DOWNGRADE TO RELATED",
+  "reason": "Drinking-water supply utilities (AWK, WTRG) fall under the Safe Drinking Water Act, which is Energy and Commerce; Water Resources and Environment covers water resources development and water pollution control. Possible gap: Energy and Commerce Environment has no 4941 mapping."
+ },
+ {
+  "key": "SY00/SY15:8731-8731:direct",
+  "action": "REMOVE",
+  "reason": "The three current matches (ICLR, IQV, MEDP) are contract research organizations serving pharma, not beneficiaries of federal science R&D. The parent SY00 8731 direct row has the same issue and should be reviewed together."
+ },
+ {
+  "key": "SY00:3760-3769:direct",
+  "action": "APPROVE DIRECT",
+  "reason": "'Astronautical research and development', NASA and 'outer space, including exploration' (Rule X 1(p)(2),(8),(12)) name space vehicles. Overlap with Armed Services is one signal."
+ },
+ {
+  "key": "BA00:6795-6799:related",
+  "action": "KEEP RELATED",
+  "reason": "REITs and royalty trusts are securities issuers and real-estate finance (Rule X 1(h)(8),(9)). Context only; 41 securities, so noisy but never triggers a flag."
+ },
+ {
+  "key": "IF00/IF16:7370-7373:related",
+  "action": "NEEDS MORE SOURCE REVIEW",
+  "reason": "Matches 75 securities (49 prepackaged software) on the strength of the word 'Technology' in the subcommittee name. Verify the Communications and Technology subcommittee's published jurisdiction before keeping."
+ },
+ {
+  "key": "BA00:6500-6599:related",
+  "action": "KEEP RELATED",
+  "reason": "Real estate operators and agents relate to 'public and private housing' and urban development (Rule X 1(h)(8),(10)). Context only."
+ },
+ {
+  "key": "JU00/JU03:7370-7373:related",
+  "action": "NEEDS MORE SOURCE REVIEW",
+  "reason": "Same issue: inferred from 'Artificial Intelligence, and the Internet' in the name, matching 75 software and IT securities. Verify the subcommittee's published jurisdiction."
+ },
+ {
+  "key": "AP00/AP07:8000-8099:related",
+  "action": "KEEP RELATED",
+  "reason": "Labor-HHS appropriations fund health programs; providers are context. Never a flag."
+ },
+ {
+  "key": "AP00/AP10:4911-4939:related",
+  "action": "KEEP RELATED",
+  "reason": "Energy and Water appropriations fund Department of Energy power programs; utilities are context."
+ },
+ {
+  "key": "AG00:2060-2079:related",
+  "action": "KEEP RELATED",
+  "reason": "Sugar, confectionery, fats and oils process agricultural commodities (Rule X 1(a)(7)); related is the right strength."
+ },
+ {
+  "key": "BA00/BA04:1520-1531:related",
+  "action": "KEEP RELATED",
+  "reason": "Residential builders supply private housing (Rule X 1(h)(8)); context only."
+ },
+ {
+  "key": "AG00/AG15:2400-2429:related",
+  "action": "KEEP RELATED",
+  "reason": "Lumber and sawmills come from forestry (Rule X 1(a)(15)); context only."
+ },
+ {
+  "key": "AP00/AP01:0100-0299:related",
+  "action": "KEEP RELATED",
+  "reason": "Agriculture appropriations fund USDA programs; crop producers are context."
+ },
+ {
+  "key": "AP00/AP10:1600-1629:related",
+  "action": "KEEP RELATED",
+  "reason": "Energy and Water appropriations fund Army Corps construction; heavy-construction contractors are context."
+ },
+ {
+  "key": "HM00/HM07:4400-4499:related",
+  "action": "KEEP RELATED",
+  "reason": "Transportation and Maritime Security relates to water carriers and ports; context only."
+ },
+ {
+  "key": "VR00:8050-8099:related",
+  "action": "KEEP RELATED",
+  "reason": "Veterans' hospitals and medical care (Rule X 1(s)(8)) make private health providers context, not direct."
+ },
+ {
+  "key": "AS00/AS35:7373-7373:related",
+  "action": "KEEP RELATED",
+  "reason": "DoD cyber and IT contractors (LDOS, SAIC, CACI) are context; the range also catches unrelated firms (GoDaddy, IonQ, Jack Henry), which is acceptable at related only."
+ },
+ {
+  "key": "BA00:6700-6793:related",
+  "action": "KEEP RELATED",
+  "reason": "Holding and investment offices (including blank-check companies) relate to securities issuance; one security matches today. Context only."
+ },
+ {
+  "key": "IF00:4700-4729:related",
+  "action": "KEEP RELATED",
+  "reason": "'Travel and tourism' (Rule X 1(f)(15)): travel agencies (BKNG, EXPE). Context only."
+ }
+]

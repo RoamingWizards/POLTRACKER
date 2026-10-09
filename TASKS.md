@@ -230,6 +230,38 @@ Politician Detail profile. See `docs/POLITICIAN_ENRICHMENT.md`. Reviewed alias o
 
 These tasks are intentionally not authorized yet.
 
+## [~] Phase 11A — Company sector and industry enrichment (`feature/committee-sector-context` branch)
+
+Phase 1 of the committee/sector context direction (bill and hearing ingestion was dropped; its experimental work lives on
+`feature/legislative-data`, unmerged). Adds SEC EDGAR company profiles (CIK, SIC code, industry, sector, exchange) to `securities` through
+migration 0009 and `python -m poltracker.enrich_securities`. See `docs/SECURITY_PROFILES.md`. Metadata only: no committee/industry mapping,
+contextual flags, scoring, AI explanation or personalized filters. Later phases: 2 committee-industry mapping, 3 contextual signals,
+4 AI explanation of structured signals, 5 personalized filters. Awaiting review.
+
+---
+
+## [~] Phase 11B — Committee/industry mapping (`feature/committee-industry-mapping` branch, stacked on 11A)
+
+Deterministic, explainable mapping from committee/subcommittee jurisdiction (House Rule X) to SIC ranges, a matcher that returns
+relevant / not relevant / unknown with provenance, migration 0010, and a read-only measurement over existing trades. See
+`docs/COMMITTEE_INDUSTRY_MAPPING.md`. Round 1 of human review is applied (round 2 decisions applied; remaining proposals are in `docs/review/round2/`): 191 mappings, 69 `reviewed` (rounds 1 to 3), 122 still `needs_review` (`docs/review/review_decisions_2026.1-draft.md`).
+Review pass: every row now has `review_status` / `reviewed_by` / `jurisdiction_basis` (migration 0011, all rows `needs_review`), and
+`python -m poltracker.committee_industry_review` generates the human-review packet (`docs/review/`). The intended Phase 3 flagging policy is
+documented, not implemented. The Phase 3 policy is now adopted (only `reviewed` + `direct` mappings may contribute to a flag; one
+committee-relevance signal per trade). A 50-row priority review table with proposed actions is in `docs/review/`.
+No trade is flagged or scored, no market data or AI is used, and no per-trade result is stored. Later phases: 3 contextual signals and review
+flags, 4 AI explanation of structured signals, 5 personalized filters. Awaiting review.
+
+---
+
+## [~] Phase 11C — Deterministic trade context signals (`feature/trade-context-signals` branch, stacked on 11B)
+
+Committee relevance (reviewed + direct mappings only), trade-size percentile, disclosure delay and excess return, combined into a selective
+`flagged_for_contextual_review` (committee relevance mandatory, two secondary signals, and temporally verified committee seats). Migrations 0012-0014 (0014: dated committee seat history from adopted House resolutions, `docs/COMMITTEE_HISTORY.md`), `python -m poltracker.analyze_trade_context`, additive API fields and a minimal
+Trades-page panel. See `docs/TRADE_CONTEXT.md`. No AI explanation, personalization, scoring, or real-database changes. Awaiting review.
+
+---
+
 ## [ ] Phase 7 — SEC EDGAR enrichment
 
 Status:

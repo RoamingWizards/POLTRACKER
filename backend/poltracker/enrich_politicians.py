@@ -336,6 +336,11 @@ def _sync_committees(session, provider: CommitteeProvider, due, matched_ids, rep
                     source=seat.source,
                     source_url=seat.source_url,
                     fetched_at=now,
+                    congress_number=seat.congress_number,
+                    temporal_precision=seat.temporal_precision,
+                    source_type=seat.source_type,
+                    verified_through=seat.verified_through,
+                    verified_at=now if seat.temporal_precision else None,
                 )
             )
 
