@@ -98,3 +98,10 @@ the explanation is simply unavailable (the app, the API and the dialog work as b
 - **API and UI.** `context.ai_context` is optional (null when none exists). The dialog shows it in a separate "AI context" panel below the deterministic signals, with a subtle
   "not generated" state.
 - **Cost.** The run summary reports calls, input and output tokens and, only if you set `POLTRACKER_TRADE_LLM_INPUT_USD_PER_MTOK` / `..._OUTPUT_USD_PER_MTOK`, an estimate. No rate is assumed.
+
+### Known minor polish for a later prompt version (not scheduled)
+
+Seen in the prompt-version-3 live validation; neither changes a signal, a flag or the validation gates.
+
+- Prefer "the member" over gendered pronouns or titles. The facts carry no gender, and the model inferred "he" and "Congressman" from a name.
+- Describe an excess-return threshold crossing in absolute-value terms ("exceeds the 20-point threshold in absolute value"), not "below the threshold" for a negative figure.
