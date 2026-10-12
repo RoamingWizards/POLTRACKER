@@ -340,16 +340,18 @@ class TradeContext(Base):
 class TradeContextAnalysis(Base):
     """A cached, validated natural-language explanation of one trade's stored context. It explains structured facts that are already calculated
     and decides nothing: the deterministic `trade_context` row stays authoritative for every signal and for the flag. One row per
-    (trade, context version, mapping version, prompt version, model); `input_hash` changes when the facts sent to the model change, and the row is then replaced."""
+    (trade, context version, mapping version, prompt version, provider, model); `input_hash` changes when the facts sent to the model change, and the row is then replaced.
+    Another provider or model gets its own row, so switching never overwrites or reuses an earlier accepted explanation."""
 
     __tablename__ = "trade_context_analysis"
-    __table_args__ = (UniqueConstraint("trade_id", "context_version", "mapping_version", "prompt_version", "model"),)
+    __table_args__ = (UniqueConstraint("trade_id", "context_version", "mapping_version", "prompt_version", "provider", "model"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     trade_id: Mapped[int] = mapped_column(ForeignKey("trades.id"), index=True)
     context_version: Mapped[str] = mapped_column(String(60))
     mapping_version: Mapped[str | None] = mapped_column(String(40))
     prompt_version: Mapped[str] = mapped_column(String(20))
+    provider: Mapped[str] = mapped_column(String(20), default="openai", server_default="openai")  # openai | anthropic | ...
     model: Mapped[str] = mapped_column(String(80))
     input_hash: Mapped[str] = mapped_column(String(64))  # hash of the exact facts, prompt version and model
     context_digest: Mapped[str] = mapped_column(String(64))  # trade_context.result_digest at generation: the API shows the text only while it still matches

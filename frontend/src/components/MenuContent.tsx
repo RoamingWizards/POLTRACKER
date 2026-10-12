@@ -9,6 +9,7 @@ import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 
 const mainListItems = [
   { text: 'Overview', icon: <HomeRoundedIcon />, to: '/', match: (p: string) => p === '/' },
@@ -23,6 +24,7 @@ const mainListItems = [
 
 const secondaryListItems = [
   { text: 'Data Status', icon: <StorageRoundedIcon />, to: '/status', match: (p: string) => p.startsWith('/status') },
+  { text: 'Settings', icon: <SettingsRoundedIcon />, to: '/settings', match: (p: string) => p.startsWith('/settings') },
 ];
 
 type Item = (typeof mainListItems)[number];

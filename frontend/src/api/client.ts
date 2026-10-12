@@ -10,9 +10,12 @@ const BASE = (import.meta.env.VITE_API_BASE_URL?.trim() || '/api').replace(/\/+$
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  /** A stable reason from the AI routes (invalid_key, network, validation_rejected, ...), when the server gave one. */
+  code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -58,6 +61,10 @@ export async function apiSend<T>(method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', pa
       if (Array.isArray(detail)) detail = (detail as { msg?: string }[]).map((d) => d.msg ?? '').filter(Boolean).join('; ') || res.statusText;
     } catch {
       /* non-JSON error body */
+    }
+    if (detail && typeof detail === 'object' && !Array.isArray(detail) && typeof (detail as { message?: unknown }).message === 'string') {
+      const d = detail as { message: string; code?: string };
+      throw new ApiError(res.status, d.message, d.code);
     }
     throw new ApiError(res.status, typeof detail === 'string' ? detail : JSON.stringify(detail));
   }

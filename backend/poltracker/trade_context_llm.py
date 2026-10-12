@@ -9,6 +9,7 @@ not in the facts it was given, any claim of wrongdoing or insider knowledge that
 import hashlib
 import json
 import re
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Protocol
@@ -25,11 +26,34 @@ MAX_HEADLINE, MAX_SUMMARY, MAX_SIGNAL, MAX_LIMITATIONS = 160, 1200, 500, 600
 
 
 class ExplanationError(ProviderError):
-    """The model could not be reached or answered in an unusable shape. Never cached. `fatal` means every further call would fail the same way."""
+    """The model could not be reached or answered in an unusable shape. Never cached. `fatal` means every further call would fail the same way.
 
-    def __init__(self, message: str, fatal: bool = False):
+    `code` is a stable, provider-neutral reason the desktop UI can act on: invalid_key | rate_limited | unavailable | network | timeout | malformed | refused | error.
+    The message never contains a key, a header or request/response bodies."""
+
+    def __init__(self, message: str, fatal: bool = False, code: str = "error"):
         super().__init__(message)
         self.fatal = fatal
+        self.code = code
+
+
+def http_failure(provider: str, status: int) -> "ExplanationError":
+    """The provider's HTTP error as a clean, key-free ExplanationError. The response body can echo request text, so it is never included."""
+    if status in (401, 403):
+        return ExplanationError(f"{provider} rejected the API key (HTTP {status}). It may be invalid, revoked or lack permission.", fatal=True, code="invalid_key")
+    if status == 429:
+        return ExplanationError(f"{provider} rate limit or quota reached (HTTP 429). Try again later.", code="rate_limited")
+    if status >= 500 or status == 408:
+        return ExplanationError(f"{provider} is temporarily unavailable (HTTP {status}).", code="unavailable")
+    return ExplanationError(f"{provider} API: HTTP {status}", code="error")
+
+
+def transport_failure(provider: str, exc: Exception) -> "ExplanationError":
+    import httpx as _httpx
+
+    if isinstance(exc, _httpx.TimeoutException):
+        return ExplanationError(f"{provider} did not answer in time.", code="timeout")
+    return ExplanationError(f"{provider}: network error ({type(exc).__name__}). Check your internet connection.", code="network")
 
 
 class ExplanationRejected(ExplanationError):
@@ -38,6 +62,7 @@ class ExplanationRejected(ExplanationError):
     def __init__(self, reasons: list[str]):
         super().__init__("explanation rejected: " + "; ".join(reasons))
         self.reasons = reasons
+        self.code = "validation_rejected"
 
 
 SYSTEM = (
@@ -156,19 +181,19 @@ class Explanation:
 def parse_explanation(data: object) -> Explanation:
     """Strict shape check. Anything malformed is an error, not a guess."""
     if not isinstance(data, dict):
-        raise ExplanationError("model output was not an object")
+        raise ExplanationError("model output was not an object", code="malformed")
     if set(data) != {"headline", "summary", "signals", "limitations"}:
-        raise ExplanationError(f"model output had unexpected fields: {sorted(set(data) ^ {'headline', 'summary', 'signals', 'limitations'})}")
+        raise ExplanationError(f"model output had unexpected fields: {sorted(set(data) ^ {'headline', 'summary', 'signals', 'limitations'})}", code="malformed")
     for name in ("headline", "summary", "limitations"):
         if not isinstance(data[name], str):
-            raise ExplanationError(f"{name} was not a string")
+            raise ExplanationError(f"{name} was not a string", code="malformed")
     sigs = data["signals"]
     if not isinstance(sigs, list):
-        raise ExplanationError("signals was not a list")
+        raise ExplanationError("signals was not a list", code="malformed")
     out = []
     for s in sigs:
         if not isinstance(s, dict) or set(s) != {"type", "explanation"} or not isinstance(s["type"], str) or not isinstance(s["explanation"], str):
-            raise ExplanationError("a signals entry was not {type, explanation}")
+            raise ExplanationError("a signals entry was not {type, explanation}", code="malformed")
         out.append({"type": s["type"].strip(), "explanation": s["explanation"].strip()})
     return Explanation(data["headline"].strip(), data["summary"].strip(), out, data["limitations"].strip())
 
@@ -361,7 +386,7 @@ def validate_explanation(exp: Explanation, facts: dict, known_committees: set[st
         raise ExplanationRejected(sorted(set(problems)))
 
 
-# --- OpenAI --------------------------------------------------------------------------------------------------------
+# --- providers -----------------------------------------------------------------------------------------------------
 
 class Explainer(Protocol):
     model: str
@@ -372,18 +397,57 @@ class Explainer(Protocol):
     def explain(self, facts: dict) -> Explanation: ...
 
 
-class OpenAIExplainer:
+class AIExplanationProvider(ABC):
+    """A hosted model that explains the normalized facts of `build_facts` and nothing else. Every provider receives the same facts and the same instructions, returns
+    the same `Explanation`, and its answer goes through the same `validate_explanation`. A provider never decides a signal or a flag and is given no tools."""
+
+    provider_name: str  # stable id used in the cache identity and the API: "openai", "anthropic"
+    label: str
+    model: str
+    requests_made: int = 0
+    tokens_in: int = 0
+    tokens_out: int = 0
+
+    @property
+    def model_name(self) -> str:
+        return self.model
+
+    @abstractmethod
+    def validate_credentials(self) -> None:
+        """A cheap authenticated request that spends no tokens. Returns normally when the key works; raises ExplanationError (code invalid_key, network, ...) otherwise."""
+
+    @abstractmethod
+    def generate_trade_explanation(self, facts: dict) -> Explanation:
+        """One request. Returns the parsed (not yet validated) explanation, or raises ExplanationError."""
+
+    def explain(self, facts: dict) -> Explanation:  # the name the explanation service has always called
+        return self.generate_trade_explanation(facts)
+
+
+class OpenAIExplanationProvider(AIExplanationProvider):
     """OpenAI Responses API with strict JSON-schema output. No tools (no web search, no files) and nothing stored on OpenAI's side (`store: false`)."""
+
+    provider_name = "openai"
+    label = "OpenAI"
+    MODELS_URL = "https://api.openai.com/v1/models"
 
     def __init__(self, api_key: str, model: str, client: httpx.Client | None = None, max_output_tokens: int = 900):
         if not (api_key or "").strip():
-            raise ExplanationError("OPENAI_API_KEY is not set", fatal=True)
+            raise ExplanationError("OPENAI_API_KEY is not set", fatal=True, code="invalid_key")
         self._key, self.model, self._max_output_tokens = api_key.strip(), model, max_output_tokens
         self._client = client or httpx.Client(timeout=60)
         self.requests_made = 0
         self.tokens_in = self.tokens_out = 0
 
-    def explain(self, facts: dict) -> Explanation:
+    def validate_credentials(self) -> None:
+        try:
+            resp = self._client.get(self.MODELS_URL, headers={"Authorization": f"Bearer {self._key}"})
+        except httpx.HTTPError as exc:
+            raise transport_failure("OpenAI", exc) from exc
+        if resp.status_code != 200:
+            raise http_failure("OpenAI", resp.status_code)
+
+    def generate_trade_explanation(self, facts: dict) -> Explanation:
         body = {
             "model": self.model, "max_output_tokens": self._max_output_tokens, "store": False,
             "instructions": SYSTEM, "input": build_user_message(facts),
@@ -393,9 +457,9 @@ class OpenAIExplainer:
         try:
             resp = self._client.post(RESPONSES_URL, json=body, headers={"Authorization": f"Bearer {self._key}"})
         except httpx.HTTPError as exc:
-            raise ExplanationError(f"OpenAI API: network error ({type(exc).__name__})") from exc
+            raise transport_failure("OpenAI", exc) from exc
         if resp.status_code != 200:
-            raise ExplanationError(f"OpenAI API: HTTP {resp.status_code}", fatal=resp.status_code in (401, 403))  # the body can echo request text; not included
+            raise http_failure("OpenAI", resp.status_code)  # the body can echo request text; not included
         try:
             data = resp.json()
             usage = data.get("usage") or {}
@@ -405,23 +469,26 @@ class OpenAIExplainer:
                 raise ExplanationError("OpenAI API: the response carried an error")
             if data.get("status") not in (None, "completed"):
                 reason = (data.get("incomplete_details") or {}).get("reason")
-                raise ExplanationError(f"OpenAI API: response status {data.get('status')!r}" + (f" ({reason})" if reason else ""))
+                raise ExplanationError(f"OpenAI API: response status {data.get('status')!r}" + (f" ({reason})" if reason else ""), code="malformed")
             parts = [c for item in data.get("output", []) if isinstance(item, dict) and item.get("type") == "message"
                      for c in item.get("content", []) if isinstance(c, dict)]
         except ExplanationError:
             raise
         except (ValueError, TypeError, AttributeError) as exc:
-            raise ExplanationError("OpenAI API: unexpected response shape") from exc
+            raise ExplanationError("OpenAI API: unexpected response shape", code="malformed") from exc
         if any(c.get("type") == "refusal" for c in parts):
-            raise ExplanationError("OpenAI API: the model refused to answer")
+            raise ExplanationError("OpenAI API: the model refused to answer", code="refused")
         text = next((c.get("text") for c in parts if c.get("type") == "output_text"), None)
         try:
             payload = json.loads(text or "")
         except (ValueError, TypeError) as exc:
-            raise ExplanationError("OpenAI API: the answer was not valid JSON") from exc
+            raise ExplanationError("OpenAI API: the answer was not valid JSON", code="malformed") from exc
         return parse_explanation(payload)
 
 
-def build_explainer(api_key: str | None, model: str) -> "OpenAIExplainer | None":
+OpenAIExplainer = OpenAIExplanationProvider  # the original name, kept for the CLI and existing callers
+
+
+def build_explainer(api_key: str | None, model: str) -> "OpenAIExplanationProvider | None":
     """The configured explainer, or None when OPENAI_API_KEY is missing (the caller reports it and carries on without)."""
-    return OpenAIExplainer(api_key, model) if (api_key or "").strip() else None
+    return OpenAIExplanationProvider(api_key, model) if (api_key or "").strip() else None

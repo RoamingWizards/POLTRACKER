@@ -68,13 +68,16 @@ def _ai_out(a: TradeContextAnalysis | None) -> AiContextOut | None:
     if a is None:
         return None
     return AiContextOut(headline=a.headline, summary=a.summary, signals=[AiSignalExplanationOut(**s) for s in json.loads(a.signals_json)], limitations=a.limitations,
-                        generated_for=a.generated_for, model=a.model, prompt_version=a.prompt_version, generated_at=a.created_at)
+                        generated_for=a.generated_for, provider=a.provider, model=a.model, prompt_version=a.prompt_version, generated_at=a.created_at)
 
 
 def _ai_by_trade(session: Session, by_trade: dict[int, TradeContext], key: tuple[str, str]) -> dict[int, TradeContextAnalysis]:
-    """Cached explanations that still match the context as it is now (newest first, so the first per trade wins). Optional: if the table does not exist yet
-    (a database not yet migrated to 0015) the trades simply have no explanation."""
+    """Cached explanations that still match the context as it is now. A trade can have one per provider/model; the one for the provider and model chosen in settings wins,
+    otherwise the newest. Optional: if the table does not exist yet (a database not yet migrated to 0015) the trades simply have no explanation."""
+    from ..ai.settings import load_settings
+
     found: dict[int, TradeContextAnalysis] = {}
+    chosen = load_settings(session)
     try:
         with session.begin_nested():
             rows = session.scalars(
@@ -84,8 +87,14 @@ def _ai_by_trade(session: Session, by_trade: dict[int, TradeContext], key: tuple
             ).all()
     except (OperationalError, ProgrammingError):
         return found
+    preferred: set[int] = set()
     for a in rows:
-        if a.context_digest == by_trade[a.trade_id].result_digest:
+        if a.context_digest != by_trade[a.trade_id].result_digest:
+            continue
+        if a.provider == chosen.provider and a.model == chosen.model_for():
+            found[a.trade_id] = a
+            preferred.add(a.trade_id)
+        elif a.trade_id not in preferred:
             found.setdefault(a.trade_id, a)
     return found
 

@@ -25,7 +25,7 @@ class AiSignalExplanationOut(BaseModel):
 
 
 class AiContextOut(BaseModel):
-    """An OpenAI-written explanation of the stored facts, validated against them. It explains; it never sets a signal or the flag. `generated_for` is
+    """An AI-written explanation of the stored facts, validated against them. It explains; it never sets a signal or the flag. `generated_for` is
     'flagged' for a flagged trade, or 'manual' for an unflagged trade explained on request (an explanation, not a flag)."""
 
     headline: str
@@ -33,6 +33,7 @@ class AiContextOut(BaseModel):
     signals: list[AiSignalExplanationOut]
     limitations: str
     generated_for: str
+    provider: str = "openai"  # openai | anthropic: which service wrote it (the cache keeps one explanation per provider and model)
     model: str
     prompt_version: str
     generated_at: datetime

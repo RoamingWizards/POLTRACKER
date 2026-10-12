@@ -25,6 +25,7 @@ const Politicians = lazy(() => import('./pages/Politicians'));
 const PoliticianDetail = lazy(() => import('./pages/PoliticianDetail'));
 const SecurityDetail = lazy(() => import('./pages/SecurityDetail'));
 const DataStatus = lazy(() => import('./pages/DataStatus'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 const xThemeComponents = {
   ...chartsCustomizations,
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="politicians/:id" element={<PoliticianDetail />} />
             <Route path="securities/:ticker" element={<SecurityDetail />} />
             <Route path="status" element={<DataStatus />} />
+            <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Alert severity="info">Page not found.</Alert>} />
           </Route>
         </Routes>

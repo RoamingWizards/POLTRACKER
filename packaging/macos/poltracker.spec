@@ -27,6 +27,7 @@ hiddenimports = (
     + collect_submodules("sqlalchemy.dialects.sqlite")
     + collect_submodules("yfinance")
     + collect_submodules("curl_cffi")
+    + collect_submodules("keyring")  # the macOS Keychain backend is imported directly (poltracker.ai.keystore)
     + ["sqlite3", "webview.platforms.cocoa"]
 )
 

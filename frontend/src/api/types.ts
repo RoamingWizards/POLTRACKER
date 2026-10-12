@@ -127,13 +127,14 @@ export interface ContextEvidence {
   metadata: Record<string, unknown> | null;
 }
 
-/** An OpenAI-written explanation of the stored facts, validated against them. It explains; it never sets a signal or the flag. */
+/** An AI-written explanation of the stored facts, validated against them. It explains; it never sets a signal or the flag. */
 export interface AiContext {
   headline: string;
   summary: string;
   signals: { type: string; explanation: string }[];
   limitations: string;
   generated_for: 'flagged' | 'manual';
+  provider: string;
   model: string;
   prompt_version: string;
   generated_at: string;
@@ -365,4 +366,62 @@ export interface RefreshStatus {
 export interface TriggerResult {
   accepted: boolean;
   reason: string;
+}
+
+// --- In-app AI providers (desktop app only). The API never returns a stored key: `masked` is all the UI ever sees. ---
+
+export interface AiProviderState {
+  id: string;
+  label: string;
+  configured: boolean;
+  masked: string | null;
+  model: string;
+  default_model: string;
+  suggested_models: string[];
+}
+
+export interface AiSettings {
+  provider: string;
+  model: string;
+  providers: AiProviderState[];
+  configured: boolean;
+  storage_error: string | null;
+  notice: string;
+  key_notice: string;
+}
+
+export interface AiTestResult {
+  ok: boolean;
+  code: string | null;
+  message: string;
+}
+
+export interface AiGenerateResult {
+  ai_context: AiContext;
+  from_cache: boolean;
+}
+
+export interface AiBulkPreview {
+  provider: string;
+  provider_label: string;
+  model: string;
+  configured: boolean;
+  flagged_total: number;
+  already_cached: number;
+  to_generate: number;
+  estimated_api_calls: number;
+}
+
+export interface AiBulkStatus {
+  state: 'idle' | 'running' | 'done' | 'failed';
+  provider: string | null;
+  model: string | null;
+  total: number;
+  done: number;
+  generated: number;
+  cached: number;
+  rejected: number;
+  errors: number;
+  message: string | null;
+  finished_at: string | null;
 }

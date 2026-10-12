@@ -35,6 +35,7 @@ class ItemResult:
     explanation: dict | None = None
     rejected_answer: dict | None = None  # the model's text when validation rejected it: shown by --verbose for diagnosis, never stored
     reasons: list[str] = field(default_factory=list)
+    code: str | None = None  # why it failed: invalid_key | rate_limited | unavailable | network | timeout | malformed | refused | validation_rejected | error
     tokens_in: int = 0
     tokens_out: int = 0
 
@@ -85,9 +86,9 @@ class RunSummary:
 class TradeContextExplanationService:
     """Never decides anything and never writes `trade_context`: it reads a context row, asks for an explanation, validates it, and caches it."""
 
-    def __init__(self, session_factory: sessionmaker[Session], explainer: Explainer | None, *, model: str, max_calls: int = 25,
+    def __init__(self, session_factory: sessionmaker[Session], explainer: Explainer | None, *, model: str, provider: str = "openai", max_calls: int = 25,
                  input_usd_per_mtok: float | None = None, output_usd_per_mtok: float | None = None, now=None):
-        self._sf, self._explainer, self.model, self.max_calls = session_factory, explainer, model, max_calls
+        self._sf, self._explainer, self.model, self.provider, self.max_calls = session_factory, explainer, model, provider, max_calls
         self._rates = (input_usd_per_mtok, output_usd_per_mtok)
         self._now = now or (lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -97,7 +98,7 @@ class TradeContextExplanationService:
                    input_usd_per_mtok=settings.trade_llm_input_usd_per_mtok, output_usd_per_mtok=settings.trade_llm_output_usd_per_mtok, **kw)
 
     def run(self, *, trade_ids: list[int] | None = None, ticker: str | None = None, politician: str | None = None, flagged_only: bool = True,
-            limit: int | None = None, force: bool = False, dry_run: bool = False) -> RunSummary:
+            limit: int | None = None, force: bool = False, dry_run: bool = False, on_item=None) -> RunSummary:
         max_calls = self.max_calls if limit is None else limit
         with self._sf() as session:
             key = self._context_key(session)
@@ -117,25 +118,25 @@ class TradeContextExplanationService:
                 digest = input_hash(facts, self.model, PROMPT_VERSION)
                 row = session.scalar(select(TradeContextAnalysis).where(
                     TradeContextAnalysis.trade_id == trade.id, TradeContextAnalysis.context_version == key[0], TradeContextAnalysis.mapping_version == key[1],
-                    TradeContextAnalysis.prompt_version == PROMPT_VERSION, TradeContextAnalysis.model == self.model))
+                    TradeContextAnalysis.prompt_version == PROMPT_VERSION, TradeContextAnalysis.provider == self.provider, TradeContextAnalysis.model == self.model))
                 if row is not None and row.input_hash == digest and not force:
                     item.status, item.explanation = "cached", _row_explanation(row)
                     summary.cached += 1
-                    continue
-                if summary.calls + summary.would_generate >= max_calls or summary.aborted:
+                elif summary.calls + summary.would_generate >= max_calls or summary.aborted:
                     item.status = "over_limit"
                     summary.over_limit += 1
-                    continue
-                if dry_run:
+                elif dry_run:
                     item.status = "would_generate"
                     summary.would_generate += 1
-                    continue
-                if self._explainer is None:
-                    item.status, item.reasons = "unavailable", ["OPENAI_API_KEY is not set"]
+                elif self._explainer is None:
+                    why = "OPENAI_API_KEY is not set" if self.provider == "openai" else f"no {self.provider} API key is configured"
+                    item.status, item.reasons = "unavailable", [why]
                     summary.errors += 1
-                    summary.aborted = "OPENAI_API_KEY is not set"
-                    continue
-                self._generate(session, summary, item, ctx, key, digest, row, known)
+                    summary.aborted = why
+                else:
+                    self._generate(session, summary, item, ctx, key, digest, row, known)
+                if on_item is not None:
+                    on_item(item, summary)
             summary.estimated_cost_usd = self._cost(summary)
         return summary
 
@@ -155,24 +156,25 @@ class TradeContextExplanationService:
             validate_explanation(explanation, item.facts, known)
             item.rejected_answer = None
         except ExplanationRejected as exc:
-            item.status, item.reasons = "rejected", exc.reasons
+            item.status, item.reasons, item.code = "rejected", exc.reasons, exc.code
             summary.rejected += 1
             return
         except ExplanationError as exc:
-            item.status, item.reasons = "error", [str(exc)]
+            item.status, item.reasons, item.code = "error", [str(exc)], exc.code
             summary.errors += 1
             if exc.fatal:
                 summary.aborted = str(exc)
             return
         except Exception as exc:  # one trade's failure must not stop the others
-            item.status, item.reasons = "error", [f"unexpected {type(exc).__name__}"]
+            item.status, item.reasons, item.code = "error", [f"unexpected {type(exc).__name__}"], "error"
             summary.errors += 1
             return
         values = dict(input_hash=digest, context_digest=ctx.result_digest, generated_for="flagged" if ctx.flagged_for_contextual_review else "manual",
                       headline=explanation.headline, summary=explanation.summary, signals_json=json.dumps(explanation.signals), limitations=explanation.limitations,
                       input_tokens=item.tokens_in, output_tokens=item.tokens_out, created_at=self._now())
         if row is None:
-            row = TradeContextAnalysis(trade_id=ctx.trade_id, context_version=key[0], mapping_version=key[1], prompt_version=PROMPT_VERSION, model=self.model, **values)
+            row = TradeContextAnalysis(trade_id=ctx.trade_id, context_version=key[0], mapping_version=key[1], prompt_version=PROMPT_VERSION, provider=self.provider,
+                                       model=self.model, **values)
             session.add(row)
         else:  # the facts changed (or --force): replace the stale text only now that the new text has passed validation
             for k, v in values.items():
@@ -216,7 +218,8 @@ class TradeContextExplanationService:
 
 
 def _row_explanation(row: TradeContextAnalysis) -> dict:
-    return {"headline": row.headline, "summary": row.summary, "signals": json.loads(row.signals_json), "limitations": row.limitations, "generated_for": row.generated_for}
+    return {"headline": row.headline, "summary": row.summary, "signals": json.loads(row.signals_json), "limitations": row.limitations, "generated_for": row.generated_for,
+            "provider": row.provider, "model": row.model, "generated_at": row.created_at}
 
 
 def main(argv: list[str] | None = None) -> int:

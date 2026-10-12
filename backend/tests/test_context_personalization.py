@@ -610,7 +610,7 @@ def test_migration_0016_adds_only_the_two_preference_tables_and_keeps_existing_c
     command.upgrade(cfg, "head")
     assert set(sa.inspect(engine).get_table_names()) - before == {"context_views", "app_preferences"}
     with engine.connect() as c:
-        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0016"
+        assert c.exec_driver_sql("select version_num from alembic_version").scalar() == "0017"
         assert tuple(c.exec_driver_sql("select trade_id, context_version, flagged_for_contextual_review, result_digest from trade_context").one()) == (1, "2026.3", 1, "d")
     command.downgrade(cfg, "0015")
     assert not {"context_views", "app_preferences"} & set(sa.inspect(engine).get_table_names())

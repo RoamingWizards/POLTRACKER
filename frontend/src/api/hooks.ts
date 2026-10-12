@@ -3,6 +3,11 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { apiGet, apiPost, apiSend, ApiError } from './client';
 import type {
   ActiveScreen,
+  AiBulkPreview,
+  AiBulkStatus,
+  AiGenerateResult,
+  AiSettings,
+  AiTestResult,
   ContextRule,
   FilterSpec,
   PresetsResponse,
@@ -178,3 +183,50 @@ export function useViewMutations() {
 
 export const saveActiveScreen = (a: Omit<ActiveScreen, 'saved'>) => apiSend<ActiveScreen>('PUT', '/context/active', a);
 export const resetActiveScreen = () => apiSend<ActiveScreen>('DELETE', '/context/active');
+
+
+// --- In-app AI providers. Desktop only: a read-only web API answers 404, which means "not available here" (null). Nothing here ever holds a stored key. ---
+
+export const useAiSettings = () =>
+  useQuery({ queryKey: ['ai-settings'], queryFn: () => orUnavailable(() => apiGet<AiSettings>('/ai/settings')), retry: false, staleTime: 30_000 });
+
+export function useAiMutations() {
+  const qc = useQueryClient();
+  const set = (s: AiSettings) => qc.setQueryData(['ai-settings'], s);
+  return {
+    setProvider: useMutation({ mutationFn: (v: { provider: string; model?: string | null }) => apiSend<AiSettings>('PUT', '/ai/provider', v), onSuccess: (s) => { set(s); qc.invalidateQueries({ queryKey: ['ai-bulk-preview'] }); } }),
+    saveKey: useMutation({ mutationFn: (v: { provider: string; api_key: string }) => apiSend<AiSettings>('POST', '/ai/key', v), onSuccess: set }),
+    removeKey: useMutation({ mutationFn: (provider: string) => apiSend<AiSettings>('DELETE', `/ai/key?provider=${encodeURIComponent(provider)}`), onSuccess: set }),
+    test: useMutation({ mutationFn: (provider: string) => apiSend<AiTestResult>('POST', '/ai/test', { provider }) }),
+  };
+}
+
+const TRADE_KEYS = new Set(['trades', 'screen', 'trade']);
+
+export function useGenerateAiContext(tradeId: number | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { regenerate?: boolean; manual?: boolean }) => apiSend<AiGenerateResult>('POST', `/trades/${tradeId}/ai-context/generate`, { regenerate: !!v.regenerate, manual: !!v.manual }),
+    onSuccess: () => qc.invalidateQueries({ predicate: (q) => TRADE_KEYS.has(String(q.queryKey[0])) }),
+  });
+}
+
+export const useAiBulkPreview = (enabled: boolean) =>
+  useQuery({ queryKey: ['ai-bulk-preview'], queryFn: () => apiGet<AiBulkPreview>('/ai/generate-flagged/preview'), enabled, gcTime: 0, retry: false });
+
+export const useAiBulkStatus = () =>
+  useQuery({
+    queryKey: ['ai-bulk-status'],
+    queryFn: () => apiGet<AiBulkStatus>('/ai/generate-flagged/status'),
+    refetchInterval: (q) => (q.state.data?.state === 'running' ? 1_500 : false),
+    retry: false,
+  });
+
+export function useStartAiBulk() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiSend<AiBulkStatus>('POST', '/ai/generate-flagged', { confirm: true }),
+    onSuccess: (s) => qc.setQueryData(['ai-bulk-status'], s),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['ai-bulk-status'] }),
+  });
+}

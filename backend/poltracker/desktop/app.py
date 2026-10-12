@@ -19,6 +19,7 @@ from ..config import Settings, get_settings
 from . import paths
 from .refresh import RefreshService, build_default_runners
 from ..api.views import router as views_router
+from ..api.ai import router as ai_router
 from .routes import router as refresh_router
 
 log = logging.getLogger(__name__)
@@ -31,6 +32,9 @@ def create_desktop_app(
     settings: Settings | None = None,
     refresh: RefreshService | None = None,
     enable_refresh: bool = True,
+    ai_secrets=None,
+    ai_provider_factory=None,
+    ai_session_factory=None,
 ) -> FastAPI:
     settings = settings or get_settings()
     frontend_dir = frontend_dir or paths.frontend_dist()
@@ -38,6 +42,16 @@ def create_desktop_app(
     api = create_app(settings)
     api.include_router(refresh_router)
     api.include_router(views_router)  # local saved views and the last-used screen: single user, same origin
+    api.include_router(ai_router)  # in-app AI provider settings (keys go to the macOS Keychain) and on-demand explanations: never on the public API
+    from ..ai.bulk import BulkJob
+    from ..ai.keystore import KeyringSecretStore
+    from ..ai.providers import build_provider
+    from ..db import make_session_factory as _msf
+
+    api.state.ai_secrets = ai_secrets or KeyringSecretStore()
+    api.state.ai_provider_factory = ai_provider_factory or build_provider
+    api.state.ai_session_factory = ai_session_factory or _msf()
+    api.state.ai_bulk = BulkJob()
     if refresh is None and enable_refresh:
         from ..db import make_session_factory
 
@@ -63,6 +77,7 @@ def create_desktop_app(
     app = FastAPI(title="POLTRACKER (desktop)", version="0.1.0", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
     app.state.refresh = api.state.refresh
+    app.state.ai_bulk = api.state.ai_bulk
 
     @app.get("/health", include_in_schema=False)
     def health() -> dict[str, str]:
