@@ -21,6 +21,7 @@ import { chartsCustomizations, dataGridCustomizations, datePickersCustomizations
 // Each page is its own chunk, loaded on first visit.
 const Overview = lazy(() => import('./pages/Overview'));
 const Trades = lazy(() => import('./pages/Trades'));
+const Flagged = lazy(() => import('./pages/Flagged'));
 const Politicians = lazy(() => import('./pages/Politicians'));
 const PoliticianDetail = lazy(() => import('./pages/PoliticianDetail'));
 const SecurityDetail = lazy(() => import('./pages/SecurityDetail'));
@@ -72,6 +73,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<Overview />} />
             <Route path="trades" element={<Trades />} />
+            <Route path="flagged" element={<Flagged />} />
             <Route path="politicians" element={<Politicians />} />
             <Route path="politicians/:id" element={<PoliticianDetail />} />
             <Route path="securities/:ticker" element={<SecurityDetail />} />
