@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [react()],
   test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'], css: false, restoreMocks: true },
   server: {
+    fs: { allow: ['..'] }, // PRIVACY.md at the repository root is the one source of the in-app privacy page
     proxy: {
       '/api': { target: backend, changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, '') },
     },

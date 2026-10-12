@@ -35,6 +35,8 @@ writes `selftest.json` to the data folder.
 Overrides for development: `POLTRACKER_HOME` (data folder), `POLTRACKER_DATABASE_URL` (explicit database). A cloud
 `DATABASE_URL` in the environment is ignored by the desktop app. No `.env` is read or needed; no secrets are bundled.
 
+Privacy: what the app stores, sends and where to delete it is in [PRIVACY.md](../PRIVACY.md); the same text is in the app under Settings → Privacy.
+
 ## First run and refresh
 
 First launch creates the database, applies the Alembic migrations, then downloads congressional trades and market prices

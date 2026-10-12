@@ -34,6 +34,7 @@ export default function NavbarBreadcrumbs() {
   else if (section === 'flagged') trail.push({ label: 'Flagged' });
   else if (section === 'status') trail.push({ label: 'Data Status' });
   else if (section === 'settings') trail.push({ label: 'Settings' });
+  else if (section === 'privacy') trail.push({ label: 'Settings', to: '/settings' }, { label: 'Privacy' });
   else if (section === 'politicians') {
     trail.push({ label: 'Politicians', to: parts[1] ? '/politicians' : undefined });
     const id = Number(parts[1]);

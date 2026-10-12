@@ -26,7 +26,7 @@ const mainListItems = [
 
 const secondaryListItems = [
   { text: 'Data Status', icon: <StorageRoundedIcon />, to: '/status', match: (p: string) => p.startsWith('/status') },
-  { text: 'Settings', icon: <SettingsRoundedIcon />, to: '/settings', match: (p: string) => p.startsWith('/settings') },
+  { text: 'Settings', icon: <SettingsRoundedIcon />, to: '/settings', match: (p: string) => p.startsWith('/settings') || p.startsWith('/privacy') },
 ];
 
 type Item = (typeof mainListItems)[number];

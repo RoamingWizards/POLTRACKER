@@ -180,7 +180,7 @@ No license has been chosen yet. Trade data belongs to its sources and is subject
 
 ## macOS app
 
-A standalone `POLTRACKER.app` (local SQLite, automatic refresh, no Terminal) can be built with `./scripts/build-macos.sh`. See [docs/MACOS_APP.md](docs/MACOS_APP.md).
+A standalone `POLTRACKER.app` (local SQLite, automatic refresh, no Terminal) can be built with `./scripts/build-macos.sh`. See [docs/MACOS_APP.md](docs/MACOS_APP.md). Privacy: [PRIVACY.md](PRIVACY.md).
 
 Official politician metadata and House committees: see [docs/POLITICIAN_ENRICHMENT.md](docs/POLITICIAN_ENRICHMENT.md).
 
