@@ -7,6 +7,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded';
+import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
@@ -14,6 +15,7 @@ import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 const mainListItems = [
   { text: 'Overview', icon: <HomeRoundedIcon />, to: '/', match: (p: string) => p === '/' },
   { text: 'Trades', icon: <SwapHorizRoundedIcon />, to: '/trades', match: (p: string) => p.startsWith('/trades') },
+  { text: 'Flagged', icon: <FlagRoundedIcon />, to: '/flagged', match: (p: string) => p.startsWith('/flagged') },
   {
     text: 'Politicians',
     icon: <PeopleRoundedIcon />,
