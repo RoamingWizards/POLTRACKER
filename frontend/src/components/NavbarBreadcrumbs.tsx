@@ -31,6 +31,7 @@ export default function NavbarBreadcrumbs() {
   const trail: { label: React.ReactNode; to?: string }[] = [{ label: 'POLTRACKER', to: '/' }];
   if (!section) trail.push({ label: 'Overview' });
   else if (section === 'trades') trail.push({ label: 'Trades' });
+  else if (section === 'flagged') trail.push({ label: 'Flagged' });
   else if (section === 'status') trail.push({ label: 'Data Status' });
   else if (section === 'politicians') {
     trail.push({ label: 'Politicians', to: parts[1] ? '/politicians' : undefined });

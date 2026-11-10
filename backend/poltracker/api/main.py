@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import case, extract, func, or_, select
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -54,8 +54,10 @@ def get_session() -> Iterator[Session]:
 
 
 @router.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health(request: Request) -> dict[str, str | bool]:
+    # The public API answers exactly {"status": "ok"}. Only the desktop app adds "desktop": true, so the frontend knows the desktop-only
+    # routes (/refresh/status) exist and never has to probe for them and log a 404.
+    return {"status": "ok", "desktop": True} if getattr(request.app.state, "desktop", False) else {"status": "ok"}
 
 
 def _context_key(session: Session) -> tuple[str, str] | None:
