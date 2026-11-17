@@ -36,6 +36,7 @@ def create_desktop_app(
     frontend_dir = frontend_dir or paths.frontend_dist()
 
     api = create_app(settings)
+    api.state.desktop = True  # advertised by /api/health so the frontend only asks for the desktop-only refresh status here
     api.include_router(refresh_router)
     api.include_router(views_router)  # local saved views and the last-used screen: single user, same origin
     if refresh is None and enable_refresh:
